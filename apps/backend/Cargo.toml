@@ -4,3 +4,24 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Local Crate (Entity SeaORM)
+entity = { path = "../../packages/entity" }
+
+# Web Framework
+actix-web = "4.9"
+actix-cors = "0.7"
+
+# Database & Async Runtime
+sea-orm = { version = "1.1", features = [ "sqlx-mysql", "runtime-tokio-native-tls", "macros" ] }
+tokio = { version = "1.40", features = ["full"] }
+
+# Serialization & Deserialization (untuk DTO/JSON)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Environment Variables
+dotenvy = "0.15"
+
+# Logging / Tracing (Opsional tapi berguna untuk debugging)
+env_logger = "0.11"
+log = "0.4"

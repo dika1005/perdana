@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "apps/backend",
+    "packages/entity",
+]
+resolver = "2"
