@@ -1,11 +1,12 @@
 use sea_orm::{DatabaseConnection, DbErr, EntityTrait, PaginatorTrait, Select};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 const DEFAULT_PAGE: u64 = 1;
 const DEFAULT_PER_PAGE: u64 = 20;
 const MAX_PER_PAGE: u64 = 100;
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, ToSchema)]
 pub struct PaginationQuery {
     pub page: Option<u64>,
     pub per_page: Option<u64>,
@@ -35,7 +36,7 @@ impl Default for Pagination {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, ToSchema)]
 pub struct PaginationMeta {
     pub page: u64,
     pub per_page: u64,

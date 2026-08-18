@@ -1,8 +1,9 @@
 use serde::Serialize;
+use utoipa::ToSchema;
 
 use super::pagination::PaginationMeta;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ApiResponse<T: Serialize> {
     pub success: bool,
     pub message: String,
@@ -19,7 +20,7 @@ impl<T: Serialize> ApiResponse<T> {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ListResponse<T: Serialize> {
     pub success: bool,
     pub message: String,
@@ -38,14 +39,14 @@ impl<T: Serialize> ListResponse<T> {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct HealthData {
     pub status: &'static str,
     pub database: &'static str,
     pub user_count: u64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct MessageData {
     pub ok: bool,
 }

@@ -2,7 +2,7 @@ use actix_web::cookie::time::Duration;
 use actix_web::cookie::{Cookie, SameSite};
 use actix_web::{HttpRequest, HttpResponse, web};
 
-use crate::dto::{ApiResponse, LoginRequest, MessageData, RefreshRequest};
+use crate::dto::{ApiResponse, LoginData, LoginRequest, MessageData, PublicUser, RefreshData, RefreshRequest};
 use crate::error::AppError;
 use crate::extractors::AuthUser;
 use crate::services::auth as auth_service;
@@ -35,6 +35,16 @@ pub fn make_removal_cookie<'a>(name: &'a str) -> Cookie<'a> {
         .finish()
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/login",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "Login berhasil, mengembalikan token JWT dan memasang HttpOnly Cookie", body = ApiResponse<LoginData>),
+        (status = 401, description = "Username atau password salah / akun non-aktif")
+    ),
+    tag = "Auth"
+)]
 pub async fn login(
     state: web::Data<AppState>,
     payload: web::Json<LoginRequest>,
@@ -50,6 +60,16 @@ pub async fn login(
         .json(ApiResponse::ok("Login berhasil", data)))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/refresh",
+    request_body(content = Option<RefreshRequest>, description = "Optional jika refresh_token ada di Cookie"),
+    responses(
+        (status = 200, description = "Token diperbarui dan cookie diperbarui", body = ApiResponse<RefreshData>),
+        (status = 401, description = "Refresh token tidak valid / expired")
+    ),
+    tag = "Auth"
+)]
 pub async fn refresh(
     state: web::Data<AppState>,
     req: HttpRequest,
@@ -81,6 +101,19 @@ pub async fn refresh(
         .json(ApiResponse::ok("Token diperbarui", data)))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/logout",
+    responses(
+        (status = 200, description = "Logout berhasil dan cookie dihapus", body = ApiResponse<MessageData>),
+        (status = 401, description = "Unauthorized")
+    ),
+    security(
+        ("bearer_auth" = []),
+        ("cookie_auth" = [])
+    ),
+    tag = "Auth"
+)]
 pub async fn logout(_user: AuthUser) -> Result<HttpResponse, AppError> {
     let access_cookie = make_removal_cookie("access_token");
     let refresh_cookie = make_removal_cookie("refresh_token");
@@ -94,6 +127,19 @@ pub async fn logout(_user: AuthUser) -> Result<HttpResponse, AppError> {
         )))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/auth/me",
+    responses(
+        (status = 200, description = "Data profil user yang sedang login", body = ApiResponse<PublicUser>),
+        (status = 401, description = "Unauthorized")
+    ),
+    security(
+        ("bearer_auth" = []),
+        ("cookie_auth" = [])
+    ),
+    tag = "Auth"
+)]
 pub async fn me(state: web::Data<AppState>, user: AuthUser) -> Result<HttpResponse, AppError> {
     let data = auth_service::me(&state.db, user.id).await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Data user aktif", data)))

@@ -3,9 +3,12 @@ use actix_web::http::header;
 use actix_web::{App, HttpServer, middleware::Logger, web};
 use backend::config::{self, AppConfig};
 use backend::http::json_config;
+use backend::openapi::ApiDoc;
 use backend::routes;
 use backend::services::auth::seed_super_admin;
 use backend::state::AppState;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -31,8 +34,14 @@ async fn main() -> std::io::Result<()> {
         app_config.server_host,
         app_config.server_port
     );
+    log::info!(
+        "Swagger UI tersedia di http://{}:{}/swagger-ui/",
+        app_config.server_host,
+        app_config.server_port
+    );
 
     let frontend_origin = app_config.frontend_origin.clone();
+    let openapi = ApiDoc::openapi();
 
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -50,6 +59,14 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .app_data(web::Data::new(state.clone()))
             .app_data(json_config())
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-docs/openapi.json", openapi.clone()),
+            )
+            .service(
+                SwaggerUi::new("/api/v1/swagger-ui/{_:.*}")
+                    .url("/api/v1/api-docs/openapi.json", openapi.clone()),
+            )
             .route("/health", web::get().to(routes::health::health_check))
             .service(web::scope("/api/v1").configure(routes::configure))
             .configure(routes::configure)
