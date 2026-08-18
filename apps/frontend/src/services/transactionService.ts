@@ -8,9 +8,21 @@ export const transactionService = {
     return res.data.data;
   },
 
-  getTransactions: async (params?: { page?: number; search?: string; date?: string; order_status?: OrderStatus }) => {
+  getTransactions: async (params?: { 
+    page?: number; 
+    per_page?: number; 
+    search?: string; 
+    date?: string; 
+    payment_status?: PaymentStatus;
+    order_status?: OrderStatus;
+  }) => {
     const res = await apiClient.get<ListResponse<any>>('/transactions', { params });
     return res.data;
+  },
+
+  getTransactionById: async (id: number) => {
+    const res = await apiClient.get<ApiResponse<any>>(`/transactions/${id}`);
+    return res.data.data;
   },
 
   updateOrderStatus: async (id: number, status: OrderStatus) => {

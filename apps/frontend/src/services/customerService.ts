@@ -27,4 +27,9 @@ export const customerService = {
     const res = await apiClient.delete<ApiResponse<null>>(`/customers/${id}`);
     return res.data;
   },
+
+  getCustomerTransactions: async (customerId: number, params?: { page?: number }) => {
+    const res = await apiClient.get<ListResponse<any>>(`/customers/${customerId}/transactions`, { params });
+    return res.data;
+  },
 };
