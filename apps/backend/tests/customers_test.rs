@@ -58,7 +58,14 @@ async fn test_customers_lifecycle() {
     assert_eq!(meta.total, 1);
     assert_eq!(list_res[0].id, cust.id);
 
-    // 5. Delete customer
+    // 5. Test customer transaction history (empty list when no transactions yet)
+    let (tx_list, tx_meta) = customer_service::list_customer_transactions(&db, cust.id, &pagination)
+        .await
+        .expect("List customer transactions");
+    assert_eq!(tx_meta.total, 0);
+    assert_eq!(tx_list.len(), 0);
+
+    // 6. Delete customer
     customer_service::delete(&db, cust.id)
         .await
         .expect("Delete customer");

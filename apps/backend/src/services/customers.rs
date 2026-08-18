@@ -1,5 +1,6 @@
 use entity::customers;
 use entity::prelude::*;
+use entity::{transactions, users};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
 };
@@ -7,9 +8,10 @@ use validator::Validate;
 
 use crate::dto::{
     CreateCustomerRequest, CustomerQuery, CustomerResponse, Pagination, PaginationMeta,
-    UpdateCustomerRequest,
+    TransactionResponse, UpdateCustomerRequest,
 };
 use crate::error::AppError;
+use crate::services::transactions as transaction_mapper;
 
 pub fn map_customer(m: &customers::Model) -> CustomerResponse {
     CustomerResponse {
@@ -108,4 +110,48 @@ pub async fn delete(db: &DatabaseConnection, id: i32) -> Result<(), AppError> {
     let active_model: customers::ActiveModel = item.into();
     active_model.delete(db).await?;
     Ok(())
+}
+
+pub async fn list_customer_transactions(
+    db: &DatabaseConnection,
+    customer_id: i32,
+    pagination: &Pagination,
+) -> Result<(Vec<TransactionResponse>, PaginationMeta), AppError> {
+    // Verify customer exists
+    Customer::find_by_id(customer_id)
+        .one(db)
+        .await?
+        .ok_or_else(|| AppError::not_found("Pelanggan tidak ditemukan"))?;
+
+    let select = Transaction::find()
+        .filter(transactions::Column::CustomerId.eq(customer_id))
+        .order_by_desc(transactions::Column::Id);
+
+    let (items, meta) = pagination.fetch(select, db).await?;
+
+    // Load cashier names
+    let cashier_ids: Vec<i32> = items.iter().filter_map(|t| t.created_by).collect();
+    let cashiers = if !cashier_ids.is_empty() {
+        User::find()
+            .filter(users::Column::Id.is_in(cashier_ids))
+            .all(db)
+            .await?
+    } else {
+        vec![]
+    };
+
+    let result = items
+        .into_iter()
+        .map(|t| {
+            let c_name = t.created_by.and_then(|id| {
+                cashiers
+                    .iter()
+                    .find(|u| u.id == id)
+                    .map(|u| u.name.clone())
+            });
+            transaction_mapper::map_transaction(&t, c_name, None)
+        })
+        .collect();
+
+    Ok((result, meta))
 }

@@ -99,7 +99,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .route("", web::post().to(customers::create))
                 .route("/{id}", web::get().to(customers::get))
                 .route("/{id}", web::put().to(customers::update))
-                .route("/{id}", web::delete().to(customers::delete)),
+                .route("/{id}", web::delete().to(customers::delete))
+                .route(
+                    "/{id}/transactions",
+                    web::get().to(customers::list_transactions),
+                ),
         )
         .service(
             web::scope("/transactions")
@@ -124,7 +128,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .route(
                     "/inventory-mutations",
                     web::get().to(reports::inventory_mutations),
-                ),
+                )
+                .route("/receivables", web::get().to(reports::receivables))
+                .route("/low-stock", web::get().to(reports::low_stock)),
         );
 }
 

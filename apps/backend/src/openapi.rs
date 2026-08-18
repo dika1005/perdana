@@ -55,6 +55,7 @@ use entity::enums::*;
         routes::customers::create,
         routes::customers::update,
         routes::customers::delete,
+        routes::customers::list_transactions,
         routes::transactions::list,
         routes::transactions::get,
         routes::transactions::create,
@@ -65,6 +66,8 @@ use entity::enums::*;
         routes::reports::daily_sales,
         routes::reports::top_products,
         routes::reports::inventory_mutations,
+        routes::reports::receivables,
+        routes::reports::low_stock,
     ),
     components(
         schemas(
@@ -82,7 +85,8 @@ use entity::enums::*;
             TransactionAddonInput, TransactionItemInput, CreateTransactionRequest, TransactionQuery,
             UpdateOrderStatusRequest, UpdatePaymentRequest,
             TransactionItemAddonResponse, TransactionItemResponse, TransactionResponse, InvoicePrintData,
-            ReportDateQuery, DashboardSummaryResponse, DailySalesReportItem, TopProductReportItem, InventoryMutationReportItem,
+            ReportDateQuery, DashboardSummaryResponse, DailySalesReportItem, TopProductReportItem,
+            InventoryMutationReportItem, ReceivableItem, LowStockItem,
         )
     ),
     modifiers(&SecurityAddon),

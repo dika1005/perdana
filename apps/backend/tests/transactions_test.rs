@@ -206,13 +206,14 @@ async fn test_pos_transaction_complete_lifecycle() {
     assert_eq!(picked_up.order_status, OrderStatus::Diambil);
 
     // 8. Generate Invoice Print Data
-    let invoice = transaction_service::get_invoice_data(&db, trans.id)
+    let invoice = transaction_service::get_invoice_data(&db, &config.store, trans.id)
         .await
         .expect("Get invoice print data");
     assert_eq!(invoice.invoice_number, trans.invoice_number);
     assert_eq!(invoice.remaining_amount, Decimal::ZERO);
     assert_eq!(invoice.change_amount, Decimal::from(50000));
     assert_eq!(invoice.items.len(), 2);
+    assert_eq!(invoice.store_name, config.store.name);
 
     // 9. List transactions with filter
     let pagination = Pagination::default();

@@ -403,7 +403,264 @@ export const useCartStore = create<CartState>((set, get) => ({
 
 ---
 
-## 4. Fitur-Fitur Istimewa & Sangat Berguna (*Killer Features*)
+## 4. Spesifikasi & Daftar Tampilan (UI Screens) yang Harus Dibuat
+
+Berikut rincian lengkap setiap layar/halaman, komponen, interaksi pengguna, dan hak akses yang wajib dibangun pada frontend:
+
+```mermaid
+graph TD
+    Login["1. Halaman Login (/login)"] --> AppLayout["Layout Utama (Sidebar + Header)"]
+    
+    subgraph Kasir & Owner
+        AppLayout --> POS["2. Kasir POS (/pos)"]
+        AppLayout --> Tracking["3. Job Tracking (/job-tracking)"]
+        AppLayout --> TransHistory["4. Riwayat Transaksi (/transactions)"]
+        AppLayout --> Inventory["5. Inventaris Bahan Baku (/inventory)"]
+        AppLayout --> Customers["6. Pelanggan & Repeat Order (/customers)"]
+        AppLayout --> Reports["7. Laporan & Dashboard (/reports)"]
+    end
+
+    subgraph Owner Only (SUPER_ADMIN)
+        AppLayout --> MasterProducts["8. Master Produk & Finishing (/products)"]
+        AppLayout --> Users["9. Manajemen Pengguna / Kasir (/users)"]
+    end
+```
+
+---
+
+### 1. 🔐 Halaman Login (`/login`)
+- **Akses**: Publik (Bebas).
+- **Elemen UI**:
+  - Logo toko & Judul "Perdana POS & Percetakan".
+  - Form Input: `Username` dan `Password`.
+  - Tombol Submit: "Masuk ke Sistem" (dengan animasi spinner loading).
+  - Pesan error interaktif jika kredensial salah atau akun dinonaktifkan.
+- **Logika & State**:
+  - Panggil `POST /auth/login` dengan opsi `withCredentials: true`.
+  - Backend otomatis menyetel HttpOnly cookie `access_token` dan `refresh_token`.
+  - Simpan data profil (`name`, `username`, `role`) di Zustand `useAuthStore`.
+  - Redirect otomatis ke `/pos` (untuk Kasir) atau `/reports` (untuk Owner).
+
+---
+
+### 2. 🖥️ Layout Utama & Shell Navigasi
+- **Komponen**:
+  - **Sidebar Navigasi**:
+    - Menu Kasir POS, Job Tracking, Riwayat Transaksi, Inventaris Bahan, Pelanggan, Laporan.
+    - Menu Khusus Super Admin (Owner): Master Produk & Finishing, Kelola Kasir.
+    - Indikator profil pengguna aktif & tombol **Logout** (`POST /auth/logout`).
+  - **Top Header**:
+    - Judul halaman dinamis + tanggal hari ini.
+    - **Badge Notifikasi Stok Kritis** (menampilkan jumlah bahan yang $\le$ `min_stock_warning` dari `GET /reports/low-stock`).
+    - Status role badge (`SUPER ADMIN` / `KASIR`).
+  - **RoleGuard Wrapper**: Komponen pelindung rute yang otomatis me-redirect kasir jika mencoba membuka halaman khusus Owner (`/products`, `/users`).
+
+---
+
+### 3. 🛒 Halaman Kasir POS (`/pos` atau `/`) — *Layar Utama Kasir*
+Layar operasional terpenting tempat kasir melayani pembeli secara cepat dan fleksibel.
+
+- **Tata Letak (2 Kolom Responsif)**:
+  - **Kolom Kiri (Katalog Produk)**:
+    - Search bar cepat (pencarian nama produk / jasa cetak).
+    - Tabs Kategori (Semua, Buku Yasin, Undangan, Spanduk/Banner, Brosur, Stiker, Souvenir).
+    - Grid Kartu Produk: Menampilkan nama, harga (atau label "Harga Rentang" / "Custom"), info minimum order, dan tombol pilih.
+  - **Kolom Kanan (Keranjang / Cart Drawer)**:
+    - Pemilih Pelanggan: Dropdown pencarian pelanggan terdaftar (`SMK Negeri 1`, `Pak Haji Budi`) atau input instan `Umum`.
+    - Daftar Item Terpilih:
+      - Nama produk & varian terpilih.
+      - Daftar Add-ons/Finishing yang menempel pada item.
+      - Kontrol kuantitas ($+$ / $-$) dengan validasi minimum order (`min_order`).
+      - Tombol hapus item dari keranjang.
+    - Kalkulasi Keuangan Real-Time:
+      - **Subtotal** (akumulasi harga item & addons).
+      - **Input Diskon / Potongan Harga** (nominal Rp).
+      - **Total Tagihan Akhir**.
+      - **Input Jumlah Bayar (`pay_amount`)**:
+        - Jika bayar penuh $\ge$ total tagihan $\rightarrow$ otomatis status `PAID` dan hitung **Kembalian**.
+        - Jika bayar sebagian $\rightarrow$ otomatis status `DP` dan hitung **Sisa Piutang**.
+      - **Input Estimasi Tanggal Selesai (`estimated_done_at`)**: Date picker perkiraan pesanan rampung.
+    - Tombol Aksi: **"Proses Pembayaran & Cetak Nota"** (Disable jika keranjang kosong).
+
+- **Modal Pendukung POS**:
+  1. **Modal Konfigurasi Item & Varian**:
+     - Memilih varian (contoh: *Buku Yasin 128 Hal Softcover* vs *176 Hal Hardcover*).
+     - **Smart Range Price Slider/Input**: Jika produk/varian bertipe `RANGE`, input dibatasi antara `min_price` dan `max_price`.
+     - **Kalkulator Spanduk/Banner (m²)**: Untuk produk custom, sediakan helper: $\text{Panjang (m)} \times \text{Lebar (m)} \times \text{Harga/m}^2$.
+     - Checklist Add-ons/Finishing (Laminasi Glossy, Doff, Pond, Jilid Spiral, dsb).
+  2. **Modal Sukses Checkout**:
+     - Menampilkan kembalian, ringkasan invoice number (`INV-20260818-XXXX`), tombol "Cetak Struk Thermal", dan tombol "Transaksi Baru".
+
+---
+
+### 4. 📋 Halaman Job Tracking & Antrean Produksi (`/job-tracking`)
+Layar untuk memantau progres pengerjaan pesanan percetakan dari cetak hingga selesai.
+
+- **Tampilan Kanban Board (4 Kolom Status)**:
+  1. **`ANTRIAN`**: Pesanan baru masuk dari kasir yang menunggu giliran cetak/desain.
+  2. **`PROSES`**: Pesanan sedang diproduksi (dicetak di mesin / proses finishing).
+  3. **`SELESAI`**: Pesanan sudah beres diproduksi dan siap diambil pelanggan.
+  4. **`DIAMBIL`**: Pesanan sudah diserahkan ke pelanggan (arsip selesai).
+
+- **Kartu Pesanan (Job Card)**:
+  - Nomor Invoice, Nama Pelanggan, Kasir pembuat pesanan.
+  - Ringkasan item yang dicetak (contoh: `Undangan Custom x 500 pcs (+ Laminasi Doff)`).
+  - Status Pembayaran: Badge Hijau (`LUNAS`) atau Badge Kuning (`DP - Sisa Rp 250.000`).
+  - Estimasi Selesai + **Badge Overdue Merah** jika tanggal hari ini melewati `estimated_done_at` dan pesanan belum selesai.
+  - **Tombol Cepat Ubah Status**:
+    - Di kolom Antrian: Tombol "Mulai Proses" $\rightarrow$ `PATCH /transactions/{id}/status` ke `PROSES`.
+    - Di kolom Proses: Tombol "Tandai Selesai" $\rightarrow$ `PATCH /transactions/{id}/status` ke `SELESAI`.
+    - Di kolom Selesai: Tombol "Serahkan ke Pelanggan" / **"Pelunasan & Serahkan"**.
+
+- **Modal Pelunasan DP Instan**:
+  - Dipicu saat kasir mengklik tombol serahkan pada pesanan yang masih berstatus `DP`.
+  - Menampilkan sisa tagihan $\rightarrow$ Input nominal uang diterima $\rightarrow$ Submit ke `PATCH /transactions/{id}/payment` $\rightarrow$ Order otomatis lunas dan status berganti ke `DIAMBIL`.
+
+---
+
+### 5. 📜 Halaman Riwayat Transaksi (`/transactions`)
+- **Elemen UI**:
+  - Filter Bar: Pencarian nomor invoice/pelanggan, filter tanggal, filter status bayar (`PAID`, `DP`, `UNPAID`), dan filter status order.
+  - Tabel Transaksi:
+    - No. Invoice, Tanggal & Jam, Pelanggan, Kasir, Total Belanja, Bayar, Status Bayar, Status Order, Aksi.
+  - Paginasi Server-Side (Halaman 1, 2, ..., Jumlah data per halaman 20/50/100).
+- **Drawer / Modal Detail Transaksi**:
+  - Rincian item produk, varian harga, detail add-ons dan kuantitasnya.
+  - Tombol **"Cetak Ulang Nota"** (panggil `GET /transactions/{id}/invoice`).
+  - Tombol **"Pelunasan Pembayaran"** (jika masih berstatus DP).
+
+---
+
+### 6. 🏷️ Halaman Master Produk & Finishing (`/products`) — *Khusus Owner*
+- **Tab 1: Katalog Produk Cetak**:
+  - Tabel master produk: Nama, Kategori, Tipe Harga (Fixed/Range/Custom), Harga Default / Rentang Harga, Minimum Order, Satuan (`pcs`, `rim`, `meter`, `lembar`).
+  - Modal Tambah / Edit Produk: Form nama, pilihan kategori, radio button tipe harga, toggle varian, input minimum order.
+- **Tab 2: Varian Produk**:
+  - Pengaturan varian per produk (misal: Buku Yasin $\rightarrow$ Varian 128 HVS, 176 HVS, Hard Cover).
+  - Form harga per varian (Fixed atau Range min-max).
+- **Tab 3: Add-ons / Finishing**:
+  - Master finishing cetak: Laminasi, Spot UV, Foil Emas, Pond, Jilid Spiral, Cutting.
+  - Form tipe harga addon (Fixed atau Range).
+- **Tab 4: Kategori Produk**:
+  - Tambah, edit, dan hapus nama kategori produk cetak.
+
+---
+
+### 7. 📦 Halaman Inventaris Bahan Baku (`/inventory`)
+- **Tabel Stok Bahan Baku**:
+  - Nama Bahan (contoh: `Kertas Art Paper 260gr`, `Tinta Eco Solvent Cyan`, `Mika Jilid A4`).
+  - Kategori Bahan, Varian Warna/Ukuran, Satuan (`rim`, `roll`, `kg`, `botol`, `lembar`).
+  - **Stok Fisik Saat Ini**.
+  - **Batas Minimum Peringatan (`min_stock_warning`)**.
+  - **Status Stok**: Badge Hijau (`Aman`) atau Badge Merah Kritis (`Stok Menipis!`).
+- **Modal Cepat Mutasi Stok (IN / OUT)**:
+  - Kasir/Owner memilih jenis mutasi:
+    - **`IN` (Stok Masuk / Restock)**: Input kuantitas masuk + catatan (contoh: "Kulakan dari Supplier ABC").
+    - **`OUT` (Stok Keluar / Pemakaian / Rusak)**: Input kuantitas keluar + catatan (contoh: "Dipakai cetak 500 brosur").
+  - Submit ke `POST /raw-materials/mutations` $\rightarrow$ stok terupdate otomatis.
+- **Tab Riwayat Mutasi**:
+  - Log kronologis mutasi bahan baku (Tanggal, Nama Bahan, Tipe IN/OUT, Jumlah, Catatan).
+- **Tab Kategori Bahan Baku** (*Owner Only*):
+  - CRUD kategori master bahan (Kertas, Tinta, Mika, Perekat, dsb).
+
+---
+
+### 8. 👥 Halaman Data Pelanggan (`/customers`)
+- **Tabel Pelanggan**:
+  - Nama Pelanggan, Nomor Telepon/WhatsApp (dengan tombol pintas kirim pesan WA), Alamat, Tanggal Terdaftar.
+  - Search bar interaktif berdasarkan nama atau nomor HP.
+  - Modal Tambah / Edit Pelanggan.
+- **Drawer Riwayat Repeat Order Pelanggan**:
+  - Dibuka saat mengklik salah satu pelanggan.
+  - Memanggil `GET /customers/{id}/transactions`.
+  - Menampilkan total omset yang disumbang pelanggan ini, daftar pesanan sebelumnya, status pesanan aktif, dan tanggal terakhir order.
+
+---
+
+### 9. 📈 Halaman Laporan & Analitik Finansial (`/reports`)
+Layar eksekutif untuk melihat performa bisnis toko percetakan.
+
+- **Filter Periode**: Date Range Picker (Hari Ini, 7 Hari Terakhir, Bulan Ini, Custom Tanggal).
+- **Kartu KPI Ringkasan Dashboard (`GET /reports/summary`)**:
+  1. 💰 **Total Omset Diterima**: Total uang riil yang sudah masuk kas.
+  2. 📝 **Total Transaksi**: Jumlah transaksi yang terjadi pada periode tersebut.
+  3. ⏳ **Total Piutang (DP Outstanding)**: Nominal uang yang masih tertunda di pelanggan.
+  4. 🔄 **Pesanan Aktif**: Jumlah pesanan yang sedang di antrean / proses produksi.
+  5. ⚠️ **Bahan Baku Menipis**: Jumlah jenis bahan baku yang berada di bawah ambang minimum.
+- **Visualisasi & Sub-Laporan**:
+  - **Grafik Tren Penjualan Harian (`GET /reports/daily-sales`)**: Bar / Line chart omset per hari.
+  - **Tabel Top 5 Produk Terlaris (`GET /reports/top-products`)**: Rangking produk yang paling banyak dipesan beserta kontribusi revenue-nya.
+  - **Laporan Piutang DP (`GET /reports/receivables`)**: Daftar invoice pelanggan yang belum melunasi pembayaran + tombol aksi pelunasan langsung.
+  - **Laporan Bahan Baku Kritis (`GET /reports/low-stock`)**: Daftar bahan yang harus segera dibeli ke supplier.
+  - **Laporan Agregasi Mutasi Stok (`GET /reports/inventory-mutations`)**: Rekap keluar-masuk seluruh bahan baku.
+
+---
+
+### 10. 👤 Halaman Manajemen Pengguna (`/users`) — *Khusus Owner*
+- **Tabel Pengguna**:
+  - Nama, Username, Role (`SUPER_ADMIN` / `ADMIN`), Status (`Aktif` / `Nonaktif`), Tanggal Dibuat.
+- **Modal Tambah Kasir**:
+  - Input Nama Lengkap, Username unik, Password awal (min 8 karakter), Role (Admin/Kasir).
+- **Modal Reset Password Kasir**:
+  - Owner dapat mengatur ulang kata sandi kasir jika lupa password.
+- **Aksi Nonaktifkan Akun**:
+  - Menonaktifkan akun kasir yang sudah tidak bekerja tanpa menghapus data riwayat transaksinya.
+
+---
+
+### 11. 🖨️ Komponen Cetak Nota Thermal Monospace (`ThermalReceiptPrint`)
+Komponen cetak khusus yang otomatis terformat ke kertas thermal 58mm atau 80mm saat kasir menekan tombol cetak:
+
+- **Struktur Konten Struk**:
+  ```text
+  ========================================
+            PERDANA PRINTING & POS        
+       Jl. Percetakan Perdana No. 1, Kota 
+               Telp: 0812-3456-7890       
+  ========================================
+  No. Nota  : INV-20260818-8472
+  Tanggal   : 18/08/2026 14:30
+  Kasir     : Budi Santoso
+  Pelanggan : SMK Negeri 1 (08123456789)
+  Est. Jadi : 20/08/2026
+  ----------------------------------------
+  Undangan Softcover x 500 pcs   Rp 1.500.000
+    + Laminasi Doff (500 pcs)    Rp   150.000
+  Banner Flexi 280gr (2x1m)      Rp   100.000
+  ----------------------------------------
+  Subtotal                       Rp 1.750.000
+  Diskon                         Rp   100.000
+  TOTAL                          Rp 1.650.000
+  BAYAR (DP)                     Rp 1.000.000
+  ----------------------------------------
+  SISA PIUTANG                   Rp   650.000
+  Status Order: ANTRIAN PRODUKSI
+  ========================================
+    Terima kasih atas kepercayaan Anda!   
+     Barang yang sudah dicetak tidak     
+          dapat dikembalikan.             
+  ========================================
+  ```
+- **Styling CSS Print**:
+  ```css
+  @media print {
+    body * { visibility: hidden; }
+    #thermal-receipt, #thermal-receipt * { visibility: visible; }
+    #thermal-receipt {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 58mm; /* atau 80mm */
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.2;
+    }
+  }
+  ```
+
+---
+
+## 5. Fitur-Fitur Istimewa & Sangat Berguna (*Killer Features*)
 
 Berikut fitur-fitur penting yang wajib di-highlight pada antarmuka frontend:
 
@@ -437,7 +694,7 @@ Berikut fitur-fitur penting yang wajib di-highlight pada antarmuka frontend:
 
 ---
 
-## 5. Tahapan Pengerjaan Frontend yang Direkomendasikan (*Sprint Plan*)
+## 6. Tahapan Pengerjaan Frontend yang Direkomendasikan (*Sprint Plan*)
 
 1. **Sprint 1: Setup Proyek, Axios Client, Auth & Layout**
    - Setup Tailwind / CSS Tokens, Router, Axios instance dengan cookies.
@@ -462,3 +719,4 @@ Berikut fitur-fitur penting yang wajib di-highlight pada antarmuka frontend:
 ---
 
 *Dokumen ini dibuat sebagai panduan resmi pengembangan frontend Percetakan Perdana.*
+

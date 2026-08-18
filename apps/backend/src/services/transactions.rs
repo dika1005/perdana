@@ -508,8 +508,11 @@ pub async fn update_payment(
     get_by_id(db, updated.id).await
 }
 
+use crate::config::StoreConfig;
+
 pub async fn get_invoice_data(
     db: &DatabaseConnection,
+    store: &StoreConfig,
     id: i32,
 ) -> Result<InvoicePrintData, AppError> {
     let trans = get_by_id(db, id).await?;
@@ -521,9 +524,9 @@ pub async fn get_invoice_data(
     };
 
     Ok(InvoicePrintData {
-        store_name: "PERDANA PRINTING & POS".to_string(),
-        store_address: "Jl. Percetakan Perdana No. 1, Kota".to_string(),
-        store_phone: "0812-3456-7890".to_string(),
+        store_name: store.name.clone(),
+        store_address: store.address.clone(),
+        store_phone: store.phone.clone(),
         invoice_number: trans.invoice_number,
         date: trans.created_at,
         cashier_name: trans.cashier_name.unwrap_or_else(|| "Kasir".to_string()),

@@ -13,6 +13,13 @@ pub struct SeedConfig {
 }
 
 #[derive(Clone, Debug)]
+pub struct StoreConfig {
+    pub name: String,
+    pub address: String,
+    pub phone: String,
+}
+
+#[derive(Clone, Debug)]
 pub struct AppConfig {
     pub database_url: String,
     pub server_host: String,
@@ -20,6 +27,7 @@ pub struct AppConfig {
     pub frontend_origin: String,
     pub jwt: JwtConfig,
     pub seed: SeedConfig,
+    pub store: StoreConfig,
 }
 
 impl AppConfig {
@@ -55,6 +63,15 @@ impl AppConfig {
                 .expect("SEED_SUPERADMIN_PASSWORD harus diatur pada file .env"),
         };
 
+        let store = StoreConfig {
+            name: env::var("STORE_NAME")
+                .unwrap_or_else(|_| "PERDANA PRINTING & POS".to_string()),
+            address: env::var("STORE_ADDRESS")
+                .unwrap_or_else(|_| "Jl. Percetakan Perdana No. 1, Kota".to_string()),
+            phone: env::var("STORE_PHONE")
+                .unwrap_or_else(|_| "0812-3456-7890".to_string()),
+        };
+
         Self {
             database_url,
             server_host,
@@ -62,6 +79,7 @@ impl AppConfig {
             frontend_origin,
             jwt,
             seed,
+            store,
         }
     }
 }

@@ -53,3 +53,37 @@ pub struct InventoryMutationReportItem {
     pub out_qty: i64,
     pub current_stock: i32,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ReceivableItem {
+    pub id: i32,
+    #[schema(example = "INV-20260818-1234")]
+    pub invoice_number: String,
+    #[schema(example = "Pak Haji Budi")]
+    pub customer_name: String,
+    pub payment_status: entity::enums::PaymentStatus,
+    pub order_status: entity::enums::OrderStatus,
+    #[schema(value_type = f64, example = 500000)]
+    pub total_amount: Decimal,
+    #[schema(value_type = f64, example = 250000)]
+    pub pay_amount: Decimal,
+    #[schema(value_type = f64, example = 250000)]
+    pub remaining_amount: Decimal,
+    #[schema(value_type = Option<String>, example = "2026-08-30")]
+    pub estimated_done_at: Option<chrono::NaiveDate>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct LowStockItem {
+    pub id: i32,
+    #[schema(example = "Tinta Printer")]
+    pub name: String,
+    #[schema(example = "Cyan")]
+    pub variant: Option<String>,
+    #[schema(example = "botol")]
+    pub unit: String,
+    pub stock: i32,
+    pub min_stock_warning: i32,
+    pub category_name: Option<String>,
+}

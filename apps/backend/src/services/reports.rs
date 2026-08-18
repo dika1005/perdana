@@ -10,8 +10,8 @@ use sea_orm::{
 };
 
 use crate::dto::{
-    DailySalesReportItem, DashboardSummaryResponse, InventoryMutationReportItem, ReportDateQuery,
-    TopProductReportItem,
+    DailySalesReportItem, DashboardSummaryResponse, InventoryMutationReportItem, LowStockItem,
+    ReceivableItem, ReportDateQuery, TopProductReportItem,
 };
 use crate::error::AppError;
 
@@ -243,6 +243,102 @@ pub async fn get_inventory_mutations(
                 in_qty,
                 out_qty,
                 current_stock: mat.stock,
+            }
+        })
+        .collect();
+
+    Ok(result)
+}
+
+pub async fn get_receivables(
+    db: &DatabaseConnection,
+    query: ReportDateQuery,
+) -> Result<Vec<ReceivableItem>, AppError> {
+    let mut trans_query = Transaction::find()
+        .filter(
+            transactions::Column::PaymentStatus
+                .eq(PaymentStatus::Dp)
+                .or(transactions::Column::PaymentStatus.eq(PaymentStatus::Unpaid)),
+        )
+        .order_by_desc(transactions::Column::CreatedAt);
+
+    if let Some(start) = query.start_date {
+        let start_dt = start.and_hms_opt(0, 0, 0).unwrap().and_utc();
+        trans_query = trans_query.filter(transactions::Column::CreatedAt.gte(start_dt));
+    }
+
+    if let Some(end) = query.end_date {
+        let end_dt = end.and_hms_opt(23, 59, 59).unwrap().and_utc();
+        trans_query = trans_query.filter(transactions::Column::CreatedAt.lte(end_dt));
+    }
+
+    let all_trans = trans_query.all(db).await?;
+
+    let result = all_trans
+        .into_iter()
+        .map(|t| {
+            let remaining = if t.total_amount > t.pay_amount {
+                t.total_amount - t.pay_amount
+            } else {
+                Decimal::ZERO
+            };
+            ReceivableItem {
+                id: t.id,
+                invoice_number: t.invoice_number,
+                customer_name: t.customer_name.unwrap_or_else(|| "Umum".to_string()),
+                payment_status: t.payment_status,
+                order_status: t.order_status,
+                total_amount: t.total_amount,
+                pay_amount: t.pay_amount,
+                remaining_amount: remaining,
+                estimated_done_at: t.estimated_done_at,
+                created_at: t.created_at,
+            }
+        })
+        .collect();
+
+    Ok(result)
+}
+
+pub async fn get_low_stock(
+    db: &DatabaseConnection,
+) -> Result<Vec<LowStockItem>, AppError> {
+    use entity::raw_material_categories;
+
+    let materials = RawMaterial::find()
+        .filter(
+            sea_orm::sea_query::Expr::col(raw_materials::Column::Stock)
+                .lte(sea_orm::sea_query::Expr::col(raw_materials::Column::MinStockWarning)),
+        )
+        .order_by_asc(raw_materials::Column::Name)
+        .all(db)
+        .await?;
+
+    // Load category names
+    let cat_ids: Vec<i32> = materials.iter().filter_map(|m| m.category_id).collect();
+    let categories = if !cat_ids.is_empty() {
+        RawMaterialCategory::find()
+            .filter(raw_material_categories::Column::Id.is_in(cat_ids))
+            .all(db)
+            .await?
+    } else {
+        vec![]
+    };
+
+    let result = materials
+        .into_iter()
+        .map(|m| {
+            let category_name = m.category_id.and_then(|cid| {
+                categories.iter().find(|c| c.id == cid).map(|c| c.name.clone())
+            });
+            LowStockItem {
+                id: m.id,
+                name: m.name,
+                variant: m.variant,
+                unit: m.unit,
+                stock: m.stock,
+                min_stock_warning: m.min_stock_warning,
+                category_name,
             }
         })
         .collect();

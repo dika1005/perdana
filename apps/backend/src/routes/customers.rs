@@ -2,7 +2,7 @@ use actix_web::{HttpResponse, web};
 
 use crate::dto::{
     ApiResponse, CreateCustomerRequest, CustomerQuery, CustomerResponse, ListResponse, MessageData,
-    Pagination, UpdateCustomerRequest,
+    Pagination, TransactionResponse, UpdateCustomerRequest,
 };
 use crate::error::AppError;
 use crate::extractors::{AuthUser, SuperAdmin};
@@ -139,4 +139,34 @@ pub async fn delete(
         "Pelanggan berhasil dihapus",
         MessageData { ok: true },
     )))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/customers/{id}/transactions",
+    params(
+        ("id" = i32, Path, description = "ID Pelanggan"),
+        ("page" = Option<u64>, Query, description = "Halaman ke-n"),
+        ("per_page" = Option<u64>, Query, description = "Jumlah data per halaman")
+    ),
+    responses(
+        (status = 200, description = "Riwayat transaksi pelanggan (untuk pesanan repeat / berulang)", body = ListResponse<TransactionResponse>),
+        (status = 404, description = "Pelanggan tidak ditemukan")
+    ),
+    security(
+        ("bearer_auth" = []),
+        ("cookie_auth" = [])
+    ),
+    tag = "Customers"
+)]
+pub async fn list_transactions(
+    state: web::Data<AppState>,
+    _user: AuthUser,
+    path: web::Path<i32>,
+    pagination: Pagination,
+) -> Result<HttpResponse, AppError> {
+    let (data, meta) =
+        customer_service::list_customer_transactions(&state.db, path.into_inner(), &pagination)
+            .await?;
+    Ok(HttpResponse::Ok().json(ListResponse::ok("Riwayat transaksi pelanggan", data, meta)))
 }

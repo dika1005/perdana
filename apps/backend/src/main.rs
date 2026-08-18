@@ -26,6 +26,7 @@ async fn main() -> std::io::Result<()> {
     let state = AppState {
         db,
         jwt: app_config.jwt.clone(),
+        store: app_config.store.clone(),
     };
 
     let bind_addr = (app_config.server_host.as_str(), app_config.server_port);

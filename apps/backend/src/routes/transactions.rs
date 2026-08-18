@@ -171,6 +171,7 @@ pub async fn get_invoice(
     _user: AuthUser,
     path: web::Path<i32>,
 ) -> Result<HttpResponse, AppError> {
-    let data = transaction_service::get_invoice_data(&state.db, path.into_inner()).await?;
+    let data =
+        transaction_service::get_invoice_data(&state.db, &state.store, path.into_inner()).await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Data invoice siap cetak", data)))
 }
