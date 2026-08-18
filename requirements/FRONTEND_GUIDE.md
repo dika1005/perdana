@@ -1,722 +1,308 @@
-# Panduan Arsitektur & Pengerjaan Frontend — POS & Inventory Percetakan Perdana
+# Panduan Frontend — POS & Inventory Percetakan Perdana
 
-Dokumen ini adalah panduan komprehensif, standar *best practice*, dan arsitektur pengerjaan aplikasi frontend yang terintegrasi penuh dengan backend REST API Percetakan Perdana.
-
----
-
-## 1. Spesifikasi Teknis & Konfigurasi Dasar
-
-### Rekomendasi Tech Stack
-- **Framework**: React (Vite / Next.js) + TypeScript
-- **Styling**: Tailwind CSS / Vanilla CSS modern dengan sistem token warna konsisten.
-- **Server State & Data Fetching**: **TanStack Query (React Query)** *(Sangat direkomendasikan untuk caching otomatis, refetching, dan auto-invalidation)*.
-- **Client State Management**: **Zustand** (untuk POS Cart / Keranjang Kasir & session UI).
-- **HTTP Client**: **Axios** (dengan konfigurasi `withCredentials: true` untuk automatic HttpOnly cookie).
-- **Icons**: Lucide Icons / Heroicons.
-- **Printing**: Native CSS `@media print` untuk nota kasir thermal 58mm / 80mm.
-
-### Konfigurasi Environment (`.env.local` / `.env`)
-```env
-VITE_API_BASE_URL=http://localhost:8800/api/v1
-# atau jika menggunakan Next.js:
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8800/api/v1
-```
-
-> **PENTING: Autentikasi Menggunakan HttpOnly Cookie**  
-> Backend telah dilengkapi fitur **Auto-Detection Cookie**. Pastikan setiap pemanggilan Axios / Fetch menyertakan opsi `{ withCredentials: true }` agar cookie `access_token` dan `refresh_token` terkirim dan tersimpan otomatis tanpa perlu repot menyimpan token di `localStorage`.
+Dokumen ini menyajikan pemetaan lengkap antara **apa yang SUDAH DIBUAT** (agar tidak dibuat ulang) dan **apa yang BELUM ADA & PERLU DIBUAT** pada aplikasi frontend Next.js (`apps/frontend`).
 
 ---
 
-## 2. Standar Struktur Folder (*Layered Clean Architecture*)
+## 1. Ringkasan Status Halaman Frontend
 
-Susunan folder yang rapi dan terisolasi mempermudah kolaborasi dan skalabilitas:
-
-```text
-src/
-├── api/                  # Konfigurasi Axios client & interceptor
-│   └── client.ts
-├── types/                # Semua definisi TypeScript interface & enum
-│   ├── auth.ts
-│   ├── category.ts
-│   ├── product.ts
-│   ├── inventory.ts
-│   ├── transaction.ts
-│   ├── customer.ts
-│   ├── report.ts
-│   └── api.ts
-├── services/             # Pure API service functions (pemanggil endpoint)
-│   ├── authService.ts
-│   ├── userService.ts
-│   ├── categoryService.ts
-│   ├── productService.ts
-│   ├── inventoryService.ts
-│   ├── customerService.ts
-│   ├── transactionService.ts
-│   └── reportService.ts
-├── hooks/                # Custom React Query Hooks (useQuery & useMutation)
-│   ├── useAuth.ts
-│   ├── useProducts.ts
-│   ├── useInventory.ts
-│   ├── useTransactions.ts
-│   └── useReports.ts
-├── stores/               # Global state (Zustand)
-│   ├── useAuthStore.ts
-│   └── useCartStore.ts   # State keranjang belanja POS kasir
-├── components/           # Komponen UI Reusable
-│   ├── common/           # Button, Input, Modal, Badge, Table, Pagination
-│   ├── pos/              # ProductGrid, CartDrawer, AddonSelector, RangePriceModal
-│   ├── tracking/         # KanbanBoard, StatusPill, OverdueAlert
-│   ├── receipt/          # ThermalReceiptPrint (58mm/80mm)
-│   └── layout/           # Sidebar, Navbar, RoleGuard
-└── pages/                # Halaman / Views aplikasi
-    ├── Login.tsx
-    ├── POSKasir.tsx
-    ├── JobTracking.tsx
-    ├── MasterProduk.tsx
-    ├── InventarisBahan.tsx
-    ├── Pelanggan.tsx
-    ├── Laporan.tsx
-    └── ManajemenUser.tsx
-```
+| Rute Halaman | Nama Layar / Menu | Status | Keterangan |
+| :--- | :--- | :--- | :--- |
+| `/login` | **Login & Autentikasi** | ✅ **Sudah Selesai** | Form login JWT + HttpOnly Cookie auto-detection |
+| `/` | **Dashboard Utama** | ✅ **Sudah Selesai** | Metrik ringkasan omset & pintasan cepat |
+| `/pos` | **Kasir POS & Checkout** | ✅ **Sudah Selesai** | Katalog, filter kategori, keranjang, diskon, DP, invoice modal |
+| `/tracking` | **Job Tracking Produksi** | ✅ **Sudah Selesai** | Kanban Board 4 kolom (`ANTRIAN` $\rightarrow$ `PROSES` $\rightarrow$ `SELESAI` $\rightarrow$ `DIAMBIL`) |
+| `/inventory` | **Inventaris Bahan Baku** | ✅ **Sudah Selesai** | Tabel stok bahan, alert minimum stok, modal restock (IN/OUT), modal tambah bahan |
+| `/customers` | **Data Pelanggan** | ✅ **Sudah Selesai** | Tabel pelanggan, search, modal tambah pelanggan, hapus pelanggan |
+| `/reports` | **Laporan Transaksi** | ✅ **Sudah Selesai** | Filter tanggal, ringkasan omset/piutang/transaksi, tabel riwayat transaksi |
+| `/products` | **Master Produk & Finishing** | ❌ **BELUM ADA** | *Wajib Dibuat*: CRUD Produk, Varian bertingkat, Add-ons, dan Kategori (*Owner only*) |
+| `/users` | **Manajemen Kasir / User** | ❌ **BELUM ADA** | *Wajib Dibuat*: Tabel user, tambah kasir baru, reset password kasir (*Owner only*) |
+| `/transactions`| **Riwayat Transaksi Dedicated**| ❌ **BELUM ADA** | *Wajib Dibuat*: Arsip transaksi mandiri, modal detail item/addons, cetak ulang nota |
 
 ---
 
-## 3. Implementasi Kode Standar (*Copy-Paste Ready*)
+## 2. Rincian Fitur & Tampilan yang SUDAH SELESAI (Jangan Dibuat Ulang!)
 
-### A. HTTP Client (`src/api/client.ts`)
-```typescript
-import axios from 'axios';
+Berikut adalah komponen dan alur yang **sudah aktif berjalan** di codebase `apps/frontend/src/app`:
 
-export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8800/api/v1',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true, // Wajib: agar cookie JWT terkirim otomatis
-});
+### A. Autentikasi (`/login`)
+- Form login dengan input `username` & `password`.
+- Menggunakan `authService.login()` yang terhubung ke backend dan otomatis menyimpan cookie `access_token` & `refresh_token`.
+- State tema gelap/terang (Dark/Light mode).
 
-// Response interceptor untuk menangani session expired / error validasi
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401 && window.location.pathname !== '/login') {
-      // Optional: Panggil endpoint refresh token otomatis atau redirect ke login
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-```
+### B. Kasir POS (`/pos`)
+- **Katalog Produk Cetak**: Menampilkan grid produk dengan filter kategori dinamis dan pencarian nama.
+- **Keranjang Belanja**: Menambah item, mengatur kuantitas, input diskon (Rp), memilih pelanggan (`Umum` atau pelanggan terdaftar).
+- **Checkout Modal**: Kalkulasi total belanja, input nominal bayar (`pay_amount`), pemilihan status `PAID` (lunas) atau `DP` (uang muka), dan estimasi tanggal selesai (`estimated_done_at`).
+- **Modal Sukses Checkout**: Menampilkan nomor invoice `INV-YYYYMMDD-XXXX` dan kembalian.
 
----
+### C. Job Tracking Antrean Produksi (`/tracking`)
+- **Kanban Board 4 Kolom**: `ANTRIAN` $\rightarrow$ `PROSES` $\rightarrow$ `SELESAI` $\rightarrow$ `DIAMBIL`.
+- **1-Click Advance Status**: Tombol panah untuk memindahkan status pengerjaan secara bertahap via `transactionService.updateOrderStatus()`.
+- Menampilkan nama pemesan, rincian produk, dan badge status pembayaran.
 
-### B. Standard Response & Entity Types (`src/types/`)
+### D. Inventaris Bahan Baku (`/inventory`)
+- **Tabel Stok**: Menampilkan nama bahan, varian, satuan, stok fisik, dan batas minimum stok (`min_stock_warning`).
+- **Badge Status Stok**: Indikator visual stok aman vs stok menipis (kritis).
+- **Modal Quick Restock**: Mencatat mutasi `IN` (stok masuk) atau `OUT` (stok keluar) langsung ke database via `rawMaterialService.createMutation()`.
+- **Modal Tambah Bahan Baku Baru**: Form input bahan lengkap dengan satuan dan kategori.
 
-#### `src/types/api.ts`
-```typescript
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
+### E. Manajemen Pelanggan (`/customers`)
+- **Tabel Pelanggan**: Daftar nama, nomor telepon WhatsApp, alamat.
+- **Search Bar**: Pencarian pelanggan secara real-time.
+- **Modal Tambah Pelanggan**: Input data pelanggan baru.
+- **Hapus Pelanggan**: Integrasi `customerService.deleteCustomer()`.
 
-export interface ListResponse<T> {
-  success: boolean;
-  message: string;
-  data: T[];
-  meta: {
-    page: number;
-    per_page: number;
-    total: number;
-  };
-}
-
-export interface ApiErrorResponse {
-  success: false;
-  message: string;
-  errors?: Record<string, string[]>;
-}
-```
-
-#### `src/types/product.ts`
-```typescript
-export type PriceType = 'FIXED' | 'RANGE' | 'CUSTOM';
-export type RangePriceType = 'FIXED' | 'RANGE';
-
-export interface ProductVariant {
-  id: number;
-  product_id: number;
-  variant_name: string;
-  price_type: RangePriceType;
-  price: number;
-  min_price: number;
-  max_price: number;
-  created_at: string;
-}
-
-export interface Product {
-  id: number;
-  category_id?: number | null;
-  name: string;
-  price_type: PriceType;
-  default_price: number;
-  min_price: number;
-  max_price: number;
-  min_order: number;
-  unit_name: string;
-  has_variants: boolean;
-  created_at: string;
-  variants?: ProductVariant[];
-}
-
-export interface ProductAddon {
-  id: number;
-  name: string;
-  price_type: RangePriceType;
-  default_price: number;
-  min_price: number;
-  max_price: number;
-  created_at: string;
-}
-```
-
-#### `src/types/transaction.ts`
-```typescript
-export type PaymentStatus = 'PAID' | 'DP' | 'UNPAID';
-export type OrderStatus = 'ANTRIAN' | 'PROSES' | 'SELESAI' | 'DIAMBIL';
-
-export interface CartItemAddon {
-  addon_id?: number;
-  addon_name: string;
-  price: number;
-  qty: number;
-}
-
-export interface CartItem {
-  product_id: number;
-  product_name: string;
-  product_variant_id?: number | null;
-  variant_name?: string | null;
-  price_type: PriceType;
-  unit_price: number;
-  qty: number;
-  min_order: number;
-  unit_name: string;
-  addons: CartItemAddon[];
-  subtotal: number;
-}
-
-export interface CreateTransactionPayload {
-  customer_id?: number | null;
-  customer_name?: string;
-  discount_amount?: number;
-  pay_amount: number;
-  payment_status?: PaymentStatus;
-  estimated_done_at?: string; // YYYY-MM-DD
-  items: {
-    product_id: number;
-    product_variant_id?: number;
-    custom_price?: number;
-    qty: number;
-    addons?: {
-      addon_id?: number;
-      addon_name?: string;
-      price?: number;
-      qty?: number;
-    }[];
-  }[];
-}
-```
+### F. Laporan Transaksi (`/reports`)
+- Date picker filter periode tanggal.
+- Ringkasan kartu: Total Omset, Transaksi Lunas, Transaksi DP, Total Piutang.
+- Tabel daftar transaksi per periode.
 
 ---
 
-### C. Services Layer (`src/services/`)
-
-#### `src/services/productService.ts`
-```typescript
-import { apiClient } from '../api/client';
-import { ApiResponse, ListResponse } from '../types/api';
-import { Product, ProductAddon } from '../types/product';
-
-export const productService = {
-  getProducts: async (params?: { page?: number; search?: string; category_id?: number }) => {
-    const res = await apiClient.get<ListResponse<Product>>('/products', { params });
-    return res.data;
-  },
-
-  getProductById: async (id: number) => {
-    const res = await apiClient.get<ApiResponse<Product>>(`/products/${id}`);
-    return res.data.data;
-  },
-
-  getAddons: async (params?: { search?: string }) => {
-    const res = await apiClient.get<ListResponse<ProductAddon>>('/addons', { params });
-    return res.data.data;
-  },
-
-  createProduct: async (payload: Partial<Product>) => {
-    const res = await apiClient.post<ApiResponse<Product>>('/products', payload);
-    return res.data.data;
-  },
-};
-```
-
-#### `src/services/transactionService.ts`
-```typescript
-import { apiClient } from '../api/client';
-import { ApiResponse, ListResponse } from '../types/api';
-import { CreateTransactionPayload, OrderStatus, PaymentStatus } from '../types/transaction';
-
-export const transactionService = {
-  createTransaction: async (payload: CreateTransactionPayload) => {
-    const res = await apiClient.post<ApiResponse<any>>('/transactions', payload);
-    return res.data.data;
-  },
-
-  getTransactions: async (params?: { page?: number; search?: string; date?: string; order_status?: OrderStatus }) => {
-    const res = await apiClient.get<ListResponse<any>>('/transactions', { params });
-    return res.data;
-  },
-
-  updateOrderStatus: async (id: number, status: OrderStatus) => {
-    const res = await apiClient.patch<ApiResponse<any>>(`/transactions/${id}/status`, { order_status: status });
-    return res.data.data;
-  },
-
-  updatePayment: async (id: number, additionalPayAmount: number, paymentStatus?: PaymentStatus) => {
-    const res = await apiClient.patch<ApiResponse<any>>(`/transactions/${id}/payment`, {
-      additional_pay_amount: additionalPayAmount,
-      payment_status: paymentStatus,
-    });
-    return res.data.data;
-  },
-
-  getInvoiceData: async (id: number) => {
-    const res = await apiClient.get<ApiResponse<any>>(`/transactions/${id}/invoice`);
-    return res.data.data;
-  },
-};
-```
-
----
-
-### D. Custom React Query Hooks (`src/hooks/`)
-
-```typescript
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { productService } from '../services/productService';
-import { transactionService } from '../services/transactionService';
-import { CreateTransactionPayload, OrderStatus } from '../types/transaction';
-
-export const useProducts = (params?: { page?: number; search?: string; category_id?: number }) => {
-  return useQuery({
-    queryKey: ['products', params],
-    queryFn: () => productService.getProducts(params),
-  });
-};
-
-export const useCreateTransaction = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: CreateTransactionPayload) => transactionService.createTransaction(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
-    },
-  });
-};
-
-export const useUpdateOrderStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: OrderStatus }) =>
-      transactionService.updateOrderStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-    },
-  });
-};
-```
-
----
-
-### E. POS Cart State Management (`src/stores/useCartStore.ts`)
-
-Mengelola item belanja, validasi min order, pemilihan add-on, dan kalkulasi tagihan kasir:
-
-```typescript
-import { create } from 'zustand';
-import { CartItem, CartItemAddon } from '../types/transaction';
-
-interface CartState {
-  items: CartItem[];
-  customerName: string;
-  customerId: number | null;
-  discountAmount: number;
-  payAmount: number;
-  estimatedDoneAt: string;
-  setCustomer: (id: number | null, name: string) => void;
-  setDiscount: (amount: number) => void;
-  setPayAmount: (amount: number) => void;
-  setEstimatedDate: (date: string) => void;
-  addItem: (item: CartItem) => void;
-  removeItem: (index: number) => void;
-  updateItemQty: (index: number, qty: number) => void;
-  clearCart: () => void;
-  getSubtotal: () => number;
-  getTotal: () => number;
-  getRemaining: () => number;
-}
-
-export const useCartStore = create<CartState>((set, get) => ({
-  items: [],
-  customerName: 'Umum',
-  customerId: null,
-  discountAmount: 0,
-  payAmount: 0,
-  estimatedDoneAt: '',
-
-  setCustomer: (customerId, customerName) => set({ customerId, customerName }),
-  setDiscount: (discountAmount) => set({ discountAmount }),
-  setPayAmount: (payAmount) => set({ payAmount }),
-  setEstimatedDate: (estimatedDoneAt) => set({ estimatedDoneAt }),
-
-  addItem: (item) => set((state) => ({ items: [...state.items, item] })),
-  removeItem: (index) => set((state) => ({ items: state.items.filter((_, i) => i !== index) })),
-  updateItemQty: (index, qty) =>
-    set((state) => {
-      const next = [...state.items];
-      if (next[index]) {
-        next[index].qty = qty;
-        const addonsTotal = next[index].addons.reduce((acc, a) => acc + a.price * a.qty, 0);
-        next[index].subtotal = (next[index].unit_price + addonsTotal) * qty;
-      }
-      return { items: next };
-    }),
-  clearCart: () => set({ items: [], discountAmount: 0, payAmount: 0, customerName: 'Umum', customerId: null }),
-
-  getSubtotal: () => get().items.reduce((acc, item) => acc + item.subtotal, 0),
-  getTotal: () => Math.max(0, get().getSubtotal() - get().discountAmount),
-  getRemaining: () => Math.max(0, get().getTotal() - get().payAmount),
-}));
-```
-
----
-
-## 4. Spesifikasi & Daftar Tampilan (UI Screens) yang Harus Dibuat
-
-Berikut rincian lengkap setiap layar/halaman, komponen, interaksi pengguna, dan hak akses yang wajib dibangun pada frontend:
+## 3. Rincian 3 Halaman Baru yang BELUM ADA (Wajib Dibuat)
 
 ```mermaid
 graph TD
-    Login["1. Halaman Login (/login)"] --> AppLayout["Layout Utama (Sidebar + Header)"]
-    
-    subgraph Kasir & Owner
-        AppLayout --> POS["2. Kasir POS (/pos)"]
-        AppLayout --> Tracking["3. Job Tracking (/job-tracking)"]
-        AppLayout --> TransHistory["4. Riwayat Transaksi (/transactions)"]
-        AppLayout --> Inventory["5. Inventaris Bahan Baku (/inventory)"]
-        AppLayout --> Customers["6. Pelanggan & Repeat Order (/customers)"]
-        AppLayout --> Reports["7. Laporan & Dashboard (/reports)"]
-    end
-
-    subgraph Owner Only (SUPER_ADMIN)
-        AppLayout --> MasterProducts["8. Master Produk & Finishing (/products)"]
-        AppLayout --> Users["9. Manajemen Pengguna / Kasir (/users)"]
-    end
+    A["Halaman Baru yang Wajib Dibuat"] --> B["1. /products<br>(Master Produk & Finishing)"]
+    A --> C["2. /users<br>(Kelola Kasir & Reset Password)"]
+    A --> D["3. /transactions<br>(Riwayat Transaksi Dedicated)"]
 ```
 
 ---
 
-### 1. 🔐 Halaman Login (`/login`)
-- **Akses**: Publik (Bebas).
-- **Elemen UI**:
-  - Logo toko & Judul "Perdana POS & Percetakan".
-  - Form Input: `Username` dan `Password`.
-  - Tombol Submit: "Masuk ke Sistem" (dengan animasi spinner loading).
-  - Pesan error interaktif jika kredensial salah atau akun dinonaktifkan.
-- **Logika & State**:
-  - Panggil `POST /auth/login` dengan opsi `withCredentials: true`.
-  - Backend otomatis menyetel HttpOnly cookie `access_token` dan `refresh_token`.
-  - Simpan data profil (`name`, `username`, `role`) di Zustand `useAuthStore`.
-  - Redirect otomatis ke `/pos` (untuk Kasir) atau `/reports` (untuk Owner).
+### 1. 🏷️ Halaman Master Produk & Finishing (`/products`) — *Khusus Owner (`SUPER_ADMIN`)*
+* **Lokasi File**: `apps/frontend/src/app/products/page.tsx`
+* **Tujuan**: Owner dapat menambah, mengubah harga, dan mengelola varian/finishing cetak tanpa menyentuh database.
+* **4 Tab yang Harus Disediakan**:
+  1. **Tab 1: Katalog Produk Cetak**:
+     - Tabel daftar produk (`GET /products`).
+     - Badge tipe harga: `FIXED` (harga tetap), `RANGE` (harga rentang min-max), `CUSTOM` (harga kesepakatan).
+     - Input setting minimum order (`min_order`) dan satuan (`pcs`, `meter`, `rim`, `lembar`).
+     - Modal Tambah / Edit Produk (`POST /products` & `PUT /products/{id}`).
+     - Tombol Hapus Produk (`DELETE /products/{id}`).
+  2. **Tab 2: Varian Produk**:
+     - Memilih produk induk $\rightarrow$ menampilkan daftar variannya (`GET /products/{id}/variants`).
+     - Modal Tambah Varian (`POST /products/{id}/variants`) & Edit Varian (`PUT /product-variants/{id}`).
+     - Input tipe harga varian (`FIXED` vs `RANGE`).
+  3. **Tab 3: Add-ons / Finishing**:
+     - Master finishing cetak: Laminasi Doff/Glossy, Spot UV, Foil Emas, Jilid Spiral, Pond, Cutting (`GET /addons`).
+     - Modal Tambah / Edit Add-on (`POST /addons` & `PUT /addons/{id}`).
+  4. **Tab 4: Kategori Produk Cetak**:
+     - CRUD Kategori Produk (`GET/POST/PUT/DELETE /product-categories`).
 
 ---
 
-### 2. 🖥️ Layout Utama & Shell Navigasi
-- **Komponen**:
-  - **Sidebar Navigasi**:
-    - Menu Kasir POS, Job Tracking, Riwayat Transaksi, Inventaris Bahan, Pelanggan, Laporan.
-    - Menu Khusus Super Admin (Owner): Master Produk & Finishing, Kelola Kasir.
-    - Indikator profil pengguna aktif & tombol **Logout** (`POST /auth/logout`).
-  - **Top Header**:
-    - Judul halaman dinamis + tanggal hari ini.
-    - **Badge Notifikasi Stok Kritis** (menampilkan jumlah bahan yang $\le$ `min_stock_warning` dari `GET /reports/low-stock`).
-    - Status role badge (`SUPER ADMIN` / `KASIR`).
-  - **RoleGuard Wrapper**: Komponen pelindung rute yang otomatis me-redirect kasir jika mencoba membuka halaman khusus Owner (`/products`, `/users`).
+### 2. 👤 Halaman Manajemen Pengguna / Kasir (`/users`) — *Khusus Owner (`SUPER_ADMIN`)*
+* **Lokasi File**: `apps/frontend/src/app/users/page.tsx`
+* **Tujuan**: Owner mengelola akun karyawan/kasir, membuat akun baru, dan mereset password.
+* **Elemen UI & Fitur**:
+  - **Tabel User (`GET /users`)**: Nama, Username, Role (`SUPER_ADMIN` / `ADMIN`), Status Aktif.
+  - **Modal Tambah Kasir Baru (`POST /users`)**:
+    - Input: Nama Lengkap, Username, Password Awal (min. 8 karakter), Role (`ADMIN`).
+  - **Modal Reset Password Kasir (`PATCH /users/{id}/password`)**:
+    - Owner memasukkan password baru jika kasir lupa password.
+  - **Tombol Nonaktifkan Akun (`DELETE /users/{id}`)**:
+    - Menonaktifkan akun kasir yang sudah berhenti bekerja tanpa menghapus riwayat transaksi mereka.
 
 ---
 
-### 3. 🛒 Halaman Kasir POS (`/pos` atau `/`) — *Layar Utama Kasir*
-Layar operasional terpenting tempat kasir melayani pembeli secara cepat dan fleksibel.
-
-- **Tata Letak (2 Kolom Responsif)**:
-  - **Kolom Kiri (Katalog Produk)**:
-    - Search bar cepat (pencarian nama produk / jasa cetak).
-    - Tabs Kategori (Semua, Buku Yasin, Undangan, Spanduk/Banner, Brosur, Stiker, Souvenir).
-    - Grid Kartu Produk: Menampilkan nama, harga (atau label "Harga Rentang" / "Custom"), info minimum order, dan tombol pilih.
-  - **Kolom Kanan (Keranjang / Cart Drawer)**:
-    - Pemilih Pelanggan: Dropdown pencarian pelanggan terdaftar (`SMK Negeri 1`, `Pak Haji Budi`) atau input instan `Umum`.
-    - Daftar Item Terpilih:
-      - Nama produk & varian terpilih.
-      - Daftar Add-ons/Finishing yang menempel pada item.
-      - Kontrol kuantitas ($+$ / $-$) dengan validasi minimum order (`min_order`).
-      - Tombol hapus item dari keranjang.
-    - Kalkulasi Keuangan Real-Time:
-      - **Subtotal** (akumulasi harga item & addons).
-      - **Input Diskon / Potongan Harga** (nominal Rp).
-      - **Total Tagihan Akhir**.
-      - **Input Jumlah Bayar (`pay_amount`)**:
-        - Jika bayar penuh $\ge$ total tagihan $\rightarrow$ otomatis status `PAID` dan hitung **Kembalian**.
-        - Jika bayar sebagian $\rightarrow$ otomatis status `DP` dan hitung **Sisa Piutang**.
-      - **Input Estimasi Tanggal Selesai (`estimated_done_at`)**: Date picker perkiraan pesanan rampung.
-    - Tombol Aksi: **"Proses Pembayaran & Cetak Nota"** (Disable jika keranjang kosong).
-
-- **Modal Pendukung POS**:
-  1. **Modal Konfigurasi Item & Varian**:
-     - Memilih varian (contoh: *Buku Yasin 128 Hal Softcover* vs *176 Hal Hardcover*).
-     - **Smart Range Price Slider/Input**: Jika produk/varian bertipe `RANGE`, input dibatasi antara `min_price` dan `max_price`.
-     - **Kalkulator Spanduk/Banner (m²)**: Untuk produk custom, sediakan helper: $\text{Panjang (m)} \times \text{Lebar (m)} \times \text{Harga/m}^2$.
-     - Checklist Add-ons/Finishing (Laminasi Glossy, Doff, Pond, Jilid Spiral, dsb).
-  2. **Modal Sukses Checkout**:
-     - Menampilkan kembalian, ringkasan invoice number (`INV-20260818-XXXX`), tombol "Cetak Struk Thermal", dan tombol "Transaksi Baru".
+### 3. 📜 Halaman Riwayat Transaksi Dedicated (`/transactions`)
+* **Lokasi File**: `apps/frontend/src/app/transactions/page.tsx`
+* **Tujuan**: Halaman mandiri untuk kasir & owner melacak seluruh transaksi penjualan dengan filter lengkap dan cetak ulang nota.
+* **Elemen UI & Fitur**:
+  - **Filter Bar**:
+    - Search nomor invoice / nama pelanggan.
+    - Filter tanggal pengerjaan.
+    - Filter status pembayaran (`PAID`, `DP`, `UNPAID`).
+    - Filter status pengerjaan (`ANTRIAN`, `PROSES`, `SELESAI`, `DIAMBIL`).
+  - **Tabel Transaksi Server-Side Paginated (`GET /transactions`)**:
+    - No Invoice, Waktu, Pelanggan, Kasir, Subtotal, Diskon, Total, Bayar, Status, Aksi.
+  - **Drawer / Modal Detail Transaksi (`GET /transactions/{id}`)**:
+    - Menampilkan rincian setiap item produk, varian, dan add-ons yang dibeli.
+  - **Tombol Cetak Ulang Nota**:
+    - Mengambil data invoice dari `GET /transactions/{id}/invoice` untuk dicetak ulang kapan saja.
 
 ---
 
-### 4. 📋 Halaman Job Tracking & Antrean Produksi (`/job-tracking`)
-Layar untuk memantau progres pengerjaan pesanan percetakan dari cetak hingga selesai.
+## 4. Sub-Fitur yang Perlu Ditambahkan pada Halaman Existing
 
-- **Tampilan Kanban Board (4 Kolom Status)**:
-  1. **`ANTRIAN`**: Pesanan baru masuk dari kasir yang menunggu giliran cetak/desain.
-  2. **`PROSES`**: Pesanan sedang diproduksi (dicetak di mesin / proses finishing).
-  3. **`SELESAI`**: Pesanan sudah beres diproduksi dan siap diambil pelanggan.
-  4. **`DIAMBIL`**: Pesanan sudah diserahkan ke pelanggan (arsip selesai).
+Selain 3 halaman baru di atas, berikut sub-fitur tambahan yang perlu disisipkan pada halaman yang sudah ada:
 
-- **Kartu Pesanan (Job Card)**:
-  - Nomor Invoice, Nama Pelanggan, Kasir pembuat pesanan.
-  - Ringkasan item yang dicetak (contoh: `Undangan Custom x 500 pcs (+ Laminasi Doff)`).
-  - Status Pembayaran: Badge Hijau (`LUNAS`) atau Badge Kuning (`DP - Sisa Rp 250.000`).
-  - Estimasi Selesai + **Badge Overdue Merah** jika tanggal hari ini melewati `estimated_done_at` dan pesanan belum selesai.
-  - **Tombol Cepat Ubah Status**:
-    - Di kolom Antrian: Tombol "Mulai Proses" $\rightarrow$ `PATCH /transactions/{id}/status` ke `PROSES`.
-    - Di kolom Proses: Tombol "Tandai Selesai" $\rightarrow$ `PATCH /transactions/{id}/status` ke `SELESAI`.
-    - Di kolom Selesai: Tombol "Serahkan ke Pelanggan" / **"Pelunasan & Serahkan"**.
-
-- **Modal Pelunasan DP Instan**:
-  - Dipicu saat kasir mengklik tombol serahkan pada pesanan yang masih berstatus `DP`.
-  - Menampilkan sisa tagihan $\rightarrow$ Input nominal uang diterima $\rightarrow$ Submit ke `PATCH /transactions/{id}/payment` $\rightarrow$ Order otomatis lunas dan status berganti ke `DIAMBIL`.
+### A. Pada Halaman Laporan (`/reports`)
+1. **Tab Laporan Piutang DP (`GET /reports/receivables`)**:
+   - Menampilkan tabel pesanan yang belum lunas (status `DP` dan `UNPAID`) beserta kolom `remaining_amount` (sisa piutang).
+   - Tombol aksi **"Lunasi Sekarang"** yang langsung membuka modal pelunasan DP.
+2. **Tab Laporan Bahan Kritis / Low Stock (`GET /reports/low-stock`)**:
+   - Menampilkan tabel bahan baku yang stok fisiknya $\le$ `min_stock_warning` agar segera dipesan ke supplier.
+3. **Tab Top 5 Produk Terlaris (`GET /reports/top-products`)**:
+   - Menampilkan produk terlaris berdasarkan kuantitas pesanan dan omset.
+4. **Tab Rekap Mutasi Bahan (`GET /reports/inventory-mutations`)**:
+   - Menampilkan akumulasi stok masuk (IN) vs keluar (OUT) per bahan baku.
 
 ---
 
-### 5. 📜 Halaman Riwayat Transaksi (`/transactions`)
-- **Elemen UI**:
-  - Filter Bar: Pencarian nomor invoice/pelanggan, filter tanggal, filter status bayar (`PAID`, `DP`, `UNPAID`), dan filter status order.
-  - Tabel Transaksi:
-    - No. Invoice, Tanggal & Jam, Pelanggan, Kasir, Total Belanja, Bayar, Status Bayar, Status Order, Aksi.
-  - Paginasi Server-Side (Halaman 1, 2, ..., Jumlah data per halaman 20/50/100).
-- **Drawer / Modal Detail Transaksi**:
-  - Rincian item produk, varian harga, detail add-ons dan kuantitasnya.
-  - Tombol **"Cetak Ulang Nota"** (panggil `GET /transactions/{id}/invoice`).
-  - Tombol **"Pelunasan Pembayaran"** (jika masih berstatus DP).
+### B. Pada Halaman Pelanggan (`/customers`)
+1. **Drawer Riwayat Repeat Order Pelanggan (`GET /customers/{id}/transactions`)**:
+   - Ketika salah satu baris pelanggan diklik, buka drawer di sisi kanan yang memuat:
+     - Total akumulasi belanja pelanggan tersebut.
+     - Riwayat nota belanja sebelumnya.
+     - Status pesanan aktif yang sedang berjalan.
 
 ---
 
-### 6. 🏷️ Halaman Master Produk & Finishing (`/products`) — *Khusus Owner*
-- **Tab 1: Katalog Produk Cetak**:
-  - Tabel master produk: Nama, Kategori, Tipe Harga (Fixed/Range/Custom), Harga Default / Rentang Harga, Minimum Order, Satuan (`pcs`, `rim`, `meter`, `lembar`).
-  - Modal Tambah / Edit Produk: Form nama, pilihan kategori, radio button tipe harga, toggle varian, input minimum order.
-- **Tab 2: Varian Produk**:
-  - Pengaturan varian per produk (misal: Buku Yasin $\rightarrow$ Varian 128 HVS, 176 HVS, Hard Cover).
-  - Form harga per varian (Fixed atau Range min-max).
-- **Tab 3: Add-ons / Finishing**:
-  - Master finishing cetak: Laminasi, Spot UV, Foil Emas, Pond, Jilid Spiral, Cutting.
-  - Form tipe harga addon (Fixed atau Range).
-- **Tab 4: Kategori Produk**:
-  - Tambah, edit, dan hapus nama kategori produk cetak.
+### C. Pada Halaman Job Tracking (`/tracking`)
+1. **Modal Pelunasan DP Instan**:
+   - Pada kolom Kanban **SELESAI**, sediakan tombol **"Pelunasan & Serahkan"** untuk pesanan berstatus `DP`.
+   - Menampilkan sisa tagihan $\rightarrow$ Kasir input uang diterima $\rightarrow$ Submit ke `PATCH /transactions/{id}/payment` $\rightarrow$ Status transaksi otomatis menjadi `PAID` dan order berpindah ke `DIAMBIL`.
 
 ---
 
-### 7. 📦 Halaman Inventaris Bahan Baku (`/inventory`)
-- **Tabel Stok Bahan Baku**:
-  - Nama Bahan (contoh: `Kertas Art Paper 260gr`, `Tinta Eco Solvent Cyan`, `Mika Jilid A4`).
-  - Kategori Bahan, Varian Warna/Ukuran, Satuan (`rim`, `roll`, `kg`, `botol`, `lembar`).
-  - **Stok Fisik Saat Ini**.
-  - **Batas Minimum Peringatan (`min_stock_warning`)**.
-  - **Status Stok**: Badge Hijau (`Aman`) atau Badge Merah Kritis (`Stok Menipis!`).
-- **Modal Cepat Mutasi Stok (IN / OUT)**:
-  - Kasir/Owner memilih jenis mutasi:
-    - **`IN` (Stok Masuk / Restock)**: Input kuantitas masuk + catatan (contoh: "Kulakan dari Supplier ABC").
-    - **`OUT` (Stok Keluar / Pemakaian / Rusak)**: Input kuantitas keluar + catatan (contoh: "Dipakai cetak 500 brosur").
-  - Submit ke `POST /raw-materials/mutations` $\rightarrow$ stok terupdate otomatis.
-- **Tab Riwayat Mutasi**:
-  - Log kronologis mutasi bahan baku (Tanggal, Nama Bahan, Tipe IN/OUT, Jumlah, Catatan).
-- **Tab Kategori Bahan Baku** (*Owner Only*):
-  - CRUD kategori master bahan (Kertas, Tinta, Mika, Perekat, dsb).
+### D. Komponen Cetak Struk Kasir Thermal 58mm / 80mm (`/pos` & `/transactions`)
+1. **Komponen Cetak Monospace (`window.print()`)**:
+   - Mengambil data struk dari `GET /transactions/{id}/invoice`.
+   - Header otomatis memuat info toko dari konfigurasi backend (`store_name`, `store_address`, `store_phone`).
+   - Rincian item + varian + add-ons, subtotal, diskon, bayar, kembalian / sisa piutang, dan estimasi waktu selesai.
+   - Menggunakan CSS `@media print` format thermal 58mm/80mm.
 
 ---
 
-### 8. 👥 Halaman Data Pelanggan (`/customers`)
-- **Tabel Pelanggan**:
-  - Nama Pelanggan, Nomor Telepon/WhatsApp (dengan tombol pintas kirim pesan WA), Alamat, Tanggal Terdaftar.
-  - Search bar interaktif berdasarkan nama atau nomor HP.
-  - Modal Tambah / Edit Pelanggan.
-- **Drawer Riwayat Repeat Order Pelanggan**:
-  - Dibuka saat mengklik salah satu pelanggan.
-  - Memanggil `GET /customers/{id}/transactions`.
-  - Menampilkan total omset yang disumbang pelanggan ini, daftar pesanan sebelumnya, status pesanan aktif, dan tanggal terakhir order.
+## 5. Referensi Service API Lengkap Siap Pakai
+
+Berikut kode service Axios di `src/services/` yang siap dipanggil oleh halaman baru:
+
+### `src/services/productService.ts`
+```typescript
+import { apiClient } from '../api/client';
+import { ApiResponse, ListResponse } from '../types/api';
+import { Product, ProductVariant, ProductAddon } from '../types/product';
+import { Category } from '../types/category';
+
+export const productService = {
+  // Master Produk
+  getProducts: (params?: { page?: number; search?: string; category_id?: number }) =>
+    apiClient.get<ListResponse<Product>>('/products', { params }).then((r) => r.data),
+  getProductById: (id: number) =>
+    apiClient.get<ApiResponse<Product>>(`/products/${id}`).then((r) => r.data.data),
+  createProduct: (payload: any) =>
+    apiClient.post<ApiResponse<Product>>('/products', payload).then((r) => r.data.data),
+  updateProduct: (id: number, payload: any) =>
+    apiClient.put<ApiResponse<Product>>(`/products/${id}`, payload).then((r) => r.data.data),
+  deleteProduct: (id: number) =>
+    apiClient.delete(`/products/${id}`).then((r) => r.data),
+
+  // Varian Produk
+  getVariants: (productId: number) =>
+    apiClient.get<ApiResponse<ProductVariant[]>>(`/products/${productId}/variants`).then((r) => r.data.data),
+  createVariant: (productId: number, payload: any) =>
+    apiClient.post<ApiResponse<ProductVariant>>(`/products/${productId}/variants`, payload).then((r) => r.data.data),
+  updateVariant: (id: number, payload: any) =>
+    apiClient.put<ApiResponse<ProductVariant>>(`/product-variants/${id}`, payload).then((r) => r.data.data),
+  deleteVariant: (id: number) =>
+    apiClient.delete(`/product-variants/${id}`).then((r) => r.data),
+
+  // Add-ons & Finishing
+  getAddons: () => apiClient.get<ApiResponse<ProductAddon[]>>('/addons').then((r) => r.data.data),
+  createAddon: (payload: any) => apiClient.post<ApiResponse<ProductAddon>>('/addons', payload).then((r) => r.data.data),
+  updateAddon: (id: number, payload: any) => apiClient.put<ApiResponse<ProductAddon>>(`/addons/${id}`, payload).then((r) => r.data.data),
+  deleteAddon: (id: number) => apiClient.delete(`/addons/${id}`).then((r) => r.data),
+
+  // Kategori Produk
+  getCategories: () => apiClient.get<ApiResponse<Category[]>>('/product-categories').then((r) => r.data.data),
+};
+```
+
+### `src/services/userService.ts`
+```typescript
+import { apiClient } from '../api/client';
+import { ApiResponse, ListResponse } from '../types/api';
+import { User, CreateUserPayload, UpdateUserPayload } from '../types/user';
+
+export const userService = {
+  getUsers: (params?: { page?: number; search?: string; role?: string }) =>
+    apiClient.get<ListResponse<User>>('/users', { params }).then((r) => r.data),
+  createUser: (payload: CreateUserPayload) =>
+    apiClient.post<ApiResponse<User>>('/users', payload).then((r) => r.data.data),
+  updateUser: (id: number, payload: UpdateUserPayload) =>
+    apiClient.put<ApiResponse<User>>(`/users/${id}`, payload).then((r) => r.data.data),
+  resetPassword: (id: number, password: string) =>
+    apiClient.patch(`/users/${id}/password`, { password }).then((r) => r.data),
+  deactivateUser: (id: number) =>
+    apiClient.delete(`/users/${id}`).then((r) => r.data),
+};
+```
+
+### `src/services/customerService.ts` (Ditambah `getCustomerTransactions`)
+```typescript
+import { apiClient } from '../api/client';
+import { ApiResponse, ListResponse } from '../types/api';
+import { Customer } from '../types/customer';
+import { Transaction } from '../types/transaction';
+
+export const customerService = {
+  getCustomers: (params?: { search?: string; page?: number }) =>
+    apiClient.get<ListResponse<Customer>>('/customers', { params }).then((r) => r.data),
+  createCustomer: (payload: Partial<Customer>) =>
+    apiClient.post<ApiResponse<Customer>>('/customers', payload).then((r) => r.data.data),
+  updateCustomer: (id: number, payload: Partial<Customer>) =>
+    apiClient.put<ApiResponse<Customer>>(`/customers/${id}`, payload).then((r) => r.data.data),
+  deleteCustomer: (id: number) =>
+    apiClient.delete(`/customers/${id}`).then((r) => r.data),
+  getCustomerTransactions: (customerId: number, params?: { page?: number }) =>
+    apiClient.get<ListResponse<Transaction>>(`/customers/${customerId}/transactions`, { params }).then((r) => r.data),
+};
+```
+
+### `src/services/reportService.ts` (Ditambah Piutang & Low Stock)
+```typescript
+import { apiClient } from '../api/client';
+import { ApiResponse } from '../types/api';
+import { DashboardSummary, DailySalesItem, TopProductItem, InventoryMutationItem, ReceivableItem, LowStockItem } from '../types/report';
+
+export const reportService = {
+  getSummary: (params?: { start_date?: string; end_date?: string }) =>
+    apiClient.get<ApiResponse<DashboardSummary>>('/reports/summary', { params }).then((r) => r.data.data),
+  getDailySales: (params?: { start_date?: string; end_date?: string }) =>
+    apiClient.get<ApiResponse<DailySalesItem[]>>('/reports/daily-sales', { params }).then((r) => r.data.data),
+  getTopProducts: (params?: { start_date?: string; end_date?: string }) =>
+    apiClient.get<ApiResponse<TopProductItem[]>>('/reports/top-products', { params }).then((r) => r.data.data),
+  getInventoryMutations: (params?: { start_date?: string; end_date?: string }) =>
+    apiClient.get<ApiResponse<InventoryMutationItem[]>>('/reports/inventory-mutations', { params }).then((r) => r.data.data),
+  getReceivables: (params?: { start_date?: string; end_date?: string }) =>
+    apiClient.get<ApiResponse<ReceivableItem[]>>('/reports/receivables', { params }).then((r) => r.data.data),
+  getLowStock: () =>
+    apiClient.get<ApiResponse<LowStockItem[]>>('/reports/low-stock').then((r) => r.data.data),
+};
+```
 
 ---
 
-### 9. 📈 Halaman Laporan & Analitik Finansial (`/reports`)
-Layar eksekutif untuk melihat performa bisnis toko percetakan.
+## 6. Sidebar Navigation Update (`src/components/layout/Sidebar.tsx`)
 
-- **Filter Periode**: Date Range Picker (Hari Ini, 7 Hari Terakhir, Bulan Ini, Custom Tanggal).
-- **Kartu KPI Ringkasan Dashboard (`GET /reports/summary`)**:
-  1. 💰 **Total Omset Diterima**: Total uang riil yang sudah masuk kas.
-  2. 📝 **Total Transaksi**: Jumlah transaksi yang terjadi pada periode tersebut.
-  3. ⏳ **Total Piutang (DP Outstanding)**: Nominal uang yang masih tertunda di pelanggan.
-  4. 🔄 **Pesanan Aktif**: Jumlah pesanan yang sedang di antrean / proses produksi.
-  5. ⚠️ **Bahan Baku Menipis**: Jumlah jenis bahan baku yang berada di bawah ambang minimum.
-- **Visualisasi & Sub-Laporan**:
-  - **Grafik Tren Penjualan Harian (`GET /reports/daily-sales`)**: Bar / Line chart omset per hari.
-  - **Tabel Top 5 Produk Terlaris (`GET /reports/top-products`)**: Rangking produk yang paling banyak dipesan beserta kontribusi revenue-nya.
-  - **Laporan Piutang DP (`GET /reports/receivables`)**: Daftar invoice pelanggan yang belum melunasi pembayaran + tombol aksi pelunasan langsung.
-  - **Laporan Bahan Baku Kritis (`GET /reports/low-stock`)**: Daftar bahan yang harus segera dibeli ke supplier.
-  - **Laporan Agregasi Mutasi Stok (`GET /reports/inventory-mutations`)**: Rekap keluar-masuk seluruh bahan baku.
+Tambahkan menu baru ke dalam array `menuItems` di `Sidebar.tsx`:
 
----
-
-### 10. 👤 Halaman Manajemen Pengguna (`/users`) — *Khusus Owner*
-- **Tabel Pengguna**:
-  - Nama, Username, Role (`SUPER_ADMIN` / `ADMIN`), Status (`Aktif` / `Nonaktif`), Tanggal Dibuat.
-- **Modal Tambah Kasir**:
-  - Input Nama Lengkap, Username unik, Password awal (min 8 karakter), Role (Admin/Kasir).
-- **Modal Reset Password Kasir**:
-  - Owner dapat mengatur ulang kata sandi kasir jika lupa password.
-- **Aksi Nonaktifkan Akun**:
-  - Menonaktifkan akun kasir yang sudah tidak bekerja tanpa menghapus data riwayat transaksinya.
+```typescript
+const menuItems = [
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
+  { name: 'Kasir POS', icon: ShoppingCart, path: '/pos' },
+  { name: 'Job Tracking', icon: ClipboardList, path: '/tracking' },
+  { name: 'Riwayat Transaksi', icon: History, path: '/transactions' }, // [BARU]
+  { name: 'Master Produk', icon: Tag, path: '/products', role: 'SUPER_ADMIN' }, // [BARU]
+  { name: 'Inventaris Bahan', icon: Package, path: '/inventory' },
+  { name: 'Pelanggan', icon: Users, path: '/customers' },
+  { name: 'Laporan', icon: FileText, path: '/reports' },
+  { name: 'Kelola Kasir', icon: UserCog, path: '/users', role: 'SUPER_ADMIN' }, // [BARU]
+];
+```
 
 ---
 
-### 11. 🖨️ Komponen Cetak Nota Thermal Monospace (`ThermalReceiptPrint`)
-Komponen cetak khusus yang otomatis terformat ke kertas thermal 58mm atau 80mm saat kasir menekan tombol cetak:
+## 7. Checklist Pengerjaan Frontend Selanjutnya
 
-- **Struktur Konten Struk**:
-  ```text
-  ========================================
-            PERDANA PRINTING & POS        
-       Jl. Percetakan Perdana No. 1, Kota 
-               Telp: 0812-3456-7890       
-  ========================================
-  No. Nota  : INV-20260818-8472
-  Tanggal   : 18/08/2026 14:30
-  Kasir     : Budi Santoso
-  Pelanggan : SMK Negeri 1 (08123456789)
-  Est. Jadi : 20/08/2026
-  ----------------------------------------
-  Undangan Softcover x 500 pcs   Rp 1.500.000
-    + Laminasi Doff (500 pcs)    Rp   150.000
-  Banner Flexi 280gr (2x1m)      Rp   100.000
-  ----------------------------------------
-  Subtotal                       Rp 1.750.000
-  Diskon                         Rp   100.000
-  TOTAL                          Rp 1.650.000
-  BAYAR (DP)                     Rp 1.000.000
-  ----------------------------------------
-  SISA PIUTANG                   Rp   650.000
-  Status Order: ANTRIAN PRODUKSI
-  ========================================
-    Terima kasih atas kepercayaan Anda!   
-     Barang yang sudah dicetak tidak     
-          dapat dikembalikan.             
-  ========================================
-  ```
-- **Styling CSS Print**:
-  ```css
-  @media print {
-    body * { visibility: hidden; }
-    #thermal-receipt, #thermal-receipt * { visibility: visible; }
-    #thermal-receipt {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 58mm; /* atau 80mm */
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 12px;
-      line-height: 1.2;
-    }
-  }
-  ```
-
----
-
-## 5. Fitur-Fitur Istimewa & Sangat Berguna (*Killer Features*)
-
-Berikut fitur-fitur penting yang wajib di-highlight pada antarmuka frontend:
-
-### 1. 🎛️ Smart Price Selector (Fixed / Range / Custom)
-- **Produk FIXED**: Harga langsung terkunci, kasir cukup mengisi kuantitas.
-- **Produk RANGE**: Muncul modal / slider interaktif yang membatasi harga antara $\text{min\_price}$ dan $\text{max\_price}$ (misal: Banner 10k–15k). Kasir tidak bisa input harga di luar batas toleransi toko.
-- **Produk CUSTOM**: Kasir dapat mengetik harga kesepakatan secara leluasa (contoh: Box Makanan, Kalender Khusus).
-- **Minimum Order Indicator**: Jika kasir input qty di bawah `min_order`, tombol checkout menampilkan peringatan visual kuning/merah.
-
-### 2. 📋 Production Kanban Board / Job Tracker (Alur Produksi)
-- Menampilkan pesanan dalam 4 kolom visual: **ANTRIAN** ➔ **PROSES** ➔ **SELESAI** ➔ **DIAMBIL**.
-- **Fitur Drag-and-Drop / 1-Click Status Advance**: Kasir / tim produksi cukup mengklik tombol "Lanjut ke Proses" atau "Selesai" untuk memperbarui status pesanan.
-- **🚨 Overdue Job Badge**: Jika tanggal hari ini $>$ `estimated_done_at` dan status belum `SELESAI`, kartu pesanan otomatis berubah warna merah menyala (*Overdue Warning*).
-
-### 3. 💳 Quick DP & Pelunasan Piutang (*Instant Settlement*)
-- Pelanggan yang bayar DP (Uang Muka) otomatis ditandai `DP` dan menyisakan piutang.
-- Saat pelanggan datang mengambil pesanan di kolom **SELESAI**, kasir cukup klik tombol **"Pelunasan"** $\rightarrow$ Muncul pop-up nominal sisa tagihan $\rightarrow$ Klik **"Lunas & Serahkan"** $\rightarrow$ Status transaksi otomatis menjadi `PAID` dan order menjadi `DIAMBIL`.
-
-### 4. 🖨️ Direct Thermal Receipt Printing (58mm & 80mm)
-- Integrasi tombol **"Cetak Nota Thermal"** yang langsung memanggil endpoint `/transactions/:id/invoice`.
-- Menyertakan stylesheet `@media print` sehingga tampilan struk terformat rapi sesuai kertas kasir thermal (termasuk nomor invoice barcode, rincian varian + add-ons, status DP, sisa piutang, dan estimasi waktu selesai).
-
-### 5. ⚠️ Low Stock Alert & Quick Restock Modal
-- Di pojok navigasi atau halaman inventaris, tampilkan badge merah untuk bahan baku yang sisa stoknya $\le$ `min_stock_warning`.
-- Klik bahan tersebut untuk membuka **Quick Restock Modal** (mencatat mutasi `IN` dalam 2 detik).
-
-### 6. 📊 Dashboard Analytics Visual
-- Menampilkan grafik penjualan harian (*Line / Bar Chart* menggunakan Chart.js atau Recharts).
-- Kartu ringkasan metrik: **Total Omset**, **Total Piutang (DP Belum Lunas)**, **Pesanan Aktif**, dan **Bahan Menipis**.
-- Tabel **Top 5 Produk Terlaris** untuk panduan kulakan bahan baku percetakan.
-
----
-
-## 6. Tahapan Pengerjaan Frontend yang Direkomendasikan (*Sprint Plan*)
-
-1. **Sprint 1: Setup Proyek, Axios Client, Auth & Layout**
-   - Setup Tailwind / CSS Tokens, Router, Axios instance dengan cookies.
-   - Halaman Login & Proteksi Route (SuperAdmin vs Kasir).
-2. **Sprint 2: Master Data & Inventaris**
-   - CRUD Kategori Produk & Kategori Bahan.
-   - CRUD Produk, Varian bertingkat, dan Add-ons.
-   - Halaman Inventaris Stok Bahan Baku + Modal Mutasi IN/OUT.
-3. **Sprint 3: Modul Kasir POS & Transaksi**
-   - Katalog produk kasir (Grid kartu produk + filter kategori & pencarian).
-   - Modal Range Price Picker & Addon Selector.
-   - Sidebar Keranjang Belanja (Diskon, DP, Estimasi Selesai, Checkout).
-   - Modal & Komponen Cetak Struk Thermal.
-4. **Sprint 4: Job Status Tracking & Pelanggan**
-   - Kanban Board tracking pengerjaan (`ANTRIAN` $\rightarrow$ `PROSES` $\rightarrow$ `SELESAI` $\rightarrow$ `DIAMBIL`).
-   - Modal Pelunasan DP Instan.
-   - Manajemen master data pelanggan & pencarian nomor HP.
-5. **Sprint 5: Laporan, Dashboard & Finishing**
-   - Dashboard ringkasan omset, piutang, dan grafik penjualan.
-   - Pengujian end-to-end alur kasir & polesan antarmuka UI/UX.
-
----
-
-*Dokumen ini dibuat sebagai panduan resmi pengembangan frontend Percetakan Perdana.*
-
+- [ ] **1. Buat Halaman `/products`**: 4 Tab (Produk Cetak, Varian, Finishing, Kategori) — *Khusus Owner*.
+- [ ] **2. Buat Halaman `/users`**: Tabel Akun Kasir, Tambah User, dan Reset Password — *Khusus Owner*.
+- [ ] **3. Buat Halaman `/transactions`**: Arsip Riwayat Transaksi Dedicated & Modal Detail Transaksi.
+- [ ] **4. Lengkapi Halaman `/reports`**: Tambahkan Tab Piutang DP (`/reports/receivables`) & Tab Bahan Kritis (`/reports/low-stock`).
+- [ ] **5. Lengkapi Halaman `/customers`**: Tambahkan Drawer Riwayat Repeat Order (`/customers/{id}/transactions`).
+- [ ] **6. Lengkapi Modal Pelunasan DP di `/tracking` & Komponen Print Nota Thermal di `/pos`**.
+- [ ] **7. Update Menu Sidebar di `Sidebar.tsx`**.
