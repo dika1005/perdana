@@ -86,7 +86,8 @@ pub async fn refresh(
     let (token, expires_at) = jwt.issue_access(user.id, user.role.as_str())?;
     let refresh_token = jwt.issue_refresh(user.id, user.role.as_str())?;
     Ok(RefreshData {
-        token,
+        token: token.clone(),
+        access_token: token,
         refresh_token,
         expires_at,
     })
@@ -107,7 +108,8 @@ fn issue_tokens(jwt: &JwtConfig, user: &users::Model) -> Result<LoginData, AppEr
     let (token, expires_at) = jwt.issue_access(user.id, user.role.as_str())?;
     let refresh_token = jwt.issue_refresh(user.id, user.role.as_str())?;
     Ok(LoginData {
-        token,
+        token: token.clone(),
+        access_token: token,
         refresh_token,
         expires_at,
         user: public_user(user),

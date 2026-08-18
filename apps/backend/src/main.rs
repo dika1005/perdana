@@ -52,6 +52,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(json_config())
             .route("/health", web::get().to(routes::health::health_check))
             .service(web::scope("/api/v1").configure(routes::configure))
+            .configure(routes::configure)
     })
     .bind(bind_addr)?
     .run()

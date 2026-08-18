@@ -159,4 +159,20 @@ async fn test_auth_and_users_lifecycle() {
     };
     let deactivated_err = auth_service::login(&db, &config.jwt, deactivated_login).await;
     assert!(deactivated_err.is_err());
+
+    // 13. Test Cookie Generation & Logout Clearance
+    let access_cookie = backend::routes::auth::make_access_cookie("test_token", 3600);
+    assert_eq!(access_cookie.name(), "access_token");
+    assert_eq!(access_cookie.value(), "test_token");
+    assert_eq!(access_cookie.http_only(), Some(true));
+    assert_eq!(access_cookie.path(), Some("/"));
+
+    let refresh_cookie = backend::routes::auth::make_refresh_cookie("test_refresh", 86400);
+    assert_eq!(refresh_cookie.name(), "refresh_token");
+    assert_eq!(refresh_cookie.http_only(), Some(true));
+
+    let removal_cookie = backend::routes::auth::make_removal_cookie("access_token");
+    assert_eq!(removal_cookie.value(), "");
+    assert_eq!(removal_cookie.max_age(), Some(actix_web::cookie::time::Duration::ZERO));
 }
+

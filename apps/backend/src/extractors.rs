@@ -49,7 +49,7 @@ impl FromRequest for AuthUser {
                 .cloned()
                 .ok_or_else(|| AppError::Internal("App state tidak tersedia".into()))?;
 
-            let token = bearer_token(&req)?;
+            let token = extract_token(&req)?;
             let claims = state.jwt.decode_access(&token)?;
             let user_id = claims.user_id()?;
 
@@ -111,17 +111,27 @@ impl FromRequest for Pagination {
     }
 }
 
-fn bearer_token(req: &HttpRequest) -> Result<String, AppError> {
-    let header = req
+fn extract_token(req: &HttpRequest) -> Result<String, AppError> {
+    // 1. Try Bearer header
+    if let Some(header) = req
         .headers()
         .get(actix_web::http::header::AUTHORIZATION)
         .and_then(|value| value.to_str().ok())
-        .ok_or_else(AppError::unauthorized)?;
+    {
+        if let Some(token) = header.strip_prefix("Bearer ").map(str::trim) {
+            if !token.is_empty() {
+                return Ok(token.to_string());
+            }
+        }
+    }
 
-    header
-        .strip_prefix("Bearer ")
-        .map(str::trim)
-        .filter(|token| !token.is_empty())
-        .map(ToOwned::to_owned)
-        .ok_or_else(AppError::unauthorized)
+    // 2. Try Cookie "access_token"
+    if let Some(cookie) = req.cookie("access_token") {
+        let val = cookie.value().trim();
+        if !val.is_empty() {
+            return Ok(val.to_string());
+        }
+    }
+
+    Err(AppError::unauthorized())
 }

@@ -11,10 +11,9 @@ pub struct LoginRequest {
     pub password: String,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, Default)]
 pub struct RefreshRequest {
-    #[validate(length(min = 1, message = "Refresh token wajib diisi"))]
-    pub refresh_token: String,
+    pub refresh_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,6 +29,7 @@ pub struct PublicUser {
 #[derive(Debug, Serialize)]
 pub struct LoginData {
     pub token: String,
+    pub access_token: String,
     pub refresh_token: String,
     pub expires_at: DateTime<Utc>,
     pub user: PublicUser,
@@ -38,6 +38,7 @@ pub struct LoginData {
 #[derive(Debug, Serialize)]
 pub struct RefreshData {
     pub token: String,
+    pub access_token: String,
     pub refresh_token: String,
     pub expires_at: DateTime<Utc>,
 }

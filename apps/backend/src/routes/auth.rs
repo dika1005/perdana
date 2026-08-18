@@ -1,5 +1,6 @@
-use actix_web::{HttpResponse, web};
-use validator::Validate;
+use actix_web::cookie::time::Duration;
+use actix_web::cookie::{Cookie, SameSite};
+use actix_web::{HttpRequest, HttpResponse, web};
 
 use crate::dto::{ApiResponse, LoginRequest, MessageData, RefreshRequest};
 use crate::error::AppError;
@@ -7,28 +8,90 @@ use crate::extractors::AuthUser;
 use crate::services::auth as auth_service;
 use crate::state::AppState;
 
+pub fn make_access_cookie<'a>(token: &'a str, max_age_secs: i64) -> Cookie<'a> {
+    Cookie::build("access_token", token)
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .max_age(Duration::seconds(max_age_secs))
+        .finish()
+}
+
+pub fn make_refresh_cookie<'a>(token: &'a str, max_age_secs: i64) -> Cookie<'a> {
+    Cookie::build("refresh_token", token)
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .max_age(Duration::seconds(max_age_secs))
+        .finish()
+}
+
+pub fn make_removal_cookie<'a>(name: &'a str) -> Cookie<'a> {
+    Cookie::build(name, "")
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .max_age(Duration::ZERO)
+        .finish()
+}
+
 pub async fn login(
     state: web::Data<AppState>,
     payload: web::Json<LoginRequest>,
 ) -> Result<HttpResponse, AppError> {
     let data = auth_service::login(&state.db, &state.jwt, payload.into_inner()).await?;
-    Ok(HttpResponse::Ok().json(ApiResponse::ok("Login berhasil", data)))
+
+    let access_cookie = make_access_cookie(&data.token, state.jwt.access_ttl_secs);
+    let refresh_cookie = make_refresh_cookie(&data.refresh_token, state.jwt.refresh_ttl_secs);
+
+    Ok(HttpResponse::Ok()
+        .cookie(access_cookie)
+        .cookie(refresh_cookie)
+        .json(ApiResponse::ok("Login berhasil", data)))
 }
 
 pub async fn refresh(
     state: web::Data<AppState>,
-    payload: web::Json<RefreshRequest>,
+    req: HttpRequest,
+    payload: Option<web::Json<RefreshRequest>>,
 ) -> Result<HttpResponse, AppError> {
-    payload.validate()?;
-    let data = auth_service::refresh(&state.db, &state.jwt, &payload.refresh_token).await?;
-    Ok(HttpResponse::Ok().json(ApiResponse::ok("Token diperbarui", data)))
+    let refresh_token = payload
+        .and_then(|p| p.into_inner().refresh_token)
+        .filter(|t| !t.trim().is_empty())
+        .or_else(|| {
+            req.cookie("refresh_token")
+                .map(|c| c.value().trim().to_string())
+                .filter(|t| !t.is_empty())
+        })
+        .ok_or_else(|| {
+            AppError::field(
+                "refresh_token",
+                "Refresh token wajib dikirim pada body atau cookie",
+            )
+        })?;
+
+    let data = auth_service::refresh(&state.db, &state.jwt, &refresh_token).await?;
+
+    let access_cookie = make_access_cookie(&data.token, state.jwt.access_ttl_secs);
+    let refresh_cookie = make_refresh_cookie(&data.refresh_token, state.jwt.refresh_ttl_secs);
+
+    Ok(HttpResponse::Ok()
+        .cookie(access_cookie)
+        .cookie(refresh_cookie)
+        .json(ApiResponse::ok("Token diperbarui", data)))
 }
 
 pub async fn logout(_user: AuthUser) -> Result<HttpResponse, AppError> {
-    Ok(HttpResponse::Ok().json(ApiResponse::ok(
-        "Logout berhasil. Hapus token di sisi klien.",
-        MessageData { ok: true },
-    )))
+    let access_cookie = make_removal_cookie("access_token");
+    let refresh_cookie = make_removal_cookie("refresh_token");
+
+    Ok(HttpResponse::Ok()
+        .cookie(access_cookie)
+        .cookie(refresh_cookie)
+        .json(ApiResponse::ok(
+            "Logout berhasil. Cookie autentikasi telah dihapus.",
+            MessageData { ok: true },
+        )))
 }
 
 pub async fn me(state: web::Data<AppState>, user: AuthUser) -> Result<HttpResponse, AppError> {

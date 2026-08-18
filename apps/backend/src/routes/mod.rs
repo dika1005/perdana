@@ -1,7 +1,14 @@
 use actix_web::web;
 
+pub mod addons;
 pub mod auth;
+pub mod categories;
+pub mod customers;
 pub mod health;
+pub mod products;
+pub mod raw_materials;
+pub mod reports;
+pub mod transactions;
 pub mod users;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -21,6 +28,107 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .route("/{id}", web::put().to(users::update))
                 .route("/{id}/password", web::patch().to(users::reset_password))
                 .route("/{id}", web::delete().to(users::delete)),
+        )
+        .service(
+            web::scope("/product-categories")
+                .route("", web::get().to(categories::list_product_categories))
+                .route("", web::post().to(categories::create_product_category))
+                .route("/{id}", web::get().to(categories::get_product_category))
+                .route("/{id}", web::put().to(categories::update_product_category))
+                .route(
+                    "/{id}",
+                    web::delete().to(categories::delete_product_category),
+                ),
+        )
+        .service(
+            web::scope("/raw-material-categories")
+                .route("", web::get().to(categories::list_raw_material_categories))
+                .route("", web::post().to(categories::create_raw_material_category))
+                .route(
+                    "/{id}",
+                    web::get().to(categories::get_raw_material_category),
+                )
+                .route(
+                    "/{id}",
+                    web::put().to(categories::update_raw_material_category),
+                )
+                .route(
+                    "/{id}",
+                    web::delete().to(categories::delete_raw_material_category),
+                ),
+        )
+        .service(
+            web::scope("/products")
+                .route("", web::get().to(products::list))
+                .route("", web::post().to(products::create))
+                .route("/{id}", web::get().to(products::get))
+                .route("/{id}", web::put().to(products::update))
+                .route("/{id}", web::delete().to(products::delete))
+                .route("/{id}/variants", web::get().to(products::list_variants))
+                .route(
+                    "/{id}/variants",
+                    web::post().to(products::create_variant),
+                ),
+        )
+        .service(
+            web::scope("/product-variants")
+                .route("/{id}", web::put().to(products::update_variant))
+                .route("/{id}", web::delete().to(products::delete_variant)),
+        )
+        .service(
+            web::scope("/addons")
+                .route("", web::get().to(addons::list))
+                .route("", web::post().to(addons::create))
+                .route("/{id}", web::get().to(addons::get))
+                .route("/{id}", web::put().to(addons::update))
+                .route("/{id}", web::delete().to(addons::delete)),
+        )
+        .service(
+            web::scope("/raw-materials")
+                .route("/mutations", web::post().to(raw_materials::create_mutation))
+                .route("/{id}/mutations", web::get().to(raw_materials::list_mutations))
+                .route("", web::get().to(raw_materials::list))
+                .route("", web::post().to(raw_materials::create))
+                .route("/{id}", web::get().to(raw_materials::get))
+                .route("/{id}", web::put().to(raw_materials::update))
+                .route("/{id}", web::delete().to(raw_materials::delete)),
+        )
+        .service(
+            web::scope("/customers")
+                .route("", web::get().to(customers::list))
+                .route("", web::post().to(customers::create))
+                .route("/{id}", web::get().to(customers::get))
+                .route("/{id}", web::put().to(customers::update))
+                .route("/{id}", web::delete().to(customers::delete)),
+        )
+        .service(
+            web::scope("/transactions")
+                .route("", web::get().to(transactions::list))
+                .route("", web::post().to(transactions::create))
+                .route("/{id}", web::get().to(transactions::get))
+                .route("/{id}/status", web::patch().to(transactions::update_status))
+                .route(
+                    "/{id}/payment",
+                    web::patch().to(transactions::update_payment),
+                )
+                .route(
+                    "/{id}/invoice",
+                    web::get().to(transactions::get_invoice),
+                ),
+        )
+        .service(
+            web::scope("/reports")
+                .route("/summary", web::get().to(reports::summary))
+                .route("/daily-sales", web::get().to(reports::daily_sales))
+                .route("/top-products", web::get().to(reports::top_products))
+                .route(
+                    "/inventory-mutations",
+                    web::get().to(reports::inventory_mutations),
+                ),
         );
 }
+
+
+
+
 
