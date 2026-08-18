@@ -1,6 +1,16 @@
 [workspace]
-members = [
-    "apps/backend",
-    "packages/entity",
-]
+members = ["apps/backend", "packages/entity"]
 resolver = "2"
+
+[workspace.dependencies]
+sea-orm = { version = "1.1", features = [
+    "sqlx-mysql",
+    "runtime-tokio-native-tls",
+    "macros",
+    "with-chrono",
+    "with-rust_decimal",
+] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+rust_decimal = { version = "1", features = ["serde"] }

@@ -1,14 +1,16 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod prelude;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod enums;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod customers;
+pub mod product_addons;
+pub mod product_categories;
+pub mod product_variants;
+pub mod products;
+pub mod raw_material_categories;
+pub mod raw_material_mutations;
+pub mod raw_materials;
+pub mod transaction_item_addons;
+pub mod transaction_items;
+pub mod transactions;
+pub mod users;

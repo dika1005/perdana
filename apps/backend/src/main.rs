@@ -1,36 +1,59 @@
 use actix_cors::Cors;
-use actix_web::{web, App, HttpServer};
-
-mod config;
-mod routes;
+use actix_web::http::header;
+use actix_web::{App, HttpServer, middleware::Logger, web};
+use backend::config::{self, AppConfig};
+use backend::http::json_config;
+use backend::routes;
+use backend::services::auth::seed_super_admin;
+use backend::state::AppState;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Inisialisasi logging console
-    env_logger::init();
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
 
-    // Koneksi ke Database
-    let db = config::connect_db()
+    let app_config = AppConfig::from_env();
+    let db = config::connect_db(&app_config.database_url)
         .await
         .expect("Gagal mengoneksikan database");
 
-    println!("Server berjalan di http://127.0.0.1:8800");
+    seed_super_admin(&db, &app_config.seed)
+        .await
+        .expect("Gagal seed Super Admin");
+
+    let state = AppState {
+        db,
+        jwt: app_config.jwt.clone(),
+    };
+
+    let bind_addr = (app_config.server_host.as_str(), app_config.server_port);
+    log::info!(
+        "Server berjalan di http://{}:{}",
+        app_config.server_host,
+        app_config.server_port
+    );
+
+    let frontend_origin = app_config.frontend_origin.clone();
 
     HttpServer::new(move || {
-        // Setup CORS agar Next.js bisa akses
         let cors = Cors::default()
-            .allow_any_origin()
-            .allow_any_method()
-            .allow_any_header();
+            .allowed_origin(&frontend_origin)
+            .allowed_methods(vec!["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+            .allowed_headers(vec![
+                header::AUTHORIZATION,
+                header::ACCEPT,
+                header::CONTENT_TYPE,
+            ])
+            .max_age(3600);
 
         App::new()
+            .wrap(Logger::default())
             .wrap(cors)
-            // Inject koneksi SeaORM ke State Actix Web
-            .app_data(web::Data::new(db.clone()))
-            // Register route
-            .service(routes::health::health_check)
+            .app_data(web::Data::new(state.clone()))
+            .app_data(json_config())
+            .route("/health", web::get().to(routes::health::health_check))
+            .service(web::scope("/api/v1").configure(routes::configure))
     })
-    .bind(("127.0.0.1", 8800))?
+    .bind(bind_addr)?
     .run()
     .await
 }

@@ -3,14 +3,9 @@
 ## Base URL
 `http://localhost:8080/api/v1`
 
-## Autentikasi
-Semua endpoint **wajib** menyertakan header `Authorization: Bearer <token>` kecuali `POST /auth/login` dan `GET /health`.
-Token berupa JWT berisi claim `user_id`, `role` (`SUPER_ADMIN` / `ADMIN`), dan `exp`.
-Endpoint yang ditandai **(Super Admin)** akan menolak request dari role `ADMIN` dengan `403 Forbidden`.
+## Response Format Standard
 
-## Standard Response Format
-
-### Success
+**Sukses:**
 ```json
 {
   "success": true,
@@ -19,96 +14,83 @@ Endpoint yang ditandai **(Super Admin)** akan menolak request dari role `ADMIN` 
 }
 ```
 
-### Error
+**Gagal (Baru — distandarkan):**
 ```json
 {
   "success": false,
-  "message": "Deskripsi error singkat",
-  "errors": { "field_name": ["pesan validasi"] }
+  "message": "Deskripsi error yang bisa ditampilkan ke user",
+  "errors": {
+    "field_name": ["pesan validasi spesifik"]
+  }
 }
 ```
-Gunakan status code standar: `400` (validasi), `401` (belum login/token invalid), `403` (tidak punya akses), `404` (data tidak ditemukan), `409` (konflik, mis. username sudah ada / stok tidak cukup), `500` (server error).
+Kode status HTTP yang dipakai: `400` (validasi), `401` (belum login/token invalid), `403` (role tidak diizinkan), `404` (data tidak ditemukan), `409` (konflik, mis. username sudah dipakai), `500` (server error).
 
-## Pagination Standard
-Endpoint list mendukung query `?page=1&limit=20`. Response list membungkus data dengan meta:
+## Pagination Standard (Baru)
+Endpoint list (`GET /products`, `GET /transactions`, `GET /raw-materials`, dll) mendukung query `page` (default 1) dan `per_page` (default 20, max 100). Response list membungkus data dengan meta:
 ```json
 {
   "success": true,
-  "data": { "items": [], "page": 1, "limit": 20, "total": 0 }
+  "data": [ ... ],
+  "meta": { "page": 1, "per_page": 20, "total": 134 }
 }
 ```
 
----
+## Auth (Baru)
+* `POST /auth/login` -> body `{ username, password }`, return JWT access token + data user (id, name, role). Password diverifikasi via bcrypt hash.
+* `POST /auth/logout` -> invalidasi token di sisi client (dan blacklist di server jika dipakai refresh token).
+* `POST /auth/refresh` -> tukar refresh token dengan access token baru (opsional, jika access token dibuat berumur pendek).
+* `GET /auth/me` -> ambil data user yang sedang login dari token aktif.
 
-## Endpoints
+Semua endpoint di bawah ini (kecuali `/health` dan `/auth/login`) wajib menyertakan header `Authorization: Bearer <token>`.
 
-### Health Check
-- `GET /health` -> Cek ketersediaan server & koneksi database.
+## User Management (Baru — Super Admin only)
+* `GET /users` -> list akun (Admin & Super Admin).
+* `POST /users` -> tambah akun baru.
+* `PUT /users/:id` -> update nama/role.
+* `PATCH /users/:id/password` -> reset password user lain.
+* `DELETE /users/:id` -> nonaktifkan akun (soft delete, bukan hard delete, agar riwayat transaksi `created_by` tetap valid).
 
-### Auth
-- `POST /auth/login` -> body `{ username, password }` -> data: `{ token, expires_at, user: { id, name, role } }`.
-- `POST /auth/logout` -> invalidasi sesi (jika pakai refresh-token/blacklist di DB) atau sekadar konfirmasi bagi klien untuk menghapus token tersimpan.
-- `GET /auth/me` -> data user yang sedang login (dari token).
-- `POST /auth/refresh` -> perpanjang token yang mendekati kadaluarsa (opsional, tergantung strategi JWT yang dipakai — lihat catatan di AGENTS.md).
+## Product & Raw Material Categories (Baru)
+* `GET /product-categories`, `POST /product-categories`, `PUT /product-categories/:id`, `DELETE /product-categories/:id`.
+* `GET /raw-material-categories`, `POST /raw-material-categories`, `PUT /raw-material-categories/:id`, `DELETE /raw-material-categories/:id`.
 
-### Users (Super Admin)
-- `GET /users` -> list akun (Admin & Super Admin).
-- `POST /users` -> buat akun baru.
-- `GET /users/:id` -> detail akun.
-- `PUT /users/:id` -> ubah nama/role akun.
-- `PATCH /users/:id/reset-password` -> reset password akun (mis. saat kasir lupa password).
-- `DELETE /users/:id` -> nonaktifkan/hapus akun.
+## Products, Variants & Addons
+* `GET /products` -> Ambil katalog jasa cetak (include `variants[]` jika `has_variants = true`). Support query `category_id`, `search`.
+* `POST /products` -> Tambah produk (Super Admin).
+* `PUT /products/:id` -> Update produk (Super Admin).
+* `DELETE /products/:id` -> Hapus/nonaktifkan produk (Super Admin).
+* `GET /products/:id/variants` -> Ambil daftar varian sebuah produk.
+* `POST /products/:id/variants` -> Tambah varian produk (Super Admin).
+* `PUT /product-variants/:id` / `DELETE /product-variants/:id` -> Update/hapus varian.
+* `GET /addons` -> Ambil daftar add-on (termasuk `price_type`, `min_price`, `max_price` untuk addon rentang).
+* `POST /addons`, `PUT /addons/:id`, `DELETE /addons/:id` -> Kelola add-on (Super Admin).
 
-### Product Categories
-- `GET /product-categories`
-- `POST /product-categories` (Super Admin)
-- `PUT /product-categories/:id` (Super Admin)
-- `DELETE /product-categories/:id` (Super Admin)
+## Inventory / Raw Materials
+* `GET /raw-materials` -> List bahan mentah & sisa stok (query `low_stock=true` untuk filter di bawah ambang minimum, `category_id`, `search`).
+* `POST /raw-materials` -> Tambah master bahan baru (Super Admin).
+* `PUT /raw-materials/:id` -> Update master bahan (nama, satuan, ambang minimum) (Super Admin).
+* `POST /raw-materials/mutations` -> Catat stok masuk/keluar.
+* `GET /raw-materials/:id/mutations` -> Riwayat mutasi stok satu bahan.
 
-### Raw Material Categories
-- `GET /raw-material-categories`
-- `POST /raw-material-categories` (Super Admin)
-- `PUT /raw-material-categories/:id` (Super Admin)
-- `DELETE /raw-material-categories/:id` (Super Admin)
+## Customers
+* `GET /customers` -> List pelanggan (query `search`).
+* `POST /customers` -> Tambah pelanggan baru.
+* `GET /customers/:id/transactions` -> Riwayat transaksi seorang pelanggan.
 
-### Products, Variants & Addons
-- `GET /products` -> katalog jasa cetak (include `variants[]` jika `has_variants = true`).
-- `POST /products` (Super Admin)
-- `PUT /products/:id` (Super Admin)
-- `DELETE /products/:id` (Super Admin)
-- `GET /products/:id/variants`
-- `POST /products/:id/variants` (Super Admin)
-- `PUT /products/:id/variants/:variant_id` (Super Admin)
-- `DELETE /products/:id/variants/:variant_id` (Super Admin)
-- `GET /addons` -> termasuk `price_type`, `min_price`, `max_price` untuk addon rentang.
-- `POST /addons` (Super Admin)
-- `PUT /addons/:id` (Super Admin)
-- `DELETE /addons/:id` (Super Admin)
+## Transactions (POS)
+* `GET /transactions` -> List riwayat transaksi (query `search`, `date`, `payment_status`, `order_status`, `page`, `per_page`).
+* `POST /transactions` -> Buat transaksi kasir baru (body termasuk `discount_amount`, `estimated_done_at` opsional).
+* `GET /transactions/:id` -> Detail transaksi beserta item & add-on.
+* `PATCH /transactions/:id/status` -> Update status produksi (`ANTRIAN`/`PROSES`/`SELESAI`/`DIAMBIL`).
+* `PATCH /transactions/:id/payment` -> Update status pembayaran / catat pelunasan sisa DP.
+* `GET /transactions/:id/invoice` -> Generate nota (format cetak thermal / PDF) untuk transaksi tersebut (Baru).
 
-### Inventory / Raw Materials
-- `GET /raw-materials` -> support query `low_stock=true`, `category_id`.
-- `GET /raw-materials/:id`
-- `POST /raw-materials` (Super Admin) -> tambah master bahan baru.
-- `PUT /raw-materials/:id` (Super Admin)
-- `POST /raw-materials/mutations` -> catat stok masuk/keluar.
-- `GET /raw-materials/:id/mutations` -> riwayat mutasi satu bahan.
+## Reports
+* `GET /reports/revenue` -> Laporan omset (query `period=daily|weekly|monthly`, `start_date`, `end_date`).
+* `GET /reports/receivables` -> Laporan piutang: daftar transaksi berstatus `DP` beserta sisa tagihan.
+* `GET /reports/best-sellers` -> Ranking produk berdasarkan qty/omset dalam periode tertentu.
+* `GET /reports/low-stock` -> Daftar bahan baku di bawah ambang minimum.
 
-### Customers
-- `GET /customers` -> support query `search`.
-- `POST /customers`
-- `PUT /customers/:id`
-- `GET /customers/:id/transactions` -> riwayat transaksi seorang pelanggan.
-
-### Transactions (POS)
-- `GET /transactions` -> support query `search`, `date`, `payment_status`, `order_status`, `page`, `limit`.
-- `POST /transactions` -> body termasuk `discount_amount`, `estimated_done_at` (opsional).
-- `GET /transactions/:id` -> detail transaksi beserta item & add-on.
-- `PATCH /transactions/:id/status` -> update status produksi.
-- `PATCH /transactions/:id/payment` -> update status pembayaran / catat pelunasan sisa DP.
-- `DELETE /transactions/:id` (Super Admin) -> batalkan transaksi (soft delete, stok yang sudah terpakai idealnya tidak otomatis dikembalikan — perlu konfirmasi manual).
-
-### Reports
-- `GET /reports/revenue` -> support query `range=today|week|month|custom&start=&end=`.
-- `GET /reports/receivables` -> daftar transaksi `payment_status=DP` beserta sisa tagihan.
-- `GET /reports/best-sellers` -> ranking produk berdasarkan qty/omset dalam periode.
-- `GET /reports/low-stock` -> daftar bahan baku di bawah ambang minimum.
+## Health Check
+* `GET /health` -> Cek ketersediaan server & koneksi database.

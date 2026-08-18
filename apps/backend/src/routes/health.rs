@@ -1,10 +1,14 @@
-use actix_web::{get, HttpResponse, Responder};
-use serde_json::json;
+use actix_web::{HttpResponse, web};
 
-#[get("/health")]
-pub async fn health_check() -> impl Responder {
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "message": "Backend Actix Web berjalan lancar"
-    }))
+use crate::dto::ApiResponse;
+use crate::error::AppError;
+use crate::services;
+use crate::state::AppState;
+
+pub async fn health_check(state: web::Data<AppState>) -> Result<HttpResponse, AppError> {
+    let data = services::health::check(&state.db).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::ok(
+        "Backend Actix Web dan SeaORM terhubung",
+        data,
+    )))
 }
