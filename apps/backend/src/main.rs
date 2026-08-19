@@ -1,5 +1,4 @@
 use actix_cors::Cors;
-use actix_web::http::header;
 use actix_web::{App, HttpServer, middleware::Logger, web};
 use backend::config::{self, AppConfig};
 use backend::http::json_config;
@@ -27,7 +26,13 @@ async fn main() -> std::io::Result<()> {
         db,
         jwt: app_config.jwt.clone(),
         store: app_config.store.clone(),
+        gemini: app_config.gemini.clone(),
+        http_client: reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(20))
+            .build()
+            .unwrap_or_default(),
     };
+
 
     let bind_addr = (app_config.server_host.as_str(), app_config.server_port);
     log::info!(
@@ -49,14 +54,13 @@ async fn main() -> std::io::Result<()> {
             .allowed_origin(&frontend_origin)
             .allowed_origin("http://localhost:3000")
             .allowed_origin("http://127.0.0.1:3000")
+            .allowed_origin("http://localhost:3001")
+            .allowed_origin("http://127.0.0.1:3001")
             .allowed_methods(vec!["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
-            .allowed_headers(vec![
-                header::AUTHORIZATION,
-                header::ACCEPT,
-                header::CONTENT_TYPE,
-            ])
+            .allow_any_header()
             .supports_credentials()
             .max_age(3600);
+
 
         App::new()
             .wrap(Logger::default())

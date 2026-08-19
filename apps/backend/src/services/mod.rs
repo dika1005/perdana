@@ -1,4 +1,5 @@
 pub mod addons;
+pub mod ai;
 pub mod auth;
 pub mod categories;
 pub mod customers;
@@ -8,6 +9,7 @@ pub mod raw_materials;
 pub mod reports;
 pub mod transactions;
 pub mod users;
+
 
 
 

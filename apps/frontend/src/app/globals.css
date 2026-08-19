@@ -13,31 +13,31 @@
 }
 
 :root {
-  --background: #e4e9f0;
-  --foreground: #1e293b;
-  --color-bg-skeuo: #e4e9f0;
-  --color-text-main: #1e293b;
-  --color-text-muted: #64748b;
+  --background: #f1f5f9;
+  --foreground: #0f172a;
+  --color-bg-skeuo: #ffffff;
+  --color-text-main: #0f172a;
+  --color-text-muted: #475569;
   
-  --shadow-skeuo: 8px 8px 16px rgba(163, 177, 198, 0.65), -8px -8px 16px rgba(255, 255, 255, 0.85);
-  --shadow-skeuo-sm: 4px 4px 8px rgba(163, 177, 198, 0.55), -4px -4px 8px rgba(255, 255, 255, 0.75);
-  --shadow-skeuo-inset: inset 4px 4px 8px rgba(163, 177, 198, 0.55), inset -4px -4px 8px rgba(255, 255, 255, 0.75);
-  --shadow-skeuo-active: inset 2px 2px 5px rgba(163, 177, 198, 0.65), inset -2px -2px 5px rgba(255, 255, 255, 0.75);
-  --border-skeuo: rgba(255, 255, 255, 0.4);
+  --shadow-skeuo: 0 4px 14px 0 rgba(0, 0, 0, 0.06), 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  --shadow-skeuo-sm: 0 2px 6px 0 rgba(0, 0, 0, 0.05);
+  --shadow-skeuo-inset: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  --shadow-skeuo-active: inset 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+  --border-skeuo: #e2e8f0;
 }
 
 .dark {
-  --background: #0f1218;
+  --background: #090d16;
   --foreground: #f8fafc;
-  --color-bg-skeuo: #171b24;
+  --color-bg-skeuo: #111827;
   --color-text-main: #f8fafc;
   --color-text-muted: #94a3b8;
   
-  --shadow-skeuo: 6px 6px 14px rgba(0, 0, 0, 0.55), -5px -5px 12px rgba(255, 255, 255, 0.035);
-  --shadow-skeuo-sm: 3px 3px 8px rgba(0, 0, 0, 0.45), -3px -3px 7px rgba(255, 255, 255, 0.03);
-  --shadow-skeuo-inset: inset 3px 3px 7px rgba(0, 0, 0, 0.6), inset -3px -3px 7px rgba(255, 255, 255, 0.03);
-  --shadow-skeuo-active: inset 2px 2px 4px rgba(0, 0, 0, 0.7), inset -2px -2px 4px rgba(255, 255, 255, 0.04);
-  --border-skeuo: rgba(255, 255, 255, 0.06);
+  --shadow-skeuo: 0 4px 20px 0 rgba(0, 0, 0, 0.45);
+  --shadow-skeuo-sm: 0 2px 8px 0 rgba(0, 0, 0, 0.35);
+  --shadow-skeuo-inset: inset 0 2px 4px 0 rgba(0, 0, 0, 0.5);
+  --shadow-skeuo-active: inset 0 2px 4px 0 rgba(0, 0, 0, 0.6);
+  --border-skeuo: #1e293b;
 }
 
 body {

@@ -26,7 +26,7 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 const menuItems = [
-  { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { name: 'Kasir POS', icon: ShoppingCart, path: '/pos' },
   { name: 'Job Tracking', icon: ClipboardList, path: '/tracking' },
   { name: 'Riwayat Transaksi', icon: History, path: '/transactions' },

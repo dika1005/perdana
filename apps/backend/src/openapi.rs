@@ -68,6 +68,7 @@ use entity::enums::*;
         routes::reports::inventory_mutations,
         routes::reports::receivables,
         routes::reports::low_stock,
+        routes::ai::parse_order,
     ),
     components(
         schemas(
@@ -87,6 +88,7 @@ use entity::enums::*;
             TransactionItemAddonResponse, TransactionItemResponse, TransactionResponse, InvoicePrintData,
             ReportDateQuery, DashboardSummaryResponse, DailySalesReportItem, TopProductReportItem,
             InventoryMutationReportItem, ReceivableItem, LowStockItem,
+            ParseOrderRequest, ParseOrderResponse, ParsedOrderItem,
         )
     ),
     modifiers(&SecurityAddon),
@@ -111,10 +113,12 @@ use entity::enums::*;
         (name = "Customers", description = "Data Pelanggan Percetakan"),
         (name = "POS Transactions", description = "Kasir, Checkout Atomik, DP, Order Tracking, dan Invoice"),
         (name = "Reports & Analytics", description = "Laporan Omset, Piutang, Grafik Penjualan, Top Produk, & Mutasi Bahan"),
+        (name = "AI Features", description = "Google AI Studio / Gemini Smart Order Parser"),
         (name = "Health", description = "Health check status server dan database")
     )
 )]
 pub struct ApiDoc;
+
 
 struct SecurityAddon;
 

@@ -3,7 +3,7 @@ import { Bell, Search } from 'lucide-react';
 
 export const Navbar = () => {
   return (
-    <header className="h-20 px-8 flex items-center justify-between mb-6">
+    <header className="h-16 px-6 sm:px-8 lg:px-10 flex items-center justify-between mb-2">
       <div className="flex-1 max-w-xl">
         <div className="flex items-center gap-3 px-4 py-3 skeuo-inset rounded-xl">
           <Search className="w-5 h-5 text-text-muted" />

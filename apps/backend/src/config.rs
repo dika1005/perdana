@@ -20,6 +20,14 @@ pub struct StoreConfig {
 }
 
 #[derive(Clone, Debug)]
+pub struct GeminiConfig {
+    pub api_key: Option<String>,
+    pub model: String,
+    pub fallback_model: String,
+}
+
+
+#[derive(Clone, Debug)]
 pub struct AppConfig {
     pub database_url: String,
     pub server_host: String,
@@ -28,7 +36,9 @@ pub struct AppConfig {
     pub jwt: JwtConfig,
     pub seed: SeedConfig,
     pub store: StoreConfig,
+    pub gemini: GeminiConfig,
 }
+
 
 impl AppConfig {
     pub fn from_env() -> Self {
@@ -72,6 +82,12 @@ impl AppConfig {
                 .unwrap_or_else(|_| "0812-3456-7890".to_string()),
         };
 
+        let gemini = GeminiConfig {
+            api_key: env::var("GEMINI_API_KEY").ok().filter(|s| !s.trim().is_empty()),
+            model: env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-2.5-flash-lite".to_string()),
+            fallback_model: env::var("GEMINI_FALLBACK_MODEL").unwrap_or_else(|_| "gemini-2.0-flash".to_string()),
+        };
+
         Self {
             database_url,
             server_host,
@@ -80,9 +96,11 @@ impl AppConfig {
             jwt,
             seed,
             store,
+            gemini,
         }
     }
 }
+
 
 pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr> {
     let mut options = ConnectOptions::new(database_url.to_owned());

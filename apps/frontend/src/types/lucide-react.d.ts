@@ -32,6 +32,8 @@ declare module 'lucide-react' {
   export const CheckCircle: LucideIcon;
   export const ChevronLeft: LucideIcon;
   export const ChevronRight: LucideIcon;
+  export const ChevronDown: LucideIcon;
+  export const ChevronUp: LucideIcon;
   export const DollarSign: LucideIcon;
   export const FileText: LucideIcon;
   export const AlertTriangle: LucideIcon;
@@ -49,11 +51,13 @@ declare module 'lucide-react' {
   export const UserX: LucideIcon;
   export const KeyRound: LucideIcon;
   export const ShieldCheck: LucideIcon;
+  export const Shield: LucideIcon;
   export const Lock: LucideIcon;
   export const Bell: LucideIcon;
   export const LayoutDashboard: LucideIcon;
   export const ClipboardList: LucideIcon;
   export const LogOut: LucideIcon;
+  export const LogIn: LucideIcon;
   export const Sun: LucideIcon;
   export const Moon: LucideIcon;
   export const Edit: LucideIcon;
@@ -62,9 +66,20 @@ declare module 'lucide-react' {
   export const ArrowUpDown: LucideIcon;
   export const ArrowUpRight: LucideIcon;
   export const ArrowDownRight: LucideIcon;
+  export const ArrowRight: LucideIcon;
   export const Phone: LucideIcon;
   export const MapPin: LucideIcon;
   export const ShoppingBag: LucideIcon;
   export const Sparkles: LucideIcon;
   export const FolderTree: LucideIcon;
+  export const ExternalLink: LucideIcon;
+  export const Star: LucideIcon;
+  export const Zap: LucideIcon;
+  export const MessageSquare: LucideIcon;
+  export const Image: LucideIcon;
+  export const FileCheck: LucideIcon;
+  export const Truck: LucideIcon;
+  export const HelpCircle: LucideIcon;
+  export const Award: LucideIcon;
+  export const Banknote: LucideIcon;
 }

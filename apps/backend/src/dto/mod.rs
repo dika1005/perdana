@@ -1,3 +1,4 @@
+pub mod ai;
 pub mod auth;
 pub mod categories;
 pub mod customers;
@@ -9,6 +10,7 @@ pub mod response;
 pub mod transactions;
 pub mod users;
 
+pub use ai::*;
 pub use auth::*;
 pub use categories::*;
 pub use customers::*;
@@ -19,3 +21,4 @@ pub use reports::*;
 pub use response::*;
 pub use transactions::*;
 pub use users::*;
+

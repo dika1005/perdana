@@ -19,7 +19,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await authService.login(username.trim(), password);
-      router.push('/');
+      router.push('/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
       setError(

@@ -1,11 +1,13 @@
 use actix_web::web;
 
 pub mod addons;
+pub mod ai;
 pub mod auth;
 pub mod categories;
 pub mod customers;
 pub mod health;
 pub mod products;
+pub mod public;
 pub mod raw_materials;
 pub mod reports;
 pub mod transactions;
@@ -13,6 +15,10 @@ pub mod users;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("/health", web::get().to(health::health_check))
+        .service(
+            web::scope("/public")
+                .route("/catalog", web::get().to(public::catalog)),
+        )
         .service(
             web::scope("/auth")
                 .route("/login", web::post().to(auth::login))
@@ -131,6 +137,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 )
                 .route("/receivables", web::get().to(reports::receivables))
                 .route("/low-stock", web::get().to(reports::low_stock)),
+        )
+        .service(
+            web::scope("/ai")
+                .route("/parse-order", web::post().to(ai::parse_order)),
         );
 }
 
