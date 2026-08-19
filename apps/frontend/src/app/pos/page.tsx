@@ -325,8 +325,8 @@ export default function POSPage() {
                     </button>
                   </div>
 
-                  {/* Kalkulator Meteran Spanduk / Banner (Jika satuan meter/m2) */}
-                  {(item.product.unit_name?.toLowerCase().includes('meter') || item.product.name.toLowerCase().includes('banner') || item.product.name.toLowerCase().includes('spanduk')) && (
+                  {/* Kalkulator Meteran Spanduk / Banner (Jika satuan meter/m2 atau produk custom) */}
+                  {(item.product.price_type === 'CUSTOM' || item.product.unit_name?.toLowerCase().includes('meter') || item.product.unit_name?.toLowerCase().includes('m2') || item.product.name.toLowerCase().includes('banner') || item.product.name.toLowerCase().includes('spanduk')) && (
                     <div className="p-2 rounded-lg bg-black/5 dark:bg-white/5 flex items-center gap-1.5 text-[10px] text-text-muted">
                       <Calculator className="w-3 h-3 text-brand-500" />
                       <span>Ukuran (P×L):</span>
@@ -500,7 +500,7 @@ export default function POSPage() {
             </div>
 
             {/* Thermal Slip Preview */}
-            <div className="bg-white text-black p-4 font-mono text-[11px] leading-tight rounded-lg shadow-inner mb-4 space-y-2 border border-slate-300">
+            <div id="thermal-receipt" className="bg-white text-black p-4 font-mono text-[11px] leading-tight rounded-lg shadow-inner mb-4 space-y-2 border border-slate-300">
               <div className="text-center pb-2 border-b border-dashed border-slate-400">
                 <p className="font-bold text-sm">{invoiceData.store_name || 'PERDANA PERCETAKAN'}</p>
                 <p className="text-[10px] text-slate-600">{invoiceData.store_address || 'Jl. Raya Percetakan No. 88'}</p>

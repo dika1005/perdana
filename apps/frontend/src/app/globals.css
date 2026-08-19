@@ -104,3 +104,38 @@ body {
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.1);
 }
+
+/* Thermal Receipt Print Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  #thermal-receipt, #thermal-receipt * {
+    visibility: visible;
+  }
+  
+  #thermal-receipt {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 80mm !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10px !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: monospace, Courier, monospace !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    z-index: 999999;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 0mm;
+  }
+}
+
