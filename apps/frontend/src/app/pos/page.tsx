@@ -11,13 +11,13 @@ import { Customer } from '../../types/customer';
 import { PaymentStatus } from '../../types/transaction';
 
 // Modular POS Components
-import { CartItem } from '../../components/pos/types';
 import { ProductCatalog } from '../../components/pos/ProductCatalog';
 import { CartSidebar } from '../../components/pos/CartSidebar';
 import { CheckoutModal } from '../../components/pos/CheckoutModal';
 import { BannerCalculatorModal } from '../../components/pos/BannerCalculatorModal';
 import { AISmartOrderModal } from '../../components/pos/AISmartOrderModal';
 import { ReceiptModal } from '../../components/pos/ReceiptModal';
+import { CartItem } from '../../components/pos/types';
 
 export default function POSPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,22 +26,26 @@ export default function POSPage() {
   const [activeCategoryId, setActiveCategoryId] = useState<number | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Checkout modal / state
+  // Cart State
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customCustomerName, setCustomCustomerName] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
+
+  // Checkout Modal State
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PAID');
   const [payAmount, setPayAmount] = useState<number>(0);
-  const [discountAmount, setDiscountAmount] = useState<number>(0);
-  const [estimatedDoneAt, setEstimatedDoneAt] = useState<string>('');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PAID');
+  const [estimatedDoneAt, setEstimatedDoneAt] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Receipt Modal State
   const [invoiceData, setInvoiceData] = useState<any | null>(null);
 
-  // Modals visibility
-  const [showAIModal, setShowAIModal] = useState(false);
+  // Tools Modal State
   const [showCalcModal, setShowCalcModal] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   const fetchCatalog = async () => {
     setLoading(true);
@@ -74,15 +78,20 @@ export default function POSPage() {
   };
 
   const addToCart = (product: Product) => {
-    const defaultPrice = Number(product.default_price) || 0;
+    let initialPrice = Number(product.default_price) || 0;
+    if (product.price_type === 'RANGE' && initialPrice <= 0) {
+      initialPrice = Number(product.min_price) || 0;
+    }
+    const initialQty = Number(product.min_order) > 0 ? Number(product.min_order) : 1;
+
     const existing = cart.find(item => item.product.id === product.id);
     if (existing) {
       setCart(cart.map(item => item.product.id === product.id ? { ...item, qty: item.qty + 1 } : item));
     } else {
       setCart([...cart, { 
         product, 
-        qty: product.min_order || 1, 
-        price: defaultPrice,
+        qty: initialQty, 
+        price: initialPrice,
         length: 1,
         width: 1
       }]);
@@ -92,8 +101,13 @@ export default function POSPage() {
   const updateQty = (id: number, delta: number) => {
     setCart(cart.map(item => {
       if (item.product.id === id) {
+        const minOrder = Number(item.product.min_order) || 1;
         const newQty = item.qty + delta;
-        return newQty > 0 ? { ...item, qty: newQty } : item;
+        if (newQty < minOrder) {
+          alert(`Kuantitas produk "${item.product.name}" minimal ${minOrder} ${item.product.unit_name || 'pcs'}`);
+          return item;
+        }
+        return { ...item, qty: newQty };
       }
       return item;
     }));
@@ -102,7 +116,7 @@ export default function POSPage() {
   const updatePrice = (id: number, price: number) => {
     setCart(cart.map(item => {
       if (item.product.id === id) {
-        return { ...item, price };
+        return { ...item, price: Math.max(0, price) };
       }
       return item;
     }));
@@ -135,7 +149,34 @@ export default function POSPage() {
   const total = Math.max(0, subtotal - discountAmount);
 
   const handleOpenCheckout = () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      alert('Keranjang belanja masih kosong');
+      return;
+    }
+
+    // Validasi harga range dan harga 0
+    for (const item of cart) {
+      if (item.price <= 0) {
+        alert(`Harga untuk produk "${item.product.name}" belum diisi (masih Rp 0). Silakan masukkan harga terlebih dahulu.`);
+        return;
+      }
+
+      if (item.product.price_type === 'RANGE') {
+        const minP = Number(item.product.min_price) || 0;
+        const maxP = Number(item.product.max_price) || 0;
+        if (item.price < minP || item.price > maxP) {
+          alert(`Harga produk "${item.product.name}" harus di antara Rp ${minP.toLocaleString('id-ID')} dan Rp ${maxP.toLocaleString('id-ID')}`);
+          return;
+        }
+      }
+
+      const minOrder = Number(item.product.min_order) || 1;
+      if (item.qty < minOrder) {
+        alert(`Kuantitas produk "${item.product.name}" minimal ${minOrder} ${item.product.unit_name || 'pcs'}`);
+        return;
+      }
+    }
+
     setPayAmount(total);
     setShowCheckoutModal(true);
   };
@@ -150,7 +191,7 @@ export default function POSPage() {
         discount_amount: discountAmount > 0 ? discountAmount : undefined,
         pay_amount: payAmount,
         payment_status: paymentStatus,
-        estimated_done_at: estimatedDoneAt || undefined,
+        estimated_done_at: estimatedDoneAt.trim() ? estimatedDoneAt : undefined,
         items: cart.map(item => ({
           product_id: item.product.id,
           custom_price: item.price,
@@ -168,9 +209,22 @@ export default function POSPage() {
       }
 
       setCart([]);
+      setDiscountAmount(0);
+      setCustomCustomerName('');
+      setSelectedCustomer(null);
       setShowCheckoutModal(false);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal memproses transaksi');
+      const errData = err?.response?.data;
+      let msg = errData?.message || 'Gagal memproses transaksi';
+      if (errData?.errors && typeof errData.errors === 'object') {
+        const details = Object.entries(errData.errors)
+          .map(([field, errs]) => Array.isArray(errs) ? errs.join(', ') : errs)
+          .join('\n');
+        if (details) {
+          msg = `${msg}:\n• ${details}`;
+        }
+      }
+      alert(msg);
     } finally {
       setSubmitting(false);
     }
@@ -258,12 +312,25 @@ export default function POSPage() {
         onSubmit={handleProcessTransaction}
       />
 
-      {/* Banner / Spanduk Calculator Modal */}
+      {/* Banner Spanduk Meteran Calculator Modal */}
       <BannerCalculatorModal
         isOpen={showCalcModal}
         onClose={() => setShowCalcModal(false)}
         products={products}
-        onAddToCart={(item) => setCart(prev => [...prev, item])}
+        onAddToCart={item => {
+          const existing = cart.find(c => c.product.id === item.product.id);
+          if (existing) {
+            setCart(cart.map(c => c.product.id === item.product.id ? { 
+              ...c, 
+              qty: c.qty + item.qty, 
+              price: item.price,
+              length: item.length,
+              width: item.width
+            } : c));
+          } else {
+            setCart([...cart, item]);
+          }
+        }}
       />
 
       {/* AI Smart Order Modal */}
@@ -274,7 +341,7 @@ export default function POSPage() {
         onApplyItems={handleApplyAIItems}
       />
 
-      {/* Printable Thermal Receipt Slip Modal */}
+      {/* Thermal Receipt Print Modal */}
       <ReceiptModal
         invoiceData={invoiceData}
         onClose={() => setInvoiceData(null)}

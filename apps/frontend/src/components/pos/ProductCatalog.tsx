@@ -43,7 +43,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
           <Search className="w-5 h-5 text-text-muted shrink-0" />
           <input 
             type="text" 
-            placeholder="Cari produk... (contoh: Spanduk, Kartu Nama, Brosur)" 
+            placeholder="Cari produk... (contoh: Spanduk, Kartu Nama, Undangan, Brosur)" 
             className="bg-transparent border-none outline-none w-full text-sm text-text-main placeholder:text-text-muted/60"
             value={searchTerm}
             onChange={e => onSearchTermChange(e.target.value)}
@@ -130,7 +130,12 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
             {products.map(product => {
               const inCartItem = cart.find(c => c.product.id === product.id);
-              const isCustom = product.price_type === 'CUSTOM' || product.unit_name?.toLowerCase().includes('meter');
+              const isMeteran = product.price_type === 'CUSTOM' || product.unit_name?.toLowerCase().includes('meter');
+              const isRange = product.price_type === 'RANGE';
+
+              const priceDisplay = isRange
+                ? `Rp ${Number(product.min_price).toLocaleString('id-ID')} - ${Number(product.max_price).toLocaleString('id-ID')}`
+                : `Rp ${Number(product.default_price).toLocaleString('id-ID')}`;
 
               return (
                 <div 
@@ -152,9 +157,14 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                       <div className="w-9 h-9 rounded-lg skeuo-inset flex items-center justify-center font-bold text-brand-600 text-sm bg-brand-50/50">
                         {product.name.charAt(0)}
                       </div>
-                      {isCustom && (
+                      {isMeteran && (
                         <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                          Ukuran Meteran
+                          Meteran
+                        </span>
+                      )}
+                      {isRange && (
+                        <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                          Harga Rentang
                         </span>
                       )}
                     </div>
@@ -167,9 +177,12 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                   <div className="mt-3 pt-2.5 border-t border-black/5 dark:border-white/5 flex items-end justify-between">
                     <div>
                       <p className="text-brand-600 font-extrabold text-sm">
-                        Rp {Number(product.default_price).toLocaleString('id-ID')}
+                        {priceDisplay}
                       </p>
-                      <span className="text-[11px] text-text-muted">/ {product.unit_name || 'pcs'}</span>
+                      <span className="text-[11px] text-text-muted">
+                        / {product.unit_name || 'pcs'}
+                        {product.min_order && product.min_order > 1 ? ` (Min. ${product.min_order})` : ''}
+                      </span>
                     </div>
                     <div className="w-7 h-7 rounded-lg skeuo-sm flex items-center justify-center text-brand-600 group-hover:bg-brand-500 group-hover:text-white transition-colors">
                       <Plus className="w-4 h-4" />

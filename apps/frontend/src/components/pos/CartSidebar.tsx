@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ShoppingCart, User, Trash2, Calculator, Minus, Plus, Banknote, CreditCard } from 'lucide-react';
+import { ShoppingCart, User, Trash2, Calculator, Minus, Plus, Banknote, CreditCard, Tag } from 'lucide-react';
 import { Customer } from '../../types/customer';
 import { CartItem } from './types';
 
@@ -43,7 +43,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   onOpenCheckout,
 }) => {
   return (
-    <div className="w-full lg:w-[420px] flex flex-col skeuo p-4 shrink-0 h-[calc(100vh-140px)] bg-bg-skeuo">
+    <div className="w-full lg:w-[430px] flex flex-col skeuo p-4 shrink-0 h-[calc(100vh-140px)] bg-bg-skeuo">
       {/* Cart Header */}
       <div className="flex items-center justify-between pb-3 border-b border-black/5 dark:border-white/10">
         <div className="flex items-center gap-2">
@@ -107,23 +107,57 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
           </div>
         ) : (
           cart.map((item) => {
-            const isCustom = item.product.price_type === 'CUSTOM' || 
+            const isMeteran = item.product.price_type === 'CUSTOM' || 
               item.product.unit_name?.toLowerCase().includes('meter') || 
               item.product.name.toLowerCase().includes('banner') || 
               item.product.name.toLowerCase().includes('spanduk');
+
+            const isRange = item.product.price_type === 'RANGE';
+            const isCustom = item.product.price_type === 'CUSTOM';
+            const minOrder = Number(item.product.min_order) || 1;
 
             return (
               <div key={item.product.id} className="skeuo-inset p-3.5 rounded-xl flex flex-col gap-2.5 bg-white/30 dark:bg-black/20">
                 <div className="flex justify-between items-start">
                   <div className="flex-1 pr-2">
-                    <h4 className="font-bold text-text-main text-sm">{item.product.name}</h4>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-xs text-text-muted">Harga:</span>
-                      <span className="font-mono font-bold text-xs text-text-main">
-                        Rp {item.price.toLocaleString('id-ID')}
-                      </span>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="font-bold text-text-main text-sm">{item.product.name}</h4>
+                      {minOrder > 1 && (
+                        <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold px-1.5 py-0.5 rounded">
+                          Min. {minOrder} {item.product.unit_name}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Harga Satuan (Bisa diedit jika tipe RANGE atau CUSTOM) */}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="text-text-muted">Harga satuan:</span>
+                      {isRange || (isCustom && !isMeteran) ? (
+                        <div className="flex items-center gap-1 bg-white/60 dark:bg-black/40 px-2 py-0.5 rounded-lg border border-black/10">
+                          <span className="font-bold text-text-muted text-[11px]">Rp</span>
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.price || ''}
+                            onChange={e => onUpdatePrice(item.product.id, Number(e.target.value))}
+                            className="w-24 text-xs font-mono font-bold bg-transparent outline-none text-text-main"
+                            placeholder="0"
+                          />
+                        </div>
+                      ) : (
+                        <span className="font-mono font-bold text-text-main">
+                          Rp {item.price.toLocaleString('id-ID')}
+                        </span>
+                      )}
+
+                      {isRange && (
+                        <span className="text-[10px] text-text-muted opacity-80">
+                          ({Number(item.product.min_price).toLocaleString('id-ID')} - {Number(item.product.max_price).toLocaleString('id-ID')})
+                        </span>
+                      )}
                     </div>
                   </div>
+
                   <button 
                     onClick={() => onRemoveFromCart(item.product.id)} 
                     className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
@@ -134,11 +168,11 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                 </div>
 
                 {/* Dimensi Meteran (Spanduk / Banner) */}
-                {isCustom && (
+                {isMeteran && (
                   <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm">
                     <div className="flex items-center gap-1.5 mb-2">
                       <Calculator className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                      <span className="font-bold text-xs text-amber-700 dark:text-amber-300">Ukuran (meter):</span>
+                      <span className="font-bold text-xs text-amber-700 dark:text-amber-300">Ukuran Spanduk (meter):</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
@@ -186,7 +220,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-8 text-center text-sm font-bold font-mono">{item.qty}</span>
+                    <span className="w-9 text-center text-sm font-bold font-mono">{item.qty}</span>
                     <button 
                       onClick={() => onUpdateQty(item.product.id, 1)} 
                       className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-text-main font-bold transition-colors"
@@ -233,7 +267,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
 
         <button 
           type="button"
-          disabled={cart.length === 0}
+          disabled={cart.length === 0 || total <= 0}
           onClick={onOpenCheckout}
           className="w-full py-3.5 mt-1 font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-brand-500 hover:from-emerald-600 hover:to-brand-600 text-white text-sm flex items-center justify-center gap-2.5 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all"
         >
