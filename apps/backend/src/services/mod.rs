@@ -9,6 +9,8 @@ pub mod raw_materials;
 pub mod reports;
 pub mod transactions;
 pub mod users;
+pub mod expenses;
+
 
 
 

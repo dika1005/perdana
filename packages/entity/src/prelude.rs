@@ -10,3 +10,5 @@ pub use super::transaction_item_addons::Entity as TransactionItemAddon;
 pub use super::transaction_items::Entity as TransactionItem;
 pub use super::transactions::Entity as Transaction;
 pub use super::users::Entity as User;
+pub use super::expenses::Entity as Expense;
+

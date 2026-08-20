@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, CreditCard, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, CreditCard, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+
 import { reportService } from '../../services/reportService';
 import { DailySalesReport, DashboardSummary, TopProductReport } from '../../types/report';
 
@@ -92,7 +93,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         <StatCard 
           title="Total Omset" 
           value={`Rp ${(summary?.total_omset || 0).toLocaleString('id-ID')}`} 
@@ -101,27 +102,42 @@ export default function Dashboard() {
           subtitle={`${summary?.total_transactions || 0} transaksi`}
         />
         <StatCard 
-          title="Total Piutang (DP/Unpaid)" 
+          title="Total Pengeluaran" 
+          value={`Rp ${(summary?.total_expenses || 0).toLocaleString('id-ID')}`} 
+          icon={TrendingDown} 
+          colorClass="text-red-500" 
+          subtitle="Biaya & operasional"
+        />
+        <StatCard 
+          title="Laba Bersih" 
+          value={`Rp ${(summary?.net_profit || 0).toLocaleString('id-ID')}`} 
+          icon={TrendingUp} 
+          colorClass={(summary?.net_profit || 0) >= 0 ? "text-emerald-500" : "text-red-500"} 
+          subtitle="Omset - Pengeluaran"
+        />
+        <StatCard 
+          title="Total Piutang" 
           value={`Rp ${(summary?.total_piutang || 0).toLocaleString('id-ID')}`} 
           icon={CreditCard} 
           colorClass="text-amber-500" 
-          subtitle={`${(summary?.dp_transactions || 0) + (summary?.unpaid_transactions || 0)} pesanan`}
+          subtitle={`${(summary?.dp_transactions || 0) + (summary?.unpaid_transactions || 0)} belum lunas`}
         />
         <StatCard 
           title="Pesanan Aktif" 
           value={`${summary?.active_orders || 0}`} 
           icon={Clock} 
-          colorClass="text-emerald-500" 
+          colorClass="text-blue-500" 
           subtitle={`${summary?.ready_orders || 0} siap diambil`}
         />
         <StatCard 
           title="Bahan Menipis" 
           value={`${summary?.low_stock_raw_materials_count || 0} Item`} 
           icon={AlertTriangle} 
-          colorClass="text-red-500" 
-          subtitle="Perlu restock segera"
+          colorClass="text-rose-500" 
+          subtitle="Perlu restock"
         />
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}

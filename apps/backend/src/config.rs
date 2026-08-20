@@ -103,6 +103,8 @@ impl AppConfig {
 
 
 pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr> {
+    use sea_orm::ConnectionTrait;
+
     let mut options = ConnectOptions::new(database_url.to_owned());
     options
         .max_connections(20)
@@ -114,8 +116,26 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     let db = Database::connect(options).await?;
     db.ping().await?;
     log::info!("Database MySQL/MariaDB berhasil terhubung");
+
+    let create_expenses_sql = r#"
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(200) NOT NULL,
+            category ENUM('BAHAN_BAKU', 'OPERASIONAL', 'MAINTENANCE', 'GAJI', 'LAINNYA') NOT NULL DEFAULT 'OPERASIONAL',
+            amount DECIMAL(12, 2) NOT NULL,
+            payment_method ENUM('CASH', 'TRANSFER') NOT NULL DEFAULT 'CASH',
+            notes TEXT DEFAULT NULL,
+            expense_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_by INT DEFAULT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+        );
+    "#;
+    let _ = db.execute_unprepared(create_expenses_sql).await;
+
     Ok(db)
 }
+
 
 fn env_i64(key: &str, default: i64) -> i64 {
     env::var(key)

@@ -1,5 +1,7 @@
 export interface DashboardSummary {
   total_omset: number;
+  total_expenses: number;
+  net_profit: number;
   total_transactions: number;
   paid_transactions: number;
   dp_transactions: number;
@@ -9,6 +11,7 @@ export interface DashboardSummary {
   ready_orders: number;
   low_stock_raw_materials_count: number;
 }
+
 
 export interface DailySalesReport {
   date: string;

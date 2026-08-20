@@ -14,3 +14,5 @@ pub mod transaction_item_addons;
 pub mod transaction_items;
 pub mod transactions;
 pub mod users;
+pub mod expenses;
+

@@ -106,3 +106,37 @@ pub enum OrderStatus {
     #[serde(alias = "diambil", alias = "Diambil")]
     Diambil,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, ToSchema)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "expense_category")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ExpenseCategory {
+    #[sea_orm(string_value = "BAHAN_BAKU")]
+    #[serde(alias = "bahan_baku", alias = "BahanBaku")]
+    BahanBaku,
+    #[sea_orm(string_value = "OPERASIONAL")]
+    #[serde(alias = "operasional", alias = "Operasional")]
+    Operasional,
+    #[sea_orm(string_value = "MAINTENANCE")]
+    #[serde(alias = "maintenance", alias = "Maintenance")]
+    Maintenance,
+    #[sea_orm(string_value = "GAJI")]
+    #[serde(alias = "gaji", alias = "Gaji")]
+    Gaji,
+    #[sea_orm(string_value = "LAINNYA")]
+    #[serde(alias = "lainnya", alias = "Lainnya")]
+    Lainnya,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, ToSchema)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "expense_payment_method")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ExpensePaymentMethod {
+    #[sea_orm(string_value = "CASH")]
+    #[serde(alias = "cash", alias = "Cash")]
+    Cash,
+    #[sea_orm(string_value = "TRANSFER")]
+    #[serde(alias = "transfer", alias = "Transfer")]
+    Transfer,
+}
+

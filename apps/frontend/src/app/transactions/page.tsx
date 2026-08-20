@@ -16,7 +16,8 @@ import {
   User, 
   CheckCircle2, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  Check
 } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
 import { OrderStatus, PaymentStatus } from '../../types/transaction';
@@ -40,6 +41,11 @@ export default function TransactionsHistoryPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [invoicePrintData, setInvoicePrintData] = useState<any | null>(null);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
+
+  // Modal Pelunasan DP Instan
+  const [settleModal, setSettleModal] = useState<{ open: boolean; item?: any | null }>({ open: false });
+  const [settlePayAmount, setSettlePayAmount] = useState<number>(0);
+  const [submittingSettle, setSubmittingSettle] = useState(false);
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -101,16 +107,51 @@ export default function TransactionsHistoryPage() {
     }
   };
 
+  const handleOpenSettle = (t: any) => {
+    const remaining = Number(t.total_amount) - Number(t.pay_amount);
+    setSettleModal({ open: true, item: t });
+    setSettlePayAmount(remaining > 0 ? remaining : 0);
+  };
+
+  const handleSettlePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settleModal.item) return;
+
+    const remaining = Number(settleModal.item.total_amount) - Number(settleModal.item.pay_amount);
+    if (settlePayAmount <= 0) {
+      alert('Jumlah bayar pelunasan harus lebih dari 0');
+      return;
+    }
+
+    setSubmittingSettle(true);
+    try {
+      const newStatus = settlePayAmount >= remaining ? 'PAID' : 'DP';
+      await transactionService.updatePayment(settleModal.item.id, settlePayAmount, newStatus);
+      
+      const settledId = settleModal.item.id;
+      setSettleModal({ open: false });
+      alert('Pelunasan berhasil dicatat!');
+      await fetchTransactions();
+      
+      // Prompt print receipt
+      handlePrintInvoice(settledId);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Gagal memproses pelunasan');
+    } finally {
+      setSubmittingSettle(false);
+    }
+  };
+
   const triggerBrowserPrint = () => {
     window.print();
   };
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-end mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-text-main mb-1">Riwayat Transaksi Penjualan</h1>
-          <p className="text-text-muted text-sm">Arsip lengkap transaksi, nota pelanggan, dan status pengerjaan.</p>
+          <p className="text-text-muted text-sm">Arsip lengkap transaksi, nota pelanggan, pelunasan DP, dan status pengerjaan.</p>
         </div>
         <button 
           onClick={fetchTransactions} 
@@ -128,7 +169,7 @@ export default function TransactionsHistoryPage() {
       )}
 
       {/* Filter Bar */}
-      <div className="skeuo p-6 mb-6">
+      <div className="skeuo p-5 mb-6">
         <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="lg:col-span-2 flex items-center gap-3 px-4 py-2.5 skeuo-inset rounded-xl">
             <Search className="w-4 h-4 text-text-muted" />
@@ -137,7 +178,7 @@ export default function TransactionsHistoryPage() {
               placeholder="Cari no. invoice / nama pelanggan..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="bg-transparent border-none outline-none w-full text-xs text-text-main"
+              className="bg-transparent border-none outline-none w-full text-xs text-text-main placeholder:text-text-muted/70"
             />
           </div>
 
@@ -187,7 +228,7 @@ export default function TransactionsHistoryPage() {
                 <th className="pb-3">Pelanggan</th>
                 <th className="pb-3">Kasir</th>
                 <th className="pb-3">Status Bayar</th>
-                <th className="pb-3">Status Pengerjaan</th>
+                <th className="pb-3">Status Cetak</th>
                 <th className="pb-3">Total (Rp)</th>
                 <th className="pb-3 text-right">Aksi</th>
               </tr>
@@ -206,47 +247,76 @@ export default function TransactionsHistoryPage() {
                   </td>
                 </tr>
               ) : (
-                transactions.map(t => (
-                  <tr key={t.id} className="border-b border-text-muted/10 last:border-0 hover:bg-white/10 transition-colors">
-                    <td className="py-3 font-mono font-bold text-text-main text-xs">{t.invoice_number}</td>
-                    <td className="py-3 text-text-muted text-xs">
-                      {new Date(t.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="py-3 font-bold text-text-main text-xs">{t.customer_name || 'Umum'}</td>
-                    <td className="py-3 text-text-muted text-xs">{t.cashier_name || 'Kasir'}</td>
-                    <td className="py-3">
-                      {t.payment_status === 'PAID' && <span className="px-2 py-0.5 rounded text-[11px] font-bold text-emerald-600 bg-emerald-50 skeuo-inset">Lunas</span>}
-                      {t.payment_status === 'DP' && <span className="px-2 py-0.5 rounded text-[11px] font-bold text-amber-500 bg-amber-50 skeuo-inset">DP</span>}
-                      {t.payment_status === 'UNPAID' && <span className="px-2 py-0.5 rounded text-[11px] font-bold text-red-500 bg-red-50 skeuo-inset">Belum Bayar</span>}
-                    </td>
-                    <td className="py-3">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold text-slate-600 skeuo-inset">
-                        {t.order_status}
-                      </span>
-                    </td>
-                    <td className="py-3 font-bold text-brand-600 text-xs">
-                      Rp {Number(t.total_amount).toLocaleString('id-ID')}
-                    </td>
-                    <td className="py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleViewDetail(t.id)}
-                          className="w-8 h-8 flex items-center justify-center skeuo-button text-brand-500 rounded-lg"
-                          title="Lihat Rincian Item"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handlePrintInvoice(t.id)}
-                          className="w-8 h-8 flex items-center justify-center skeuo-button text-emerald-600 rounded-lg"
-                          title="Cetak Ulang Nota"
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                transactions.map(t => {
+                  const isDP = t.payment_status === 'DP' || t.payment_status === 'UNPAID';
+                  const remaining = Number(t.total_amount) - Number(t.pay_amount);
+
+                  return (
+                    <tr key={t.id} className="border-b border-text-muted/10 last:border-0 hover:bg-white/10 transition-colors">
+                      <td className="py-3 font-mono font-bold text-text-main text-xs">{t.invoice_number}</td>
+                      <td className="py-3 text-text-muted text-xs whitespace-nowrap">
+                        {new Date(t.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="py-3 font-bold text-text-main text-xs">{t.customer_name || 'Umum'}</td>
+                      <td className="py-3 text-text-muted text-xs">{t.cashier_name || 'Kasir'}</td>
+                      <td className="py-3 whitespace-nowrap">
+                        {t.payment_status === 'PAID' && (
+                          <span className="px-2 py-0.5 rounded text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 skeuo-inset">
+                            Lunas
+                          </span>
+                        )}
+                        {t.payment_status === 'DP' && (
+                          <div className="flex flex-col">
+                            <span className="px-2 py-0.5 rounded text-[11px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-950/40 skeuo-inset inline-block w-max">
+                              DP (Kurang Rp {remaining.toLocaleString('id-ID')})
+                            </span>
+                          </div>
+                        )}
+                        {t.payment_status === 'UNPAID' && (
+                          <span className="px-2 py-0.5 rounded text-[11px] font-bold text-red-500 bg-red-50 dark:bg-red-950/40 skeuo-inset">
+                            Belum Bayar
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-bold text-slate-600 dark:text-slate-300 skeuo-inset">
+                          {t.order_status}
+                        </span>
+                      </td>
+                      <td className="py-3 font-bold text-brand-600 text-xs whitespace-nowrap">
+                        Rp {Number(t.total_amount).toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-3 text-right whitespace-nowrap">
+                        <div className="flex justify-end items-center gap-2">
+                          {isDP && (
+                            <button
+                              onClick={() => handleOpenSettle(t)}
+                              className="px-2.5 py-1.5 flex items-center gap-1.5 skeuo-button text-amber-500 hover:text-amber-600 rounded-lg text-xs font-bold"
+                              title="Pelunasan Sisa DP"
+                            >
+                              <CreditCard className="w-3.5 h-3.5" />
+                              <span>Lunasi</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleViewDetail(t.id)}
+                            className="w-8 h-8 flex items-center justify-center skeuo-button text-brand-500 rounded-lg"
+                            title="Lihat Rincian Item"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handlePrintInvoice(t.id)}
+                            className="w-8 h-8 flex items-center justify-center skeuo-button text-emerald-600 rounded-lg"
+                            title="Cetak Ulang Nota"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -274,6 +344,88 @@ export default function TransactionsHistoryPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal Pelunasan DP */}
+      {settleModal.open && settleModal.item && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="skeuo p-6 sm:p-8 w-full max-w-md">
+            <div className="flex justify-between items-start mb-6 pb-2 border-b border-black/10">
+              <div>
+                <h2 className="text-xl font-bold text-text-main flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-amber-500" /> Pelunasan Tagihan DP
+                </h2>
+                <p className="text-xs text-text-muted mt-0.5 font-mono">
+                  {settleModal.item.invoice_number} • {settleModal.item.customer_name || 'Umum'}
+                </p>
+              </div>
+              <button onClick={() => setSettleModal({ open: false })} className="text-text-muted hover:text-text-main">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSettlePayment} className="space-y-4">
+              <div className="p-4 rounded-xl skeuo-inset text-xs space-y-2">
+                <div className="flex justify-between text-text-muted">
+                  <span>Total Tagihan</span>
+                  <span className="font-bold text-text-main">Rp {Number(settleModal.item.total_amount).toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between text-text-muted">
+                  <span>Sudah Dibayar (DP)</span>
+                  <span className="font-bold text-emerald-600">Rp {Number(settleModal.item.pay_amount).toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold text-red-500 pt-2 border-t border-black/5">
+                  <span>Sisa Kurang Bayar</span>
+                  <span>Rp {(Number(settleModal.item.total_amount) - Number(settleModal.item.pay_amount)).toLocaleString('id-ID')}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-text-main mb-1">
+                  Jumlah Bayar Pelunasan (Rp) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={settlePayAmount}
+                  onChange={e => setSettlePayAmount(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 rounded-xl skeuo-inset text-sm text-text-main outline-none bg-transparent font-bold text-brand-600"
+                />
+              </div>
+
+              {/* Kembalian calculation */}
+              {settlePayAmount > (Number(settleModal.item.total_amount) - Number(settleModal.item.pay_amount)) && (
+                <div className="p-3 rounded-xl skeuo-inset bg-emerald-50/50 text-emerald-600 text-xs flex justify-between font-bold">
+                  <span>Uang Kembalian</span>
+                  <span>Rp {(settlePayAmount - (Number(settleModal.item.total_amount) - Number(settleModal.item.pay_amount))).toLocaleString('id-ID')}</span>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setSettleModal({ open: false })}
+                  className="flex-1 py-2.5 font-bold skeuo-button text-text-muted text-xs rounded-xl"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingSettle}
+                  className="flex-1 py-2.5 font-bold skeuo-button-primary bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-xl flex items-center justify-center gap-2"
+                >
+                  {submittingSettle ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5" />
+                  )}
+                  Proses Pelunasan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal Detail Transaksi */}
       {selectedTransaction && (

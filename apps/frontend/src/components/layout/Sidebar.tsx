@@ -14,35 +14,48 @@ import {
   History, 
   Tag, 
   UserCog, 
+  Wallet,
   Sun, 
-  Moon 
+  Moon,
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { authService } from '../../services/authService';
+import { authService, UserProfile } from '../../services/authService';
 
 export function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-const menuItems = [
-  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+interface MenuItem {
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  path: string;
+  superAdminOnly?: boolean;
+}
+
+const allMenuItems: MenuItem[] = [
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', superAdminOnly: true },
   { name: 'Kasir POS', icon: ShoppingCart, path: '/pos' },
   { name: 'Job Tracking', icon: ClipboardList, path: '/tracking' },
   { name: 'Riwayat Transaksi', icon: History, path: '/transactions' },
-  { name: 'Master Produk', icon: Tag, path: '/products' },
-  { name: 'Inventaris Bahan', icon: Package, path: '/inventory' },
+  { name: 'Kas Keluar', icon: Wallet, path: '/expenses' },
+  { name: 'Master Produk', icon: Tag, path: '/products', superAdminOnly: true },
+  { name: 'Inventaris Bahan', icon: Package, path: '/inventory', superAdminOnly: true },
   { name: 'Pelanggan', icon: Users, path: '/customers' },
-  { name: 'Laporan', icon: FileText, path: '/reports' },
-  { name: 'Kelola Kasir', icon: UserCog, path: '/users' },
+  { name: 'Laporan', icon: FileText, path: '/reports', superAdminOnly: true },
+  { name: 'Kelola Kasir', icon: UserCog, path: '/users', superAdminOnly: true },
 ];
 
 export const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
+    // 1. Theme sync
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
@@ -52,7 +65,26 @@ export const Sidebar = () => {
       setIsDarkMode(false);
       document.documentElement.classList.remove('dark');
     }
-  }, []);
+
+    // 2. Fetch logged in user profile
+    const fetchMe = async () => {
+      try {
+        const u = await authService.me();
+        setUser(u);
+
+        // Client-side route protection for Kasir (ADMIN)
+        if (u.role === 'ADMIN') {
+          const restrictedPaths = ['/dashboard', '/reports', '/users', '/products', '/inventory'];
+          if (restrictedPaths.includes(pathname)) {
+            router.replace('/pos');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user:', err);
+      }
+    };
+    fetchMe();
+  }, [pathname, router]);
 
   const toggleTheme = () => {
     if (isDarkMode) {
@@ -76,9 +108,19 @@ export const Sidebar = () => {
     }
   };
 
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+
+  const menuItems = allMenuItems.filter(item => {
+    if (item.superAdminOnly && !isSuperAdmin) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <aside className="w-64 h-[calc(100vh-2rem)] p-6 flex flex-col skeuo bg-bg-skeuo my-4 ml-4 sticky top-4">
-      <div className="flex items-center gap-3 mb-6 px-2">
+      {/* Brand Header */}
+      <div className="flex items-center gap-3 mb-4 px-2">
         <div className="w-10 h-10 rounded-xl skeuo flex items-center justify-center text-brand-500 font-bold text-xl">
           P
         </div>
@@ -88,7 +130,24 @@ export const Sidebar = () => {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-1">
+      {/* User Role Badge */}
+      {user && (
+        <div className="mb-4 px-3 py-2 rounded-xl skeuo-inset flex items-center gap-2.5">
+          {isSuperAdmin ? (
+            <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+          ) : (
+            <UserCheck className="w-4 h-4 text-brand-500 shrink-0" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-text-main truncate leading-tight">{user.name}</p>
+            <p className="text-[10px] font-semibold text-text-muted">
+              {isSuperAdmin ? 'SUPER ADMIN / OWNER' : 'KASIR OPERASIONAL'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <nav className="flex-1 space-y-1.5 overflow-y-auto custom-scrollbar pr-1">
         {menuItems.map((item) => {
           const isActive = pathname === item.path;
           return (

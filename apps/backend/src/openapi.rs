@@ -69,10 +69,17 @@ use entity::enums::*;
         routes::reports::receivables,
         routes::reports::low_stock,
         routes::ai::parse_order,
+        routes::expenses::list,
+        routes::expenses::summary,
+        routes::expenses::get,
+        routes::expenses::create,
+        routes::expenses::update,
+        routes::expenses::delete,
     ),
     components(
         schemas(
             UserRole, MutationType, PriceType, RangePriceType, PaymentStatus, OrderStatus,
+            ExpenseCategory, ExpensePaymentMethod,
             PaginationMeta, PaginationQuery, MessageData, HealthData,
             LoginRequest, RefreshRequest, PublicUser, LoginData, RefreshData,
             CreateUserRequest, UpdateUserRequest, ResetPasswordRequest, UserQuery,
@@ -89,8 +96,11 @@ use entity::enums::*;
             ReportDateQuery, DashboardSummaryResponse, DailySalesReportItem, TopProductReportItem,
             InventoryMutationReportItem, ReceivableItem, LowStockItem,
             ParseOrderRequest, ParseOrderResponse, ParsedOrderItem,
+            CreateExpenseRequest, UpdateExpenseRequest, ExpenseQuery, ExpenseResponse,
+            ExpenseCategoryBreakdown, ExpenseSummaryResponse,
         )
     ),
+
     modifiers(&SecurityAddon),
     info(
         title = "Perdana Percetakan POS & Inventory API",

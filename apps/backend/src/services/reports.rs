@@ -70,8 +70,29 @@ pub async fn get_dashboard_summary(
         .count(db)
         .await?;
 
+    // Expenses query
+    let mut exp_query = Expense::find();
+    if let Some(start) = query.start_date {
+        let start_dt = start.and_hms_opt(0, 0, 0).unwrap().and_utc();
+        exp_query = exp_query.filter(entity::expenses::Column::ExpenseDate.gte(start_dt));
+    }
+    if let Some(end) = query.end_date {
+        let end_dt = end.and_hms_opt(23, 59, 59).unwrap().and_utc();
+        exp_query = exp_query.filter(entity::expenses::Column::ExpenseDate.lte(end_dt));
+    }
+
+    let all_expenses = exp_query.all(db).await?;
+    let mut total_expenses = Decimal::ZERO;
+    for e in all_expenses {
+        total_expenses += e.amount;
+    }
+
+    let net_profit = total_omset - total_expenses;
+
     Ok(DashboardSummaryResponse {
         total_omset,
+        total_expenses,
+        net_profit,
         total_transactions: all_trans.len() as i64,
         paid_transactions: paid_count,
         dp_transactions: dp_count,
@@ -82,6 +103,7 @@ pub async fn get_dashboard_summary(
         low_stock_raw_materials_count: low_stock_count as i64,
     })
 }
+
 
 pub async fn get_daily_sales(
     db: &DatabaseConnection,

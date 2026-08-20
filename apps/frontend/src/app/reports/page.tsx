@@ -246,24 +246,35 @@ export default function ReportsPage() {
       {/* Tab 1: Summary */}
       {activeTab === 'summary' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <div className="skeuo p-5">
               <span className="text-xs text-text-muted">Total Omset</span>
-              <p className="text-xl font-bold text-brand-600 mt-1">Rp {(summary?.total_omset || 0).toLocaleString('id-ID')}</p>
+              <p className="text-lg font-bold text-brand-600 mt-1">Rp {(summary?.total_omset || 0).toLocaleString('id-ID')}</p>
             </div>
             <div className="skeuo p-5">
-              <span className="text-xs text-text-muted">Transaksi Lunas (PAID)</span>
-              <p className="text-xl font-bold text-emerald-600 mt-1">{summary?.paid_transactions || 0} Transaksi</p>
+              <span className="text-xs text-text-muted">Total Pengeluaran</span>
+              <p className="text-lg font-bold text-red-500 mt-1">Rp {(summary?.total_expenses || 0).toLocaleString('id-ID')}</p>
             </div>
             <div className="skeuo p-5">
-              <span className="text-xs text-text-muted">Total Piutang (DP/Unpaid)</span>
-              <p className="text-xl font-bold text-amber-500 mt-1">Rp {(summary?.total_piutang || 0).toLocaleString('id-ID')}</p>
+              <span className="text-xs text-text-muted">Laba Bersih</span>
+              <p className={`text-lg font-bold mt-1 ${(summary?.net_profit || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                Rp {(summary?.net_profit || 0).toLocaleString('id-ID')}
+              </p>
+            </div>
+            <div className="skeuo p-5">
+              <span className="text-xs text-text-muted">Total Piutang (DP)</span>
+              <p className="text-lg font-bold text-amber-500 mt-1">Rp {(summary?.total_piutang || 0).toLocaleString('id-ID')}</p>
+            </div>
+            <div className="skeuo p-5">
+              <span className="text-xs text-text-muted">Transaksi Lunas</span>
+              <p className="text-lg font-bold text-emerald-600 mt-1">{summary?.paid_transactions || 0} Nota</p>
             </div>
             <div className="skeuo p-5">
               <span className="text-xs text-text-muted">Total Transaksi</span>
-              <p className="text-xl font-bold text-text-main mt-1">{summary?.total_transactions || 0} Nota</p>
+              <p className="text-lg font-bold text-text-main mt-1">{summary?.total_transactions || 0} Nota</p>
             </div>
           </div>
+
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="skeuo p-6">

@@ -1,7 +1,28 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { Bell, Search } from 'lucide-react';
+import { authService, UserProfile } from '../../services/authService';
 
 export const Navbar = () => {
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const u = await authService.me();
+        setUser(u);
+      } catch (err) {
+        console.error('Navbar failed to fetch user:', err);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const displayName = user?.name || 'Kasir Percetakan';
+  const roleLabel = user?.role === 'SUPER_ADMIN' ? 'Super Admin / Owner' : 'Kasir';
+  const avatarName = encodeURIComponent(displayName);
+
   return (
     <header className="h-16 px-6 sm:px-8 lg:px-10 flex items-center justify-between mb-2">
       <div className="flex-1 max-w-xl">
@@ -9,25 +30,25 @@ export const Navbar = () => {
           <Search className="w-5 h-5 text-text-muted" />
           <input 
             type="text" 
-            placeholder="Cari transaksi, pelanggan, atau produk..." 
-            className="bg-transparent border-none outline-none w-full text-text-main placeholder:text-text-muted/70"
+            placeholder="Cari transaksi, nota invoice, pelanggan..." 
+            className="bg-transparent border-none outline-none w-full text-text-main placeholder:text-text-muted/70 text-sm"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-6">
-        <button className="relative w-12 h-12 flex items-center justify-center skeuo-button text-text-muted">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-bg-skeuo"></span>
+        <button className="relative w-11 h-11 flex items-center justify-center skeuo-button text-text-muted rounded-xl">
+          <Bell className="w-4 h-4" />
+          <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-emerald-500 rounded-full"></span>
         </button>
 
-        <div className="flex items-center gap-4 pl-6 border-l border-white/40">
+        <div className="flex items-center gap-3.5 pl-4 border-l border-white/20">
           <div className="text-right">
-            <p className="font-bold text-text-main leading-tight">Admin Kasir</p>
-            <p className="text-sm text-text-muted">Superadmin</p>
+            <p className="font-bold text-text-main text-sm leading-tight">{displayName}</p>
+            <p className="text-xs text-brand-600 font-semibold">{roleLabel}</p>
           </div>
-          <div className="w-12 h-12 rounded-xl skeuo overflow-hidden border-2 border-white/50">
-            <img src="https://ui-avatars.com/api/?name=Admin+Kasir&background=3b82f6&color=fff" alt="User Avatar" className="w-full h-full object-cover" />
+          <div className="w-10 h-10 rounded-xl skeuo overflow-hidden border border-white/30 flex items-center justify-center font-bold text-sm text-brand-600 bg-brand-50">
+            {displayName.charAt(0).toUpperCase()}
           </div>
         </div>
       </div>

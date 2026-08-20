@@ -84,4 +84,9 @@ declare module 'lucide-react' {
   export const Banknote: LucideIcon;
   export const ArrowLeft: LucideIcon;
   export const Home: LucideIcon;
+  export const Wallet: LucideIcon;
+  export const TrendingDown: LucideIcon;
+  export const Receipt: LucideIcon;
+  export const Wrench: LucideIcon;
 }
+

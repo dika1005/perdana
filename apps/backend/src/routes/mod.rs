@@ -12,8 +12,10 @@ pub mod raw_materials;
 pub mod reports;
 pub mod transactions;
 pub mod users;
+pub mod expenses;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
+
     cfg.route("/health", web::get().to(health::health_check))
         .service(
             web::scope("/public")
@@ -141,8 +143,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(
             web::scope("/ai")
                 .route("/parse-order", web::post().to(ai::parse_order)),
-        );
+        )
+        .configure(expenses::configure);
 }
+
 
 
 
