@@ -125,12 +125,12 @@ export default function JobTrackingPage() {
     <DashboardLayout>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-text-main mb-1">Job Tracking Produksi</h1>
-          <p className="text-text-muted text-sm">Pantau status pengerjaan pesanan, notifikasi WhatsApp pelanggan, & pelunasan saat pengambilan.</p>
+          <h1 className="text-3xl font-bold text-text-main mb-1">Antrian & Status Pesanan</h1>
+          <p className="text-text-muted text-sm">Pantau pesanan dari antrian sampai diambil pelanggan.</p>
         </div>
         <button 
           onClick={fetchJobs} 
-          className="flex items-center gap-2 px-4 py-2 font-bold skeuo-button text-text-main text-xs"
+          className="flex items-center gap-2 px-4 py-2.5 font-bold skeuo-button text-text-main text-sm rounded-xl"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Segarkan
@@ -149,7 +149,8 @@ export default function JobTrackingPage() {
           title="Antrian"
           status="ANTRIAN"
           icon={Clock}
-          colorClass="text-slate-500"
+          colorClass="text-slate-600 dark:text-slate-300"
+          bgClass="bg-slate-100/60 dark:bg-slate-800/30"
           transactions={transactions}
           customers={customers}
           onOpenSettle={handleOpenSettle}
@@ -160,7 +161,8 @@ export default function JobTrackingPage() {
           title="Proses Cetak"
           status="PROSES"
           icon={AlertCircle}
-          colorClass="text-amber-500"
+          colorClass="text-amber-600 dark:text-amber-300"
+          bgClass="bg-amber-50/60 dark:bg-amber-900/20"
           transactions={transactions}
           customers={customers}
           onOpenSettle={handleOpenSettle}
@@ -168,10 +170,11 @@ export default function JobTrackingPage() {
           onAdvanceStatus={advanceStatus}
         />
         <TrackingColumn
-          title="Selesai / Siap Ambil"
+          title="Selesai — Siap Ambil"
           status="SELESAI"
           icon={CheckCircle2}
-          colorClass="text-emerald-500"
+          colorClass="text-emerald-600 dark:text-emerald-300"
+          bgClass="bg-emerald-50/60 dark:bg-emerald-900/20"
           transactions={transactions}
           customers={customers}
           onOpenSettle={handleOpenSettle}
@@ -179,10 +182,11 @@ export default function JobTrackingPage() {
           onAdvanceStatus={advanceStatus}
         />
         <TrackingColumn
-          title="Telah Diambil"
+          title="Sudah Diambil"
           status="DIAMBIL"
           icon={PackageCheck}
-          colorClass="text-brand-500"
+          colorClass="text-brand-600 dark:text-brand-300"
+          bgClass="bg-brand-50/60 dark:bg-brand-900/20"
           transactions={transactions}
           customers={customers}
           onOpenSettle={handleOpenSettle}

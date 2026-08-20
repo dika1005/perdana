@@ -189,9 +189,9 @@ export default function ExpensesPage() {
     <DashboardLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-text-main mb-1">Kas Keluar & Pengeluaran</h1>
+          <h1 className="text-3xl font-bold text-text-main mb-1">Pengeluaran</h1>
           <p className="text-text-muted text-sm">
-            Catat biaya bahan baku percetakan, operasional listrik, gaji/upah, dan perawatan mesin.
+            Catat biaya operasional, bahan baku, gaji, dan perawatan mesin.
           </p>
         </div>
 

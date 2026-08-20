@@ -10,6 +10,7 @@ interface TrackingColumnProps {
   status: OrderStatus;
   icon: React.ComponentType<{ className?: string }>;
   colorClass: string;
+  bgClass: string;
   transactions: any[];
   customers: Customer[];
   onOpenSettle: (job: any) => void;
@@ -22,6 +23,7 @@ export const TrackingColumn: React.FC<TrackingColumnProps> = ({
   status,
   icon: Icon,
   colorClass,
+  bgClass,
   transactions,
   customers,
   onOpenSettle,
@@ -32,20 +34,21 @@ export const TrackingColumn: React.FC<TrackingColumnProps> = ({
 
   return (
     <div className="flex-1 min-w-[300px] flex flex-col skeuo bg-bg-skeuo h-[calc(100vh-180px)]">
-      <div className={`p-4 border-b border-white/20 flex justify-between items-center ${colorClass}`}>
-        <div className="flex items-center gap-2 font-bold text-sm">
-          <Icon className="w-4 h-4" />
+      {/* Column Header with colored background band */}
+      <div className={`p-4 border-b border-white/20 flex justify-between items-center ${bgClass}`}>
+        <div className={`flex items-center gap-2.5 font-bold text-sm ${colorClass}`}>
+          <Icon className="w-5 h-5" />
           {title}
         </div>
-        <span className="w-6 h-6 rounded-full skeuo-inset flex items-center justify-center text-xs font-bold text-text-main">
+        <span className={`w-7 h-7 rounded-full skeuo-inset flex items-center justify-center text-xs font-bold ${colorClass}`}>
           {columnJobs.length}
         </span>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-3">
         {columnJobs.length === 0 ? (
-          <div className="text-center py-12 text-text-muted text-xs">
-            Kosong
+          <div className="text-center py-12 text-text-muted text-xs opacity-60">
+            <p className="text-sm">Tidak ada pesanan</p>
           </div>
         ) : (
           columnJobs.map(job => (

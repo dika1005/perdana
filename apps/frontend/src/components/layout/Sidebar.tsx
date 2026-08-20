@@ -38,9 +38,9 @@ interface MenuItem {
 const allMenuItems: MenuItem[] = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', superAdminOnly: true },
   { name: 'Kasir POS', icon: ShoppingCart, path: '/pos' },
-  { name: 'Job Tracking', icon: ClipboardList, path: '/tracking' },
+  { name: 'Antrian Pesanan', icon: ClipboardList, path: '/tracking' },
   { name: 'Riwayat Transaksi', icon: History, path: '/transactions' },
-  { name: 'Kas Keluar', icon: Wallet, path: '/expenses' },
+  { name: 'Pengeluaran', icon: Wallet, path: '/expenses' },
   { name: 'Master Produk', icon: Tag, path: '/products', superAdminOnly: true },
   { name: 'Inventaris Bahan', icon: Package, path: '/inventory', superAdminOnly: true },
   { name: 'Pelanggan', icon: Users, path: '/customers' },
