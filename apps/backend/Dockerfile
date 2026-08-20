@@ -1,7 +1,7 @@
 # ========================================================
 # Stage 1: Build & Compile Rust Backend
 # ========================================================
-FROM rust:1.80-bookworm AS builder
+FROM rust:bookworm AS builder
 
 WORKDIR /usr/src/perdana
 
