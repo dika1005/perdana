@@ -11,13 +11,19 @@ import {
   RefreshCw, 
   CreditCard, 
   X, 
-  Check 
+  Check,
+  MessageSquare,
+  Phone,
+  ExternalLink
 } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
+import { customerService } from '../../services/customerService';
 import { OrderStatus } from '../../types/transaction';
+import { Customer } from '../../types/customer';
 
 export default function JobTrackingPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,12 +32,19 @@ export default function JobTrackingPage() {
   const [payAmount, setPayAmount] = useState(0);
   const [submittingSettle, setSubmittingSettle] = useState(false);
 
+  // Modal WhatsApp
+  const [waModal, setWaModal] = useState<{ open: boolean; job?: any | null; phone: string }>({ open: false, phone: '' });
+
   const fetchJobs = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await transactionService.getTransactions();
+      const [res, custRes] = await Promise.all([
+        transactionService.getTransactions(),
+        customerService.getCustomers()
+      ]);
       setTransactions(res.data);
+      setCustomers(custRes.data);
     } catch (err: any) {
       console.error('Failed to load tracking data:', err);
       setError(err?.response?.data?.message || 'Gagal memuat antrian produksi');
@@ -91,11 +104,42 @@ export default function JobTrackingPage() {
     }
   };
 
+  const handleSendWhatsApp = (job: any, customPhone?: string) => {
+    const cust = customers.find(c => c.id === job.customer_id);
+    const targetPhone = customPhone || cust?.phone || '';
+
+    // If no phone is provided, open prompt modal
+    if (!targetPhone.trim()) {
+      setWaModal({ open: true, job, phone: '' });
+      return;
+    }
+
+    // Format phone: 08123456789 -> 628123456789
+    let cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '62' + cleanPhone.slice(1);
+    } else if (cleanPhone.startsWith('8')) {
+      cleanPhone = '62' + cleanPhone;
+    }
+
+    const customerName = job.customer_name || 'Pelanggan';
+    const invoiceNumber = job.invoice_number;
+    const remaining = Number(job.total_amount) - Number(job.pay_amount);
+    const isPaid = job.payment_status === 'PAID' || remaining <= 0;
+    const paymentText = isPaid ? '*LUNAS*' : `*DP (Sisa Tagihan: Rp ${remaining.toLocaleString('id-ID')})*`;
+
+    const message = `Halo Kak *${customerName}*,\n\nKabar gembira! Pesanan cetak Anda di *PERDANA PRINTING & POS* sudah *SELESAI* dan siap diambil. 🥳🎉\n\n📋 *Rincian Pesanan:*\n• No. Nota: *${invoiceNumber}*\n• Total Belanja: *Rp ${Number(job.total_amount).toLocaleString('id-ID')}*\n• Status Bayar: ${paymentText}\n\n📍 *Lokasi Pengambilan:*\nJl. Percetakan Perdana No. 1, Kota\nBuka setiap hari jam 08.00 - 21.00 WIB\n\nSilakan tunjukkan nomor nota ini kepada kasir saat pengambilan pesanan. Terima kasih banyak telah mempercayakan cetakan Anda di tempat kami! 🙏✨`;
+
+    const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
+    setWaModal({ open: false, phone: '' });
+  };
+
   const Column = ({ title, status, icon: Icon, colorClass }: { title: string; status: OrderStatus; icon: React.ComponentType<{ className?: string }>; colorClass: string }) => {
     const columnJobs = transactions.filter(j => j.order_status === status);
     
     return (
-      <div className="flex-1 min-w-[290px] flex flex-col skeuo bg-bg-skeuo h-[calc(100vh-180px)]">
+      <div className="flex-1 min-w-[300px] flex flex-col skeuo bg-bg-skeuo h-[calc(100vh-180px)]">
         <div className={`p-4 border-b border-white/20 flex justify-between items-center ${colorClass}`}>
           <div className="flex items-center gap-2 font-bold text-sm">
             <Icon className="w-4 h-4" />
@@ -115,6 +159,7 @@ export default function JobTrackingPage() {
             columnJobs.map(job => {
               const isDP = job.payment_status === 'DP' || job.payment_status === 'UNPAID';
               const remaining = Number(job.total_amount) - Number(job.pay_amount);
+              const cust = customers.find(c => c.id === job.customer_id);
 
               return (
                 <div 
@@ -122,7 +167,7 @@ export default function JobTrackingPage() {
                   className="p-4 rounded-xl skeuo-button transition-all text-xs"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-[11px] font-mono font-bold text-text-muted bg-white/40 px-2 py-0.5 rounded">
+                    <span className="text-[11px] font-mono font-bold text-text-muted bg-white/40 dark:bg-black/20 px-2 py-0.5 rounded">
                       {job.invoice_number}
                     </span>
                     <span className="text-[11px] font-bold text-brand-600">
@@ -130,25 +175,44 @@ export default function JobTrackingPage() {
                     </span>
                   </div>
 
-                  <h4 className="font-bold text-text-main text-sm mb-1">{job.customer_name || 'Pelanggan Umum'}</h4>
+                  <div className="flex justify-between items-baseline mb-1">
+                    <h4 className="font-bold text-text-main text-sm">{job.customer_name || 'Pelanggan Umum'}</h4>
+                    {cust?.phone && (
+                      <span className="text-[10px] text-text-muted font-mono">{cust.phone}</span>
+                    )}
+                  </div>
+
                   <p className="text-[11px] text-text-muted mb-3">
                     {job.estimated_done_at ? `Est. Selesai: ${job.estimated_done_at}` : `Tgl: ${new Date(job.created_at).toLocaleDateString('id-ID')}`}
                   </p>
                   
-                  <div className="flex items-center justify-between border-t border-black/5 pt-2.5 mt-2">
-                    <span className={`font-bold ${job.payment_status === 'PAID' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {/* Action Bar */}
+                  <div className="flex items-center justify-between border-t border-black/5 dark:border-white/5 pt-2.5 mt-2">
+                    <span className={`font-bold text-[11px] ${job.payment_status === 'PAID' ? 'text-emerald-600' : 'text-amber-600'}`}>
                       {job.payment_status === 'PAID' ? 'LUNAS' : `DP (Sisa Rp ${remaining.toLocaleString('id-ID')})`}
                     </span>
                     
                     <div className="flex items-center gap-1.5">
+                      {/* WhatsApp Trigger Button on SELESAI */}
+                      {status === 'SELESAI' && (
+                        <button
+                          onClick={() => handleSendWhatsApp(job)}
+                          className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-1"
+                          title="Kirim pesan WhatsApp: Pesanan sudah selesai & siap diambil"
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                          <span>Kirim WA</span>
+                        </button>
+                      )}
+
                       {status === 'SELESAI' && isDP && (
                         <button
                           onClick={() => handleOpenSettle(job)}
-                          className="px-2.5 py-1 text-[11px] font-bold skeuo-button text-brand-600 flex items-center gap-1"
+                          className="px-2.5 py-1 text-[11px] font-bold skeuo-button text-amber-600 flex items-center gap-1"
                           title="Lunasi & Serahkan Barang"
                         >
                           <CreditCard className="w-3 h-3" />
-                          Pelunasan & Serahkan
+                          Lunasi & Serahkan
                         </button>
                       )}
 
@@ -177,7 +241,7 @@ export default function JobTrackingPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-text-main mb-1">Job Tracking Produksi</h1>
-          <p className="text-text-muted text-sm">Pantau status pengerjaan pesanan & pelunasan saat pengambilan.</p>
+          <p className="text-text-muted text-sm">Pantau status pengerjaan pesanan, notifikasi WhatsApp pelanggan, & pelunasan saat pengambilan.</p>
         </div>
         <button 
           onClick={fetchJobs} 
@@ -197,9 +261,73 @@ export default function JobTrackingPage() {
       <div className="flex gap-4 overflow-x-auto pb-4">
         <Column title="Antrian" status="ANTRIAN" icon={Clock} colorClass="text-slate-500" />
         <Column title="Proses Cetak" status="PROSES" icon={AlertCircle} colorClass="text-amber-500" />
-        <Column title="Selesai / Siap" status="SELESAI" icon={CheckCircle2} colorClass="text-emerald-500" />
+        <Column title="Selesai / Siap Ambil" status="SELESAI" icon={CheckCircle2} colorClass="text-emerald-500" />
         <Column title="Telah Diambil" status="DIAMBIL" icon={PackageCheck} colorClass="text-brand-500" />
       </div>
+
+      {/* Modal WhatsApp Phone Input Fallback */}
+      {waModal.open && waModal.job && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="skeuo p-6 sm:p-7 w-full max-w-sm bg-bg-skeuo">
+            <div className="flex justify-between items-start mb-4 pb-2 border-b border-black/10">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-600 flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-text-main">Kirim Notifikasi WhatsApp</h3>
+                  <p className="text-[10px] text-text-muted font-mono">{waModal.job.invoice_number}</p>
+                </div>
+              </div>
+              <button onClick={() => setWaModal({ open: false, phone: '' })} className="text-text-muted hover:text-text-main">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-text-muted">
+                Pesanan atas nama <strong>{waModal.job.customer_name || 'Pelanggan'}</strong> belum memiliki nomor telepon. Masukkan nomor WhatsApp tujuan:
+              </p>
+
+              <div>
+                <label className="block text-[11px] font-bold text-text-main mb-1">
+                  Nomor WhatsApp Pelanggan:
+                </label>
+                <div className="flex items-center gap-2 px-3 py-2 skeuo-inset rounded-xl">
+                  <Phone className="w-4 h-4 text-emerald-500" />
+                  <input
+                    type="text"
+                    placeholder="Contoh: 08123456789"
+                    value={waModal.phone}
+                    onChange={e => setWaModal({ ...waModal, phone: e.target.value })}
+                    className="bg-transparent border-none outline-none w-full text-xs text-text-main font-mono"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setWaModal({ open: false, phone: '' })}
+                  className="flex-1 py-2 font-bold skeuo-button text-text-muted text-xs rounded-xl"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={!waModal.phone.trim()}
+                  onClick={() => handleSendWhatsApp(waModal.job, waModal.phone)}
+                  className="flex-1 py-2 font-bold bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Buka WhatsApp
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Pelunasan DP Instan */}
       {settleModal.open && settleModal.job && (
