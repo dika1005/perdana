@@ -1,5 +1,6 @@
 [workspace]
 members = ["apps/backend", "packages/entity"]
+default-members = ["apps/backend"]
 resolver = "2"
 
 [workspace.dependencies]

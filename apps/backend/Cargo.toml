@@ -2,6 +2,15 @@
 name = "backend"
 version = "0.1.0"
 edition = "2024"
+default-run = "backend"
+
+[[bin]]
+name = "backend"
+path = "src/main.rs"
+
+[[bin]]
+name = "seed"
+path = "src/bin/seed.rs"
 
 [dependencies]
 entity = { path = "../../packages/entity" }
@@ -28,4 +37,3 @@ validator = { version = "0.19", features = ["derive"] }
 utoipa = { version = "5.5.0", features = ["actix_extras", "chrono", "decimal"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-
