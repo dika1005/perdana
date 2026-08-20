@@ -1,0 +1,39 @@
+# ========================================================
+# Caddyfile — Reverse Proxy & Automated SSL HTTPS
+# ========================================================
+# Ganti :80 dengan nama domain Anda saat sudah memiliki VPS (contoh: pos.perdanaprinting.com)
+:80 {
+    # Encode responses using gzip & zstd compression
+    encode zstd gzip
+
+    # Route request API /api/* langsung ke Backend Rust
+    handle /api/* {
+        reverse_proxy backend:8800 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Route request Swagger UI ke Backend Rust
+    handle /swagger-ui/* {
+        reverse_proxy backend:8800
+    }
+
+    # Route seluruh request halaman ke Frontend Next.js
+    handle {
+        reverse_proxy frontend:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Logging format
+    log {
+        output stdout
+        format console
+    }
+}
