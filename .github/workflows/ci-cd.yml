@@ -102,13 +102,13 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ========================================================
-  # JOB 3: Deploy to VPS (Otomatis jika Secret VPS sudah diisi)
+  # JOB 3: Deploy to VPS (Aktif jika Repository Variable ENABLE_VPS_DEPLOY = 'true')
   # ========================================================
   deploy-vps:
     name: 🚀 Deploy to VPS via SSH
     needs: [build-backend, build-frontend]
     runs-on: ubuntu-latest
-    if: ${{ vars.VPS_HOST != '' || secrets.VPS_HOST != '' }}
+    if: ${{ vars.ENABLE_VPS_DEPLOY == 'true' }}
 
     steps:
       - name: Deploying Containers to VPS Server
