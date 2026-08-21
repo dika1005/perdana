@@ -7,6 +7,7 @@ import { rawMaterialService } from '../../services/rawMaterialService';
 import { categoryService } from '../../services/categoryService';
 import { RawMaterial } from '../../types/rawMaterial';
 import { Category } from '../../types/category';
+import { useAlert } from '../../context/AlertContext';
 
 // Modular Inventory Components
 import { InventoryTable } from '../../components/inventory/InventoryTable';
@@ -14,6 +15,7 @@ import { InventoryRestockModal } from '../../components/inventory/InventoryResto
 import { InventoryCreateModal } from '../../components/inventory/InventoryCreateModal';
 
 export default function InventoryPage() {
+  const { showAlert, showToast } = useAlert();
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,9 +90,14 @@ export default function InventoryPage() {
         notes: mutationNotes || undefined,
       });
       setShowRestock(false);
+      showToast(`Stok "${selectedItem.name}" berhasil ditambahkan (+${mutationQty} ${selectedItem.unit})!`, 'success');
       await fetchInventory();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menambahkan mutasi stok');
+      await showAlert({
+        title: 'Gagal Menambahkan Mutasi Stok',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menambahkan stok bahan baku.',
+        type: 'error',
+      });
     } finally {
       setSubmittingMutation(false);
     }
@@ -118,9 +125,14 @@ export default function InventoryPage() {
         min_stock_warning: 10,
         category_id: undefined,
       });
+      showToast('Bahan baku baru berhasil ditambahkan!', 'success');
       await fetchInventory();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal membuat bahan baku baru');
+      await showAlert({
+        title: 'Gagal Membuat Bahan Baku',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat membuat bahan baku baru.',
+        type: 'error',
+      });
     } finally {
       setSubmittingCreate(false);
     }

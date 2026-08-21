@@ -5,6 +5,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { UserPlus, RefreshCw } from 'lucide-react';
 import { userService } from '../../services/userService';
 import { User, UserRole } from '../../types/user';
+import { useAlert } from '../../context/AlertContext';
 
 // Modular User Components
 import { UserTable } from '../../components/users/UserTable';
@@ -12,6 +13,7 @@ import { UserFormModal } from '../../components/users/UserFormModal';
 import { UserResetPasswordModal } from '../../components/users/UserResetPasswordModal';
 
 export default function UsersManagementPage() {
+  const { showAlert, showConfirm, showToast } = useAlert();
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,11 @@ export default function UsersManagementPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.name.trim() || !createForm.username.trim() || createForm.password.length < 8) {
-      alert('Nama, username wajib diisi dan password minimal 8 karakter');
+      await showAlert({
+        title: 'Form Belum Lengkap',
+        message: 'Nama, username wajib diisi dan password minimal 8 karakter.',
+        type: 'warning',
+      });
       return;
     }
     setSubmitting(true);
@@ -71,9 +77,14 @@ export default function UsersManagementPage() {
         password: '',
         role: 'ADMIN',
       });
+      showToast('Pengguna baru berhasil dibuat!', 'success');
       await fetchUsers();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal membuat pengguna');
+      await showAlert({
+        title: 'Gagal Membuat Pengguna',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat membuat akun pengguna.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -82,17 +93,25 @@ export default function UsersManagementPage() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetModal.user || newPassword.length < 8) {
-      alert('Password baru minimal 8 karakter');
+      await showAlert({
+        title: 'Password Terlalu Pendek',
+        message: 'Password baru minimal 8 karakter.',
+        type: 'warning',
+      });
       return;
     }
     setSubmitting(true);
     try {
       await userService.resetPassword(resetModal.user.id, newPassword);
-      alert(`Password untuk ${resetModal.user.name} berhasil diperbarui.`);
       setResetModal({ open: false });
       setNewPassword('');
+      showToast(`Password untuk ${resetModal.user.name} berhasil diperbarui!`, 'success');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal mereset password');
+      await showAlert({
+        title: 'Gagal Mereset Password',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat memperbarui password.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -100,16 +119,28 @@ export default function UsersManagementPage() {
 
   const handleToggleActive = async (user: User) => {
     const actionText = user.is_active ? 'menonaktifkan' : 'mengaktifkan kembali';
-    if (!confirm(`Apakah Anda yakin ingin ${actionText} akun kasir "${user.name}"?`)) return;
+    const confirmed = await showConfirm({
+      title: `${user.is_active ? 'Nonaktifkan' : 'Aktifkan'} Akun?`,
+      message: `Apakah Anda yakin ingin ${actionText} akun kasir "${user.name}"?`,
+      type: user.is_active ? 'danger' : 'info',
+      confirmText: user.is_active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan',
+    });
+    if (!confirmed) return;
+
     try {
       if (user.is_active) {
         await userService.deactivateUser(user.id);
       } else {
         await userService.updateUser(user.id, { is_active: true });
       }
+      showToast(`Akun "${user.name}" berhasil di${actionText}`, 'info');
       await fetchUsers();
     } catch (err: any) {
-      alert(err?.response?.data?.message || `Gagal mengubah status akun`);
+      await showAlert({
+        title: 'Gagal Mengubah Status Akun',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat mengubah status akun.',
+        type: 'error',
+      });
     }
   };
 

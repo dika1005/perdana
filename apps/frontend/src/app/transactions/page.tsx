@@ -12,8 +12,10 @@ import { TransactionTable } from '../../components/transactions/TransactionTable
 import { TransactionDetailDrawer } from '../../components/transactions/TransactionDetailDrawer';
 import { TransactionSettleModal } from '../../components/transactions/TransactionSettleModal';
 import { ReceiptModal } from '../../components/pos/ReceiptModal';
+import { useAlert } from '../../context/AlertContext';
 
 export default function TransactionsHistoryPage() {
+  const { showAlert, showToast } = useAlert();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +85,11 @@ export default function TransactionsHistoryPage() {
       const data = await transactionService.getTransactionById(id);
       setSelectedTransaction(data);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal memuat detail transaksi');
+      await showAlert({
+        title: 'Gagal Memuat Detail Transaksi',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat memuat rincian transaksi.',
+        type: 'error',
+      });
     }
   };
 
@@ -110,7 +116,7 @@ export default function TransactionsHistoryPage() {
     try {
       const res = await transactionService.updatePayment(settleModal.item.id, settlePayAmount, 'PAID');
       setSettleModal({ open: false });
-      alert('Pelunasan berhasil dicatat!');
+      showToast('Pelunasan berhasil dicatat!', 'success');
       await fetchTransactions();
       
       try {
@@ -120,7 +126,11 @@ export default function TransactionsHistoryPage() {
         setInvoicePrintData(res);
       }
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal memproses pelunasan');
+      await showAlert({
+        title: 'Gagal Memproses Pelunasan',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat memproses pelunasan transaksi.',
+        type: 'error',
+      });
     } finally {
       setSubmittingSettle(false);
     }

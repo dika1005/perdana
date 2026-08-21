@@ -8,6 +8,7 @@ import { customerService } from '../../services/customerService';
 import { OrderStatus } from '../../types/transaction';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
+import { useAlert } from '../../context/AlertContext';
 
 // Modular Tracking Components
 import { TrackingColumn } from '../../components/tracking/TrackingColumn';
@@ -15,30 +16,27 @@ import { TrackingSettleModal } from '../../components/tracking/TrackingSettleMod
 import { TrackingWhatsAppModal } from '../../components/tracking/TrackingWhatsAppModal';
 
 export default function JobTrackingPage() {
+  const { showAlert, showToast } = useAlert();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Modals
-  const [settleModal, setSettleModal] = useState<{ open: boolean; job?: any | null }>({ open: false });
-  const [payAmount, setPayAmount] = useState(0);
+  const [settleModal, setSettleModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
+  const [payAmount, setPayAmount] = useState<number>(0);
   const [submittingSettle, setSubmittingSettle] = useState(false);
-  const [waModal, setWaModal] = useState<{ open: boolean; job?: any | null; phone: string }>({ open: false, phone: '' });
+  const [waModal, setWaModal] = useState<{ open: boolean; job: any | null; phone: string }>({ open: false, job: null, phone: '' });
 
   const fetchJobs = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [res, custRes] = await Promise.all([
-        transactionService.getTransactions(),
-        customerService.getCustomers()
-      ]);
+      const res = await transactionService.getTransactions({ per_page: 100 });
       setTransactions(res.data);
-      setCustomers(custRes.data);
     } catch (err: any) {
       console.error('Failed to load tracking data:', err);
-      setError(err?.response?.data?.message || 'Gagal memuat antrian produksi');
+      setError(err?.response?.data?.message || 'Gagal memuat data antrian produksi');
     } finally {
       setLoading(false);
     }
@@ -46,9 +44,10 @@ export default function JobTrackingPage() {
 
   useEffect(() => {
     fetchJobs();
+    customerService.getCustomers().then(res => setCustomers(res.data)).catch(() => {});
   }, []);
 
-  const advanceStatus = async (id: number, currentStatus: OrderStatus) => {
+  const handleAdvanceStatus = async (id: number, currentStatus: OrderStatus) => {
     const statusFlow: Record<OrderStatus, OrderStatus | null> = {
       'ANTRIAN': 'PROSES',
       'PROSES': 'SELESAI',
@@ -60,10 +59,15 @@ export default function JobTrackingPage() {
     if (nextStatus) {
       try {
         await transactionService.updateOrderStatus(id, nextStatus);
+        showToast(`Status pesanan diperbarui ke ${nextStatus}`, 'success');
         fetchJobs();
       } catch (err: any) {
         console.error('Failed to update status:', err);
-        alert(err?.response?.data?.message || 'Gagal mengubah status pesanan');
+        await showAlert({
+          title: 'Gagal Mengubah Status',
+          message: err?.response?.data?.message || 'Terjadi kesalahan saat memperbarui status pesanan.',
+          type: 'error',
+        });
       }
     }
   };
@@ -83,10 +87,15 @@ export default function JobTrackingPage() {
       await transactionService.updatePayment(settleModal.job.id, payAmount, 'PAID');
       await transactionService.updateOrderStatus(settleModal.job.id, 'DIAMBIL');
       setSettleModal({ open: false, job: null });
+      showToast('Pelunasan berhasil dan barang diserahkan!', 'success');
       fetchJobs();
     } catch (err: any) {
       console.error('Failed to settle payment:', err);
-      alert(err?.response?.data?.message || 'Gagal memproses pelunasan');
+      await showAlert({
+        title: 'Gagal Memproses Pelunasan',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat memproses pelunasan pesanan.',
+        type: 'error',
+      });
     } finally {
       setSubmittingSettle(false);
     }
@@ -98,7 +107,7 @@ export default function JobTrackingPage() {
     setWaModal({ open: true, job, phone: initialPhone });
   };
 
-  const handleSendWhatsAppSubmit = () => {
+  const handleSendWhatsAppSubmit = async () => {
     if (!waModal.job) return;
 
     let targetPhone = waModal.phone.replace(/[^0-9]/g, '');
@@ -107,7 +116,11 @@ export default function JobTrackingPage() {
     }
 
     if (!targetPhone) {
-      alert('Masukkan nomor WhatsApp yang valid');
+      await showAlert({
+        title: 'Nomor WhatsApp Tidak Valid',
+        message: 'Silakan masukkan nomor WhatsApp tujuan yang valid (contoh: 081234567890).',
+        type: 'warning',
+      });
       return;
     }
 
@@ -128,7 +141,7 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
 
     const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank');
-    setWaModal({ open: false, phone: '' });
+    setWaModal({ open: false, job: null, phone: '' });
   };
 
   return (
@@ -165,7 +178,7 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
           customers={customers}
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
-          onAdvanceStatus={advanceStatus}
+          onAdvanceStatus={handleAdvanceStatus}
         />
         <TrackingColumn
           title="Sedang Diproses"
@@ -177,7 +190,7 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
           customers={customers}
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
-          onAdvanceStatus={advanceStatus}
+          onAdvanceStatus={handleAdvanceStatus}
         />
         <TrackingColumn
           title="Selesai — Siap Ambil"
@@ -189,7 +202,7 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
           customers={customers}
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
-          onAdvanceStatus={advanceStatus}
+          onAdvanceStatus={handleAdvanceStatus}
         />
         <TrackingColumn
           title="Sudah Diambil"
@@ -201,7 +214,7 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
           customers={customers}
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
-          onAdvanceStatus={advanceStatus}
+          onAdvanceStatus={handleAdvanceStatus}
         />
       </div>
 
@@ -222,7 +235,7 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
         job={waModal.job}
         phone={waModal.phone}
         onPhoneChange={(phone) => setWaModal(prev => ({ ...prev, phone }))}
-        onClose={() => setWaModal({ open: false, phone: '' })}
+        onClose={() => setWaModal({ open: false, job: null, phone: '' })}
         onSubmit={handleSendWhatsAppSubmit}
       />
     </DashboardLayout>

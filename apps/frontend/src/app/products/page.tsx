@@ -6,6 +6,7 @@ import { Tag, Layers, Sparkles, FolderTree, RefreshCw } from 'lucide-react';
 import { productService } from '../../services/productService';
 import { Product, ProductVariant, ProductAddon, PriceType, RangePriceType } from '../../types/product';
 import { Category } from '../../types/category';
+import { useAlert } from '../../context/AlertContext';
 
 // Modular Product Components
 import { ProductListTab } from '../../components/products/ProductListTab';
@@ -17,7 +18,8 @@ import { VariantFormModal } from '../../components/products/VariantFormModal';
 import { AddonFormModal } from '../../components/products/AddonFormModal';
 import { CategoryFormModal } from '../../components/products/CategoryFormModal';
 
-export default function ProductsMasterPage() {
+export default function ProductsPage() {
+  const { showAlert, showConfirm, showToast } = useAlert();
   const [activeTab, setActiveTab] = useState<'products' | 'variants' | 'addons' | 'categories'>('products');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,25 +125,43 @@ export default function ProductsMasterPage() {
     try {
       if (productModal.item) {
         await productService.updateProduct(productModal.item.id, pForm);
+        showToast('Produk berhasil diperbarui!', 'success');
       } else {
         await productService.createProduct(pForm);
+        showToast('Produk baru berhasil ditambahkan!', 'success');
       }
       setProductModal({ open: false });
       await fetchAllData();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menyimpan produk');
+      await showAlert({
+        title: 'Gagal Menyimpan Produk',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menyimpan produk.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   const deleteProduct = async (id: number) => {
-    if (!confirm('Hapus produk ini beserta seluruh variannya?')) return;
+    const confirmed = await showConfirm({
+      title: 'Hapus Produk?',
+      message: 'Apakah Anda yakin ingin menghapus produk ini beserta seluruh variannya? Tindakan ini tidak dapat dibatalkan.',
+      type: 'danger',
+      confirmText: 'Ya, Hapus',
+    });
+    if (!confirmed) return;
+
     try {
       await productService.deleteProduct(id);
+      showToast('Produk berhasil dihapus', 'info');
       await fetchAllData();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menghapus produk');
+      await showAlert({
+        title: 'Gagal Menghapus Produk',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menghapus produk.',
+        type: 'error',
+      });
     }
   };
 
@@ -153,25 +173,43 @@ export default function ProductsMasterPage() {
     try {
       if (variantModal.item) {
         await productService.updateVariant(variantModal.item.id, vForm);
+        showToast('Varian berhasil diperbarui!', 'success');
       } else {
         await productService.createVariant(selectedProductId, vForm);
+        showToast('Varian baru berhasil ditambahkan!', 'success');
       }
       setVariantModal({ open: false });
       await fetchVariants(selectedProductId);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menyimpan varian');
+      await showAlert({
+        title: 'Gagal Menyimpan Varian',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menyimpan varian.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   const deleteVariant = async (id: number) => {
-    if (!confirm('Hapus varian ini?')) return;
+    const confirmed = await showConfirm({
+      title: 'Hapus Varian?',
+      message: 'Apakah Anda yakin ingin menghapus varian produk ini?',
+      type: 'danger',
+      confirmText: 'Ya, Hapus',
+    });
+    if (!confirmed) return;
+
     try {
       await productService.deleteVariant(id);
+      showToast('Varian berhasil dihapus', 'info');
       if (selectedProductId) await fetchVariants(selectedProductId);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menghapus varian');
+      await showAlert({
+        title: 'Gagal Menghapus Varian',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menghapus varian.',
+        type: 'error',
+      });
     }
   };
 
@@ -182,27 +220,45 @@ export default function ProductsMasterPage() {
     try {
       if (addonModal.item) {
         await productService.updateAddon(addonModal.item.id, aForm);
+        showToast('Finishing/Add-on berhasil diperbarui!', 'success');
       } else {
         await productService.createAddon(aForm);
+        showToast('Finishing/Add-on baru berhasil ditambahkan!', 'success');
       }
       setAddonModal({ open: false });
       const aRes = await productService.getAddons();
       setAddons(aRes);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menyimpan add-on');
+      await showAlert({
+        title: 'Gagal Menyimpan Add-on',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menyimpan finishing/add-on.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   const deleteAddon = async (id: number) => {
-    if (!confirm('Hapus add-on/finishing ini?')) return;
+    const confirmed = await showConfirm({
+      title: 'Hapus Finishing / Add-on?',
+      message: 'Apakah Anda yakin ingin menghapus opsi finishing / add-on ini?',
+      type: 'danger',
+      confirmText: 'Ya, Hapus',
+    });
+    if (!confirmed) return;
+
     try {
       await productService.deleteAddon(id);
+      showToast('Add-on berhasil dihapus', 'info');
       const aRes = await productService.getAddons();
       setAddons(aRes);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menghapus add-on');
+      await showAlert({
+        title: 'Gagal Menghapus Add-on',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menghapus add-on.',
+        type: 'error',
+      });
     }
   };
 
@@ -213,27 +269,45 @@ export default function ProductsMasterPage() {
     try {
       if (categoryModal.item) {
         await productService.updateCategory(categoryModal.item.id, cForm);
+        showToast('Kategori berhasil diperbarui!', 'success');
       } else {
         await productService.createCategory(cForm);
+        showToast('Kategori baru berhasil ditambahkan!', 'success');
       }
       setCategoryModal({ open: false });
       const cRes = await productService.getCategories();
       setCategories(cRes);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menyimpan kategori');
+      await showAlert({
+        title: 'Gagal Menyimpan Kategori',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menyimpan kategori.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   const deleteCategory = async (id: number) => {
-    if (!confirm('Hapus kategori ini?')) return;
+    const confirmed = await showConfirm({
+      title: 'Hapus Kategori?',
+      message: 'Apakah Anda yakin ingin menghapus kategori produk ini?',
+      type: 'danger',
+      confirmText: 'Ya, Hapus',
+    });
+    if (!confirmed) return;
+
     try {
       await productService.deleteCategory(id);
+      showToast('Kategori berhasil dihapus', 'info');
       const cRes = await productService.getCategories();
       setCategories(cRes);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menghapus kategori');
+      await showAlert({
+        title: 'Gagal Menghapus Kategori',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menghapus kategori.',
+        type: 'error',
+      });
     }
   };
 

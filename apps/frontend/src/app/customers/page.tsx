@@ -5,6 +5,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { UserPlus, RefreshCw } from 'lucide-react';
 import { customerService } from '../../services/customerService';
 import { Customer } from '../../types/customer';
+import { useAlert } from '../../context/AlertContext';
 
 // Modular Customer Components
 import { CustomerTable } from '../../components/customers/CustomerTable';
@@ -12,6 +13,7 @@ import { CustomerFormModal } from '../../components/customers/CustomerFormModal'
 import { CustomerOrderDrawer } from '../../components/customers/CustomerOrderDrawer';
 
 export default function CustomersPage() {
+  const { showAlert, showConfirm, showToast } = useAlert();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -80,9 +82,14 @@ export default function CustomersPage() {
       setName('');
       setPhone('');
       setAddress('');
+      showToast('Pelanggan berhasil ditambahkan!', 'success');
       await fetchCustomers();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal membuat pelanggan');
+      await showAlert({
+        title: 'Gagal Menambahkan Pelanggan',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menambahkan pelanggan.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -90,12 +97,24 @@ export default function CustomersPage() {
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
-    if (!confirm('Apakah Anda yakin ingin menghapus pelanggan ini?')) return;
+    const confirmed = await showConfirm({
+      title: 'Hapus Pelanggan?',
+      message: 'Apakah Anda yakin ingin menghapus data pelanggan ini?',
+      type: 'danger',
+      confirmText: 'Ya, Hapus',
+    });
+    if (!confirmed) return;
+
     try {
       await customerService.deleteCustomer(id);
+      showToast('Pelanggan berhasil dihapus', 'info');
       await fetchCustomers();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menghapus pelanggan');
+      await showAlert({
+        title: 'Gagal Menghapus Pelanggan',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menghapus pelanggan.',
+        type: 'error',
+      });
     }
   };
 

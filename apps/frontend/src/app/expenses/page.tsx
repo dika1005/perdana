@@ -11,6 +11,7 @@ import {
   ExpensePaymentMethod, 
   ExpenseSummary 
 } from '../../types/expense';
+import { useAlert } from '../../context/AlertContext';
 
 // Modular Expense Components
 import { ExpenseSummaryCards } from '../../components/expenses/ExpenseSummaryCards';
@@ -19,6 +20,7 @@ import { ExpenseTable } from '../../components/expenses/ExpenseTable';
 import { ExpenseFormModal } from '../../components/expenses/ExpenseFormModal';
 
 export default function ExpensesPage() {
+  const { showAlert, showConfirm, showToast } = useAlert();
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [summary, setSummary] = useState<ExpenseSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,26 +162,44 @@ export default function ExpensesPage() {
 
       if (editingExpense) {
         await expenseService.updateExpense(editingExpense.id, payload);
+        showToast('Catatan pengeluaran berhasil diperbarui!', 'success');
       } else {
         await expenseService.createExpense(payload);
+        showToast('Catatan pengeluaran berhasil disimpan!', 'success');
       }
 
       setIsModalOpen(false);
       await Promise.all([fetchExpenses(), fetchSummary()]);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menyimpan pengeluaran');
+      await showAlert({
+        title: 'Gagal Menyimpan Pengeluaran',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menyimpan catatan pengeluaran.',
+        type: 'error',
+      });
     } finally {
       setFormSubmitting(false);
     }
   };
 
   const handleDeleteExpense = async (id: number) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus catatan pengeluaran ini?')) return;
+    const confirmed = await showConfirm({
+      title: 'Hapus Catatan Pengeluaran?',
+      message: 'Apakah Anda yakin ingin menghapus catatan pengeluaran ini? Data yang dihapus tidak dapat dikembalikan.',
+      type: 'danger',
+      confirmText: 'Ya, Hapus',
+    });
+    if (!confirmed) return;
+
     try {
       await expenseService.deleteExpense(id);
+      showToast('Catatan pengeluaran berhasil dihapus', 'info');
       await Promise.all([fetchExpenses(), fetchSummary()]);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menghapus pengeluaran');
+      await showAlert({
+        title: 'Gagal Menghapus Pengeluaran',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menghapus catatan pengeluaran.',
+        type: 'error',
+      });
     }
   };
 

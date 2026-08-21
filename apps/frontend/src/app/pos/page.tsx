@@ -11,6 +11,7 @@ import { Customer } from '../../types/customer';
 import { RawMaterial } from '../../types/rawMaterial';
 import { formatRupiah } from '../../utils/format';
 import { PaymentStatus } from '../../types/transaction';
+import { useAlert } from '../../context/AlertContext';
 
 // Modular POS Components
 import { ProductCatalog } from '../../components/pos/ProductCatalog';
@@ -22,6 +23,7 @@ import { ReceiptModal } from '../../components/pos/ReceiptModal';
 import { CartItem } from '../../components/pos/types';
 
 export default function POSPage() {
+  const { showAlert, showConfirm, showToast } = useAlert();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -106,7 +108,7 @@ export default function POSPage() {
         const minOrder = Number(item.product.min_order) || 1;
         const newQty = item.qty + delta;
         if (newQty < minOrder) {
-          alert(`Kuantitas produk "${item.product.name}" minimal ${minOrder} ${item.product.unit_name || 'pcs'}`);
+          showToast(`Kuantitas minimal produk "${item.product.name}" adalah ${minOrder} ${item.product.unit_name || 'pcs'}`, 'warning');
           return item;
         }
         return { ...item, qty: newQty };
@@ -141,25 +143,42 @@ export default function POSPage() {
     setCart(cart.filter(item => item.product.id !== id));
   };
 
-  const clearCart = () => {
-    if (cart.length > 0 && confirm('Kosongkan semua item di keranjang?')) {
-      setCart([]);
+  const clearCart = async () => {
+    if (cart.length > 0) {
+      const confirmed = await showConfirm({
+        title: 'Kosongkan Keranjang?',
+        message: 'Semua item pesanan yang sudah dipilih akan dihapus dari keranjang.',
+        type: 'danger',
+        confirmText: 'Ya, Kosongkan',
+      });
+      if (confirmed) {
+        setCart([]);
+        showToast('Keranjang belanja dikosongkan', 'info');
+      }
     }
   };
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   const total = Math.max(0, subtotal - discountAmount);
 
-  const handleOpenCheckout = () => {
+  const handleOpenCheckout = async () => {
     if (cart.length === 0) {
-      alert('Keranjang belanja masih kosong');
+      await showAlert({
+        title: 'Keranjang Kosong',
+        message: 'Silakan pilih produk terlebih dahulu sebelum melanjutkan ke pembayaran.',
+        type: 'warning',
+      });
       return;
     }
 
     // Validasi harga range dan harga 0
     for (const item of cart) {
       if (item.price <= 0) {
-        alert(`Harga untuk produk "${item.product.name}" belum diisi (masih Rp 0). Silakan masukkan harga terlebih dahulu.`);
+        await showAlert({
+          title: 'Harga Belum Diisi',
+          message: `Harga untuk produk "${item.product.name}" belum diisi (masih Rp 0). Silakan masukkan nominal harga terlebih dahulu.`,
+          type: 'warning',
+        });
         return;
       }
 
@@ -167,14 +186,22 @@ export default function POSPage() {
         const minP = Number(item.product.min_price) || 0;
         const maxP = Number(item.product.max_price) || 0;
         if (item.price < minP || item.price > maxP) {
-          alert(`Harga produk "${item.product.name}" harus di antara ${formatRupiah(minP)} dan ${formatRupiah(maxP)}`);
+          await showAlert({
+            title: 'Harga Di Luar Batas',
+            message: `Harga produk "${item.product.name}" harus di antara ${formatRupiah(minP)} dan ${formatRupiah(maxP)}.`,
+            type: 'warning',
+          });
           return;
         }
       }
 
       const minOrder = Number(item.product.min_order) || 1;
       if (item.qty < minOrder) {
-        alert(`Kuantitas produk "${item.product.name}" minimal ${minOrder} ${item.product.unit_name || 'pcs'}`);
+        await showAlert({
+          title: 'Kuantitas Minimum Belum Terpenuhi',
+          message: `Kuantitas produk "${item.product.name}" minimal ${minOrder} ${item.product.unit_name || 'pcs'}.`,
+          type: 'warning',
+        });
         return;
       }
     }
@@ -201,21 +228,31 @@ export default function POSPage() {
         })),
       };
 
-      const result = await transactionService.createTransaction(payload);
-      
-      try {
-        const inv = await transactionService.getInvoiceData(result.id);
-        setInvoiceData(inv);
-      } catch {
-        setInvoiceData(result);
-      }
-
-      setCart([]);
-      setDiscountAmount(0);
-      setCustomCustomerName('');
-      setSelectedCustomer(null);
+      const res = await transactionService.createTransaction(payload as any);
+      setInvoiceData({
+        ...res,
+        items: cart.map(c => ({
+          product_name: c.product.name,
+          qty: c.qty,
+          custom_price: c.price,
+          unit_name: c.product.unit_name,
+          length: c.length,
+          width: c.width,
+        })),
+        store_name: 'PERDANA PERCETAKAN',
+      });
       setShowCheckoutModal(false);
+      showToast('Transaksi berhasil diproses!', 'success');
+
+      // Reset Form Cart
+      setCart([]);
+      setSelectedCustomer(null);
+      setCustomCustomerName('');
+      setDiscountAmount(0);
+      setPayAmount(0);
+      setEstimatedDoneAt('');
     } catch (err: any) {
+      console.error('Transaction creation error:', err);
       const errData = err?.response?.data;
       let msg = errData?.message || 'Gagal memproses transaksi';
       if (errData?.errors && typeof errData.errors === 'object') {
@@ -226,7 +263,11 @@ export default function POSPage() {
           msg = `${msg}:\n• ${details}`;
         }
       }
-      alert(msg);
+      await showAlert({
+        title: 'Gagal Memproses Transaksi',
+        message: msg,
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }

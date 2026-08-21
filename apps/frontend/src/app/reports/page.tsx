@@ -13,6 +13,7 @@ import {
   ReceivableItem, 
   LowStockItem 
 } from '../../types/report';
+import { useAlert } from '../../context/AlertContext';
 
 // Modular Report Components
 import { ReportSummaryTab } from '../../components/reports/ReportSummaryTab';
@@ -22,6 +23,7 @@ import { ReportMutationsTab } from '../../components/reports/ReportMutationsTab'
 import { ReportPayModal } from '../../components/reports/ReportPayModal';
 
 export default function ReportsPage() {
+  const { showAlert, showToast } = useAlert();
   const [activeTab, setActiveTab] = useState<'summary' | 'receivables' | 'low_stock' | 'mutations'>('summary');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -93,11 +95,15 @@ export default function ReportsPage() {
     setSubmittingPay(true);
     try {
       await transactionService.updatePayment(payModal.item.id, payAmount, 'PAID');
-      alert('Pelunasan berhasil dicatat!');
+      showToast('Pelunasan berhasil dicatat!', 'success');
       setPayModal({ open: false });
       await fetchReportsData();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal memproses pelunasan');
+      await showAlert({
+        title: 'Gagal Memproses Pelunasan',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat memproses pelunasan.',
+        type: 'error',
+      });
     } finally {
       setSubmittingPay(false);
     }
