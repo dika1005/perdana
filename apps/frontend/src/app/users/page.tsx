@@ -124,4 +124,116 @@ export default function UsersManagementPage() {
       await userService.resetPassword(resetModal.user.id, newPassword);
       setResetModal({ open: false });
       setNewPassword('');
- 
+      showToast(`Password untuk ${resetModal.user.name} berhasil diperbarui!`, 'success');
+    } catch (err: any) {
+      await showAlert({
+        title: 'Gagal Mereset Password',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat memperbarui password.',
+        type: 'error',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggleActive = async (user: User) => {
+    const actionText = user.is_active ? 'menonaktifkan' : 'mengaktifkan kembali';
+    const confirmed = await showConfirm({
+      title: `${user.is_active ? 'Nonaktifkan' : 'Aktifkan'} Akun?`,
+      message: `Apakah Anda yakin ingin ${actionText} akun kasir "${user.name}"?`,
+      type: user.is_active ? 'danger' : 'info',
+      confirmText: user.is_active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan',
+    });
+    if (!confirmed) return;
+
+    try {
+      if (user.is_active) {
+        await userService.deactivateUser(user.id);
+      } else {
+        await userService.updateUser(user.id, { is_active: true });
+      }
+      showToast(`Akun "${user.name}" berhasil di${actionText}`, 'info');
+      await fetchUsers();
+    } catch (err: any) {
+      await showAlert({
+        title: 'Gagal Mengubah Status Akun',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat mengubah status akun.',
+        type: 'error',
+      });
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="flex justify-between items-end mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-text-main mb-1">Manajemen Kasir & Pengguna</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-xs">Kelola akun kasir, hak akses, dan reset password.</p>
+        </div>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleDownloadBackup}
+            disabled={backingUp}
+            className="flex items-center gap-1.5 px-3.5 py-2 font-semibold skeuo-button text-emerald-600 dark:text-emerald-400 text-xs rounded-xl"
+            title="Download cadangan seluruh database (.sql)"
+          >
+            <Download className={`w-3.5 h-3.5 ${backingUp ? 'animate-pulse' : ''}`} />
+            <span>{backingUp ? 'Mengekspor...' : 'Backup Database'}</span>
+          </button>
+          <button 
+            onClick={fetchUsers} 
+            className="flex items-center gap-1.5 px-3.5 py-2 font-semibold skeuo-button text-text-main text-xs rounded-xl"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Segarkan
+          </button>
+          <button 
+            onClick={() => setCreateModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 font-semibold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-sm transition-colors"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            Tambah Kasir Baru
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+          {error}
+        </div>
+      )}
+
+      {/* User Table */}
+      <UserTable
+        users={users}
+        loading={loading}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onSearchKeyDown={e => e.key === 'Enter' && fetchUsers()}
+        onOpenResetPassword={u => setResetModal({ open: true, user: u })}
+        onToggleActive={handleToggleActive}
+      />
+
+      {/* Modal Tambah User */}
+      <UserFormModal
+        isOpen={createModal}
+        formData={createForm}
+        onChange={(field, value) => setCreateForm(prev => ({ ...prev, [field]: value }))}
+        submitting={submitting}
+        onClose={() => setCreateModal(false)}
+        onSubmit={handleCreateUser}
+      />
+
+      {/* Modal Reset Password */}
+      <UserResetPasswordModal
+        isOpen={resetModal.open}
+        user={resetModal.user || null}
+        newPassword={newPassword}
+        onChangePassword={setNewPassword}
+        submitting={submitting}
+        onClose={() => setResetModal({ open: false })}
+        onSubmit={handleResetPassword}
+      />
+    </DashboardLayout>
+  );
+}
