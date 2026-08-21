@@ -23,8 +23,8 @@ pub async fn export_sql_dump(db: &DatabaseConnection) -> Result<String, AppError
     sql.push_str(&format!("-- TABLE: users ({} rows)\n", users_list.len()));
     for u in users_list {
         sql.push_str(&format!(
-            "INSERT INTO users (id, name, username, password_hash, role, is_active, created_at, updated_at) \
-             VALUES ({}, {}, {}, {}, {}, {}, {}, {}) \
+            "INSERT INTO users (id, name, username, password_hash, role, is_active, created_at) \
+             VALUES ({}, {}, {}, {}, {}, {}, {}) \
              ON DUPLICATE KEY UPDATE name=VALUES(name), role=VALUES(role);\n",
             u.id,
             sql_str(&u.name),
@@ -33,7 +33,6 @@ pub async fn export_sql_dump(db: &DatabaseConnection) -> Result<String, AppError
             sql_str(u.role.as_str()),
             if u.is_active { 1 } else { 0 },
             sql_ts(&u.created_at),
-            sql_ts(&u.updated_at),
         ));
     }
     sql.push('\n');

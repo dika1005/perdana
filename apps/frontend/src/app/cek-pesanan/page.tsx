@@ -73,16 +73,17 @@ export default function CekPesananPage() {
     setLoading(true);
     setError(null);
     try {
-      const isPhone = /^[0-9+]+$/.test(clean);
-      const data = await publicService.getTracking(
-        isPhone ? { phone: clean } : { invoice: clean }
-      );
+      const data = await publicService.getTracking({
+        q: clean,
+        invoice: clean,
+        phone: clean,
+      });
       setTrackingData(data);
     } catch (err: any) {
       setTrackingData(null);
       setError(
         err?.response?.data?.message ||
-        'Pesanan tidak ditemukan. Mohon periksa kembali Nomor Nota atau No. WhatsApp Anda.'
+        'Pesanan tidak ditemukan. Mohon periksa kembali Nomor Nota, Nama, atau No. WhatsApp Anda.'
       );
     } finally {
       setLoading(false);

@@ -2,7 +2,7 @@ use actix_web::{HttpResponse, web};
 use chrono::{DateTime, NaiveDate, Utc};
 use entity::enums::{OrderStatus, PaymentStatus};
 use entity::prelude::*;
-use entity::{customers, product_categories, products, transaction_item_addons, transaction_items, transactions};
+use entity::{customers, product_categories, products, transaction_items, transactions};
 use rust_decimal::Decimal;
 use sea_orm::{ColumnTrait, EntityTrait, LoaderTrait, ModelTrait, QueryFilter, QueryOrder};
 use serde::{Deserialize, Serialize};
@@ -38,6 +38,7 @@ pub struct PublicCatalogResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct PublicTrackingQuery {
+    pub q: Option<String>,
     pub invoice: Option<String>,
     pub phone: Option<String>,
 }
@@ -133,6 +134,7 @@ pub async fn catalog(
     get,
     path = "/api/v1/public/tracking",
     params(
+        ("q" = Option<String>, Query, description = "Pencarian umum (nomor nota, nama pelanggan, atau no WA)"),
         ("invoice" = Option<String>, Query, description = "Nomor nota / invoice (misal: INV-20260821-1234)"),
         ("phone" = Option<String>, Query, description = "Nomor WhatsApp pelanggan")
     ),
@@ -147,34 +149,61 @@ pub async fn tracking(
     query: web::Query<PublicTrackingQuery>,
 ) -> Result<HttpResponse, AppError> {
     let q = query.into_inner();
-    let invoice_raw = q.invoice.as_deref().unwrap_or("").trim();
-    let phone_raw = q.phone.as_deref().unwrap_or("").trim();
+    let term = q
+        .q
+        .or(q.invoice)
+        .or(q.phone)
+        .unwrap_or_default()
+        .trim()
+        .to_string();
 
-    if invoice_raw.is_empty() && phone_raw.is_empty() {
-        return Err(AppError::bad_request("Masukkan nomor nota atau nomor WhatsApp"));
+    if term.is_empty() {
+        return Err(AppError::field("q", "Masukkan nomor nota, nama, atau nomor WhatsApp Anda"));
     }
 
-    let mut select = Transaction::find().order_by_desc(transactions::Column::Id);
+    let keyword = format!("%{}%", term);
 
-    if !invoice_raw.is_empty() {
-        select = select.filter(transactions::Column::InvoiceNumber.like(format!("%{}%", invoice_raw)));
-    } else if !phone_raw.is_empty() {
-        // Cari pelanggan by phone
-        let custs = Customer::find()
-            .filter(customers::Column::Phone.like(format!("%{}%", phone_raw)))
+    // Cari ID customer bila input berupa nomor telepon atau nama
+    let digits_only: String = term.chars().filter(|c| c.is_ascii_digit()).collect();
+    let matched_cust_ids: Vec<i32> = if !digits_only.is_empty() {
+        let phone_kw = format!("%{}%", digits_only);
+        Customer::find()
+            .filter(
+                customers::Column::Phone
+                    .like(&phone_kw)
+                    .or(customers::Column::Name.like(&keyword)),
+            )
             .all(&state.db)
-            .await?;
-        let cust_ids: Vec<i32> = custs.into_iter().map(|c| c.id).collect();
-        if cust_ids.is_empty() {
-            return Err(AppError::not_found("Tidak ditemukan pesanan untuk nomor WhatsApp tersebut"));
-        }
-        select = select.filter(transactions::Column::CustomerId.is_in(cust_ids));
+            .await?
+            .into_iter()
+            .map(|c| c.id)
+            .collect()
+    } else {
+        Customer::find()
+            .filter(customers::Column::Name.like(&keyword))
+            .all(&state.db)
+            .await?
+            .into_iter()
+            .map(|c| c.id)
+            .collect()
+    };
+
+    let mut condition = transactions::Column::InvoiceNumber
+        .like(&keyword)
+        .or(transactions::Column::CustomerName.like(&keyword));
+
+    if !matched_cust_ids.is_empty() {
+        condition = condition.or(transactions::Column::CustomerId.is_in(matched_cust_ids));
     }
 
-    let trans_model = select
+    let trans_model = Transaction::find()
+        .filter(condition)
+        .order_by_desc(transactions::Column::Id)
         .one(&state.db)
         .await?
-        .ok_or_else(|| AppError::not_found("Pesanan tidak ditemukan. Periksa kembali nomor nota Anda."))?;
+        .ok_or_else(|| {
+            AppError::not_found("Pesanan tidak ditemukan. Periksa kembali nomor nota atau nomor WhatsApp Anda.")
+        })?;
 
     let items = trans_model
         .find_related(TransactionItem)

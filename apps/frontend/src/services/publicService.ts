@@ -80,7 +80,7 @@ export const publicService = {
     return res.data.data;
   },
 
-  getTracking: async (params: { invoice?: string; phone?: string }): Promise<PublicTrackingData> => {
+  getTracking: async (params: { q?: string; invoice?: string; phone?: string }): Promise<PublicTrackingData> => {
     const res = await publicClient.get<{ data: PublicTrackingData }>('/public/tracking', { params });
     return res.data.data;
   },
