@@ -17,6 +17,9 @@ pub struct Model {
     pub min_price: Decimal,
     #[sea_orm(column_type = "Decimal(Some((12, 2)))")]
     pub max_price: Decimal,
+    pub raw_material_id: Option<i32>,
+    #[sea_orm(column_type = "Decimal(Some((12, 4)))", nullable)]
+    pub material_amount: Option<Decimal>,
     pub created_at: DateTimeUtc,
 }
 
@@ -30,6 +33,14 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Product,
+    #[sea_orm(
+        belongs_to = "super::raw_materials::Entity",
+        from = "Column::RawMaterialId",
+        to = "super::raw_materials::Column::Id",
+        on_update = "NoAction",
+        on_delete = "SetNull"
+    )]
+    RawMaterial,
     #[sea_orm(has_many = "super::transaction_items::Entity")]
     TransactionItems,
 }
@@ -37,6 +48,12 @@ pub enum Relation {
 impl Related<super::products::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Product.def()
+    }
+}
+
+impl Related<super::raw_materials::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::RawMaterial.def()
     }
 }
 

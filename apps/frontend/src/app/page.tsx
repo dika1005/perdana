@@ -133,11 +133,11 @@ export default function HomePage() {
     // Map categories and clean raw timestamp names
     const categoryMap = new Map<number, { id: number; name: string; count: number }>();
     
-    catalog.categories.forEach(c => {
+    catalog.categories.forEach((c: { id: number; name: string }) => {
       let cleanName = c.name.replace(/\s*\d{10,}.*$/, '').trim();
       if (!cleanName) cleanName = 'Kategori Umum';
       
-      const count = catalog.products.filter(p => p.category_id === c.id).length;
+      const count = catalog.products.filter((p: PublicProduct) => p.category_id === c.id).length;
       if (count > 0) {
         categoryMap.set(c.id, { id: c.id, name: cleanName, count });
       }
@@ -214,7 +214,7 @@ export default function HomePage() {
 
   const getCategoryName = (id: number | null) => {
     if (!id || !catalog) return null;
-    const found = catalog.categories.find(c => c.id === id);
+    const found = catalog.categories.find((c: any) => c.id === id);
     if (!found) return null;
     const clean = found.name.replace(/\s*\d{10,}.*$/, '').trim();
     return clean || found.name;
@@ -276,6 +276,13 @@ export default function HomePage() {
             <button onClick={scrollToCatalog} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Katalog Produk
             </button>
+            <Link 
+              href="/cek-pesanan"
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1.5"
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Cek Status Pesanan</span>
+            </Link>
             <a 
               href={`https://wa.me/${(catalog?.store.phone || '').replace(/[^0-9]/g, '')}`} 
               target="_blank" 
@@ -287,6 +294,13 @@ export default function HomePage() {
           </nav>
 
           <div className="flex items-center gap-2.5">
+            <Link
+              href="/cek-pesanan"
+              className="md:hidden p-2 rounded-xl skeuo-button text-xs font-bold text-text-muted hover:text-text-main"
+              title="Cek Pesanan"
+            >
+              <Package className="w-4 h-4 text-blue-500" />
+            </Link>
             <button
               onClick={toggleTheme}
               className="w-9 h-9 rounded-xl skeuo-button flex items-center justify-center text-text-muted hover:text-text-main transition-colors"
@@ -832,7 +846,7 @@ export default function HomePage() {
                           {product.variants.length} Varian Tersedia:
                         </p>
                         <div className="space-y-1">
-                          {product.variants.slice(0, 2).map(v => (
+                          {product.variants.slice(0, 2).map((v: any) => (
                             <div key={v.id} className="flex justify-between items-center text-[10px] px-2.5 py-1 rounded-lg skeuo-inset">
                               <span className="text-text-main font-medium truncate mr-2">{v.variant_name}</span>
                               <span className="text-blue-600 dark:text-blue-400 font-bold whitespace-nowrap">

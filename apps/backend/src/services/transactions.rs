@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
-use entity::enums::{OrderStatus, PaymentStatus, PriceType, RangePriceType};
+use entity::enums::{MutationType, OrderStatus, PaymentStatus, PriceType, RangePriceType};
 use entity::prelude::*;
-use entity::{transaction_item_addons, transaction_items, transactions, users};
+use entity::{raw_material_mutations, raw_materials, transaction_item_addons, transaction_items, transactions, users};
+use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, LoaderTrait, ModelTrait,
@@ -218,6 +219,8 @@ pub async fn create(
         price: Decimal,
         qty: i32,
         subtotal: Decimal,
+        raw_material_id: Option<i32>,
+        material_amount: Decimal,
         addons: Vec<ProcessedAddon>,
     }
 
@@ -239,6 +242,9 @@ pub async fn create(
             ));
         }
 
+        let mut linked_raw_material_id = product.raw_material_id;
+        let mut linked_material_amount = product.material_amount.unwrap_or(Decimal::ONE);
+
         let (unit_price, variant_name) = if let Some(variant_id) = item_input.product_variant_id {
             let variant = ProductVariant::find_by_id(variant_id)
                 .one(&txn)
@@ -247,6 +253,11 @@ pub async fn create(
 
             if variant.product_id != product.id {
                 return Err(AppError::field("items", "Varian tidak cocok dengan produk"));
+            }
+
+            if variant.raw_material_id.is_some() {
+                linked_raw_material_id = variant.raw_material_id;
+                linked_material_amount = variant.material_amount.unwrap_or(Decimal::ONE);
             }
 
             let price = match variant.price_type {
@@ -380,6 +391,8 @@ pub async fn create(
             price: unit_price,
             qty: item_input.qty,
             subtotal: item_subtotal,
+            raw_material_id: linked_raw_material_id,
+            material_amount: linked_material_amount,
             addons: processed_addons,
         });
     }
@@ -399,7 +412,7 @@ pub async fn create(
 
     // 5. Insert Transaction
     let active_trans = transactions::ActiveModel {
-        invoice_number: Set(invoice_number),
+        invoice_number: Set(invoice_number.clone()),
         customer_id: Set(payload.customer_id),
         customer_name: Set(Some(customer_name)),
         subtotal_amount: Set(total_subtotal),
@@ -416,7 +429,7 @@ pub async fn create(
 
     let trans = active_trans.insert(&txn).await?;
 
-    // 6. Insert Items & Addons
+    // 6. Insert Items & Addons + Auto-deduct Raw Material Stock (BOM)
     let mut response_items = Vec::new();
     for p_item in processed_items {
         let active_item = transaction_items::ActiveModel {
@@ -432,6 +445,32 @@ pub async fn create(
         };
 
         let item_model = active_item.insert(&txn).await?;
+
+        // Auto deduct raw material if linked
+        if let Some(mat_id) = p_item.raw_material_id {
+            let deduct_qty = (Decimal::from(p_item.qty) * p_item.material_amount)
+                .to_f64()
+                .unwrap_or(p_item.qty as f64)
+                .ceil() as i32;
+
+            if deduct_qty > 0 {
+                if let Some(raw_mat) = RawMaterial::find_by_id(mat_id).one(&txn).await? {
+                    let new_stock = (raw_mat.stock - deduct_qty).max(0);
+                    let mut active_mat: raw_materials::ActiveModel = raw_mat.into();
+                    active_mat.stock = Set(new_stock);
+                    active_mat.update(&txn).await?;
+
+                    let active_mutation = raw_material_mutations::ActiveModel {
+                        raw_material_id: Set(mat_id),
+                        mutation_type: Set(MutationType::Out),
+                        qty: Set(deduct_qty),
+                        notes: Set(Some(format!("Otomatis dari Transaksi {}", invoice_number))),
+                        ..Default::default()
+                    };
+                    active_mutation.insert(&txn).await?;
+                }
+            }
+        }
 
         let mut response_addons = Vec::new();
         for p_addon in p_item.addons {

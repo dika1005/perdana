@@ -1,9 +1,8 @@
-'use client';
-
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Layers } from 'lucide-react';
 import { Product, PriceType } from '../../types/product';
 import { Category } from '../../types/category';
+import { RawMaterial } from '../../types/rawMaterial';
 
 interface ProductFormData {
   name: string;
@@ -15,12 +14,15 @@ interface ProductFormData {
   min_order: number;
   unit_name: string;
   has_variants: boolean;
+  raw_material_id?: number;
+  material_amount?: number;
 }
 
 interface ProductFormModalProps {
   isOpen: boolean;
   item: Product | null;
   categories: Category[];
+  rawMaterials?: RawMaterial[];
   formData: ProductFormData;
   onChange: (field: keyof ProductFormData, value: any) => void;
   submitting: boolean;
@@ -32,6 +34,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   isOpen,
   item,
   categories,
+  rawMaterials = [],
   formData,
   onChange,
   submitting,
@@ -77,6 +80,46 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+          </div>
+
+          {/* BOM: Hubungkan ke Bahan Baku Inventaris */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-brand-600">
+              <Layers className="w-4 h-4" />
+              <span>Resep Bahan Baku (Auto-Deduct Stok)</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-text-muted mb-1">Bahan Baku Terkait</label>
+                <select
+                  value={formData.raw_material_id || ''}
+                  onChange={e => onChange('raw_material_id', e.target.value ? Number(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 skeuo outline-none text-xs text-text-main rounded-lg bg-transparent"
+                >
+                  <option value="">-- Tidak Terhubung --</option>
+                  {rawMaterials.map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.unit}) - Stok: {m.stock}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-text-muted mb-1">Konsumsi per Unit / m²</label>
+                <input
+                  type="number"
+                  step="any"
+                  min="0.01"
+                  value={formData.material_amount !== undefined ? formData.material_amount : 1}
+                  onChange={e => onChange('material_amount', Number(e.target.value))}
+                  placeholder="1.0"
+                  className="w-full px-3 py-2 skeuo-inset outline-none text-xs text-text-main rounded-lg font-bold"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-slate-400">
+              Stok bahan di modul Inventaris otomatis berkurang saat pesanan produk ini dibuat.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

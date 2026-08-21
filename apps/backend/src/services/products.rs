@@ -23,6 +23,8 @@ pub fn map_variant(m: &product_variants::Model) -> ProductVariantResponse {
         price: m.price,
         min_price: m.min_price,
         max_price: m.max_price,
+        raw_material_id: m.raw_material_id,
+        material_amount: m.material_amount,
         created_at: m.created_at,
     }
 }
@@ -42,6 +44,8 @@ pub fn map_product(
         min_order: m.min_order.unwrap_or(1),
         unit_name: m.unit_name.clone().unwrap_or_else(|| "pcs".to_string()),
         has_variants: m.has_variants,
+        raw_material_id: m.raw_material_id,
+        material_amount: m.material_amount,
         created_at: m.created_at,
         variants,
     }
@@ -140,6 +144,8 @@ pub async fn create(
         min_order: Set(Some(payload.min_order.unwrap_or(1).max(1))),
         unit_name: Set(Some(payload.unit_name.unwrap_or_else(|| "pcs".to_string()))),
         has_variants: Set(payload.has_variants.unwrap_or(false)),
+        raw_material_id: Set(payload.raw_material_id),
+        material_amount: Set(payload.material_amount.or(Some(Decimal::ONE))),
         ..Default::default()
     };
 
@@ -190,6 +196,10 @@ pub async fn update(
     active_model.unit_name = Set(Some(payload.unit_name.unwrap_or_else(|| "pcs".to_string())));
     if let Some(has_variants) = payload.has_variants {
         active_model.has_variants = Set(has_variants);
+    }
+    active_model.raw_material_id = Set(payload.raw_material_id);
+    if payload.material_amount.is_some() {
+        active_model.material_amount = Set(payload.material_amount);
     }
 
     let updated = active_model.update(db).await?;
@@ -268,6 +278,8 @@ pub async fn create_variant(
         price: Set(price),
         min_price: Set(min_price),
         max_price: Set(max_price),
+        raw_material_id: Set(payload.raw_material_id),
+        material_amount: Set(payload.material_amount.or(Some(Decimal::ONE))),
         ..Default::default()
     };
 
@@ -314,6 +326,10 @@ pub async fn update_variant(
     active_variant.price = Set(price);
     active_variant.min_price = Set(min_price);
     active_variant.max_price = Set(max_price);
+    active_variant.raw_material_id = Set(payload.raw_material_id);
+    if payload.material_amount.is_some() {
+        active_variant.material_amount = Set(payload.material_amount);
+    }
 
     let updated = active_variant.update(db).await?;
     Ok(map_variant(&updated))

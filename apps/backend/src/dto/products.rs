@@ -31,6 +31,9 @@ pub struct CreateProductRequest {
     pub unit_name: Option<String>,
     #[schema(example = false)]
     pub has_variants: Option<bool>,
+    pub raw_material_id: Option<i32>,
+    #[schema(value_type = Option<f64>, example = 1.0)]
+    pub material_amount: Option<Decimal>,
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
@@ -55,6 +58,9 @@ pub struct UpdateProductRequest {
     pub unit_name: Option<String>,
     #[schema(example = false)]
     pub has_variants: Option<bool>,
+    pub raw_material_id: Option<i32>,
+    #[schema(value_type = Option<f64>, example = 1.0)]
+    pub material_amount: Option<Decimal>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -78,6 +84,9 @@ pub struct ProductResponse {
     pub min_order: i32,
     pub unit_name: String,
     pub has_variants: bool,
+    pub raw_material_id: Option<i32>,
+    #[schema(value_type = Option<f64>, example = 1.0)]
+    pub material_amount: Option<Decimal>,
     pub created_at: DateTime<Utc>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub variants: Option<Vec<ProductVariantResponse>>,
@@ -100,6 +109,9 @@ pub struct CreateVariantRequest {
     pub min_price: Option<Decimal>,
     #[schema(value_type = Option<f64>, example = 3500)]
     pub max_price: Option<Decimal>,
+    pub raw_material_id: Option<i32>,
+    #[schema(value_type = Option<f64>, example = 1.0)]
+    pub material_amount: Option<Decimal>,
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
@@ -115,6 +127,9 @@ pub struct UpdateVariantRequest {
     pub min_price: Option<Decimal>,
     #[schema(value_type = Option<f64>, example = 4000)]
     pub max_price: Option<Decimal>,
+    pub raw_material_id: Option<i32>,
+    #[schema(value_type = Option<f64>, example = 1.0)]
+    pub material_amount: Option<Decimal>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -129,6 +144,9 @@ pub struct ProductVariantResponse {
     pub min_price: Decimal,
     #[schema(value_type = f64, example = 3500)]
     pub max_price: Decimal,
+    pub raw_material_id: Option<i32>,
+    #[schema(value_type = Option<f64>, example = 1.0)]
+    pub material_amount: Option<Decimal>,
     pub created_at: DateTime<Utc>,
 }
 

@@ -4,8 +4,10 @@ import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Tag, Layers, Sparkles, FolderTree, RefreshCw } from 'lucide-react';
 import { productService } from '../../services/productService';
+import { rawMaterialService } from '../../services/rawMaterialService';
 import { Product, ProductVariant, ProductAddon, PriceType, RangePriceType } from '../../types/product';
 import { Category } from '../../types/category';
+import { RawMaterial } from '../../types/rawMaterial';
 import { useAlert } from '../../context/AlertContext';
 
 // Modular Product Components
@@ -28,6 +30,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [addons, setAddons] = useState<ProductAddon[]>([]);
+  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
 
@@ -51,6 +54,8 @@ export default function ProductsPage() {
     min_order: 1,
     unit_name: 'pcs',
     has_variants: false,
+    raw_material_id: undefined as number | undefined,
+    material_amount: 1,
   });
 
   const [vForm, setVForm] = useState({
@@ -59,6 +64,8 @@ export default function ProductsPage() {
     price: 0,
     min_price: 0,
     max_price: 0,
+    raw_material_id: undefined as number | undefined,
+    material_amount: 1,
   });
 
   const [aForm, setAForm] = useState({
@@ -79,14 +86,16 @@ export default function ProductsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [pRes, cRes, aRes] = await Promise.all([
+      const [pRes, cRes, aRes, mRes] = await Promise.all([
         productService.getProducts({ search: searchTerm || undefined }),
         productService.getCategories(),
         productService.getAddons(),
+        rawMaterialService.getRawMaterials(),
       ]);
       setProducts(pRes.data);
       setCategories(cRes);
       setAddons(aRes);
+      setRawMaterials(mRes.data);
 
       if (pRes.data.length > 0 && !selectedProductId) {
         setSelectedProductId(pRes.data[0].id);
@@ -392,6 +401,8 @@ export default function ProductsPage() {
               min_order: 1,
               unit_name: 'pcs',
               has_variants: false,
+              raw_material_id: undefined,
+              material_amount: 1,
             });
             setProductModal({ open: true, item: null });
           }}
@@ -406,6 +417,8 @@ export default function ProductsPage() {
               min_order: p.min_order,
               unit_name: p.unit_name,
               has_variants: p.has_variants,
+              raw_material_id: p.raw_material_id || undefined,
+              material_amount: p.material_amount ? Number(p.material_amount) : 1,
             });
             setProductModal({ open: true, item: p });
           }}
@@ -427,6 +440,8 @@ export default function ProductsPage() {
               price: 0,
               min_price: 0,
               max_price: 0,
+              raw_material_id: undefined,
+              material_amount: 1,
             });
             setVariantModal({ open: true, item: null });
           }}
@@ -437,6 +452,8 @@ export default function ProductsPage() {
               price: Number(v.price),
               min_price: Number(v.min_price),
               max_price: Number(v.max_price),
+              raw_material_id: v.raw_material_id || undefined,
+              material_amount: v.material_amount ? Number(v.material_amount) : 1,
             });
             setVariantModal({ open: true, item: v });
           }}
@@ -493,6 +510,7 @@ export default function ProductsPage() {
         isOpen={productModal.open}
         item={productModal.item || null}
         categories={categories}
+        rawMaterials={rawMaterials}
         formData={pForm}
         onChange={(field, value) => setPForm(prev => ({ ...prev, [field]: value }))}
         submitting={submitting}
@@ -503,6 +521,7 @@ export default function ProductsPage() {
       <VariantFormModal
         isOpen={variantModal.open}
         item={variantModal.item || null}
+        rawMaterials={rawMaterials}
         formData={vForm}
         onChange={(field, value) => setVForm(prev => ({ ...prev, [field]: value }))}
         submitting={submitting}

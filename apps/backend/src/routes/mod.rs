@@ -13,13 +13,15 @@ pub mod reports;
 pub mod transactions;
 pub mod users;
 pub mod expenses;
+pub mod backup;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
 
     cfg.route("/health", web::get().to(health::health_check))
         .service(
             web::scope("/public")
-                .route("/catalog", web::get().to(public::catalog)),
+                .route("/catalog", web::get().to(public::catalog))
+                .route("/tracking", web::get().to(public::tracking)),
         )
         .service(
             web::scope("/auth")
@@ -143,6 +145,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(
             web::scope("/ai")
                 .route("/parse-order", web::post().to(ai::parse_order)),
+        )
+        .service(
+            web::scope("/backup")
+                .route("/export", web::get().to(backup::export_backup)),
         )
         .configure(expenses::configure);
 }

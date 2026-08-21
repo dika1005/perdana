@@ -133,6 +133,15 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     "#;
     let _ = db.execute_unprepared(create_expenses_sql).await;
 
+    // Migrasi BOM (Resep Bahan Baku) pada products dan product_variants jika belum ada
+    let _ = db.execute_unprepared("ALTER TABLE products ADD COLUMN raw_material_id INT NULL DEFAULT NULL;").await;
+    let _ = db.execute_unprepared("ALTER TABLE products ADD COLUMN material_amount DECIMAL(12,4) NULL DEFAULT 1.0000;").await;
+    let _ = db.execute_unprepared("ALTER TABLE products ADD CONSTRAINT fk_products_raw_material FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE SET NULL;").await;
+
+    let _ = db.execute_unprepared("ALTER TABLE product_variants ADD COLUMN raw_material_id INT NULL DEFAULT NULL;").await;
+    let _ = db.execute_unprepared("ALTER TABLE product_variants ADD COLUMN material_amount DECIMAL(12,4) NULL DEFAULT 1.0000;").await;
+    let _ = db.execute_unprepared("ALTER TABLE product_variants ADD CONSTRAINT fk_product_variants_raw_material FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE SET NULL;").await;
+
     Ok(db)
 }
 

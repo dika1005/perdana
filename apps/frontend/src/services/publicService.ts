@@ -52,9 +52,36 @@ export interface PublicCatalog {
   products: PublicProduct[];
 }
 
+export interface PublicTrackingItem {
+  product_name: string;
+  variant_name?: string | null;
+  qty: number;
+  addons: string[];
+}
+
+export interface PublicTrackingData {
+  invoice_number: string;
+  customer_name: string;
+  order_status: 'ANTRIAN' | 'PROSES' | 'SELESAI' | 'DIAMBIL';
+  payment_status: 'PAID' | 'DP' | 'UNPAID';
+  total_amount: number | string;
+  pay_amount: number | string;
+  remaining_amount: number | string;
+  estimated_done_at?: string | null;
+  created_at: string;
+  items: PublicTrackingItem[];
+  store_name: string;
+  store_phone: string;
+}
+
 export const publicService = {
   getCatalog: async (): Promise<PublicCatalog> => {
     const res = await publicClient.get<{ data: PublicCatalog }>('/public/catalog');
+    return res.data.data;
+  },
+
+  getTracking: async (params: { invoice?: string; phone?: string }): Promise<PublicTrackingData> => {
+    const res = await publicClient.get<{ data: PublicTrackingData }>('/public/tracking', { params });
     return res.data.data;
   },
 };

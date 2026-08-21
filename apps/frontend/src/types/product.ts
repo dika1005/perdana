@@ -9,6 +9,8 @@ export interface ProductVariant {
   price: number;
   min_price: number;
   max_price: number;
+  raw_material_id?: number | null;
+  material_amount?: number | string | null;
   created_at: string;
 }
 
@@ -23,6 +25,8 @@ export interface Product {
   min_order: number;
   unit_name: string;
   has_variants: boolean;
+  raw_material_id?: number | null;
+  material_amount?: number | string | null;
   created_at: string;
   variants?: ProductVariant[];
 }

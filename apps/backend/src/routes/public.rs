@@ -1,8 +1,11 @@
 use actix_web::{HttpResponse, web};
+use chrono::{DateTime, NaiveDate, Utc};
+use entity::enums::{OrderStatus, PaymentStatus};
 use entity::prelude::*;
-use entity::{product_categories, products};
-use sea_orm::{EntityTrait, LoaderTrait, QueryOrder};
-use serde::Serialize;
+use entity::{customers, product_categories, products, transaction_item_addons, transaction_items, transactions};
+use rust_decimal::Decimal;
+use sea_orm::{ColumnTrait, EntityTrait, LoaderTrait, ModelTrait, QueryFilter, QueryOrder};
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::dto::{ApiResponse, ProductResponse};
@@ -33,12 +36,37 @@ pub struct PublicCatalogResponse {
     pub products: Vec<ProductResponse>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct PublicTrackingQuery {
+    pub invoice: Option<String>,
+    pub phone: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PublicTrackingItem {
+    pub product_name: String,
+    pub variant_name: Option<String>,
+    pub qty: i32,
+    pub addons: Vec<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PublicTrackingResponse {
+    pub invoice_number: String,
+    pub customer_name: String,
+    pub order_status: OrderStatus,
+    pub payment_status: PaymentStatus,
+    pub total_amount: Decimal,
+    pub pay_amount: Decimal,
+    pub remaining_amount: Decimal,
+    pub estimated_done_at: Option<NaiveDate>,
+    pub created_at: DateTime<Utc>,
+    pub items: Vec<PublicTrackingItem>,
+    pub store_name: String,
+    pub store_phone: String,
+}
+
 /// GET /api/v1/public/catalog
-///
-/// Endpoint publik tanpa autentikasi. Mengembalikan:
-/// - Info toko (nama, alamat, telepon)
-/// - Daftar kategori produk
-/// - Daftar semua produk beserta varian
 #[utoipa::path(
     get,
     path = "/api/v1/public/catalog",
@@ -98,4 +126,91 @@ pub async fn catalog(
     };
 
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Katalog produk publik", catalog)))
+}
+
+/// GET /api/v1/public/tracking
+#[utoipa::path(
+    get,
+    path = "/api/v1/public/tracking",
+    params(
+        ("invoice" = Option<String>, Query, description = "Nomor nota / invoice (misal: INV-20260821-1234)"),
+        ("phone" = Option<String>, Query, description = "Nomor WhatsApp pelanggan")
+    ),
+    responses(
+        (status = 200, description = "Status pelacakan pesanan publik", body = ApiResponse<PublicTrackingResponse>),
+        (status = 404, description = "Pesanan tidak ditemukan")
+    ),
+    tag = "Public"
+)]
+pub async fn tracking(
+    state: web::Data<AppState>,
+    query: web::Query<PublicTrackingQuery>,
+) -> Result<HttpResponse, AppError> {
+    let q = query.into_inner();
+    let invoice_raw = q.invoice.as_deref().unwrap_or("").trim();
+    let phone_raw = q.phone.as_deref().unwrap_or("").trim();
+
+    if invoice_raw.is_empty() && phone_raw.is_empty() {
+        return Err(AppError::bad_request("Masukkan nomor nota atau nomor WhatsApp"));
+    }
+
+    let mut select = Transaction::find().order_by_desc(transactions::Column::Id);
+
+    if !invoice_raw.is_empty() {
+        select = select.filter(transactions::Column::InvoiceNumber.like(format!("%{}%", invoice_raw)));
+    } else if !phone_raw.is_empty() {
+        // Cari pelanggan by phone
+        let custs = Customer::find()
+            .filter(customers::Column::Phone.like(format!("%{}%", phone_raw)))
+            .all(&state.db)
+            .await?;
+        let cust_ids: Vec<i32> = custs.into_iter().map(|c| c.id).collect();
+        if cust_ids.is_empty() {
+            return Err(AppError::not_found("Tidak ditemukan pesanan untuk nomor WhatsApp tersebut"));
+        }
+        select = select.filter(transactions::Column::CustomerId.is_in(cust_ids));
+    }
+
+    let trans_model = select
+        .one(&state.db)
+        .await?
+        .ok_or_else(|| AppError::not_found("Pesanan tidak ditemukan. Periksa kembali nomor nota Anda."))?;
+
+    let items = trans_model
+        .find_related(TransactionItem)
+        .order_by_asc(transaction_items::Column::Id)
+        .all(&state.db)
+        .await?;
+
+    let addons = items.load_many(TransactionItemAddon::find(), &state.db).await?;
+
+    let item_results: Vec<PublicTrackingItem> = items
+        .into_iter()
+        .zip(addons.into_iter())
+        .map(|(item, item_addons)| PublicTrackingItem {
+            product_name: item.product_name,
+            variant_name: item.variant_name,
+            qty: item.qty,
+            addons: item_addons.into_iter().map(|a| a.addon_name).collect(),
+        })
+        .collect();
+
+    let remaining_amount = (trans_model.total_amount - trans_model.pay_amount).max(Decimal::ZERO);
+
+    let res = PublicTrackingResponse {
+        invoice_number: trans_model.invoice_number,
+        customer_name: trans_model.customer_name.unwrap_or_else(|| "Pelanggan".to_string()),
+        order_status: trans_model.order_status,
+        payment_status: trans_model.payment_status,
+        total_amount: trans_model.total_amount,
+        pay_amount: trans_model.pay_amount,
+        remaining_amount,
+        estimated_done_at: trans_model.estimated_done_at,
+        created_at: trans_model.created_at,
+        items: item_results,
+        store_name: state.store.name.clone(),
+        store_phone: state.store.phone.clone(),
+    };
+
+    Ok(HttpResponse::Ok().json(ApiResponse::ok("Status pesanan ditemukan", res)))
 }

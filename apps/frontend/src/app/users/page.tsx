@@ -1,9 +1,8 @@
-'use client';
-
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { UserPlus, RefreshCw } from 'lucide-react';
+import { UserPlus, RefreshCw, Download } from 'lucide-react';
 import { userService } from '../../services/userService';
+import { backupService } from '../../services/backupService';
 import { User, UserRole } from '../../types/user';
 import { useAlert } from '../../context/AlertContext';
 
@@ -17,6 +16,7 @@ export default function UsersManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [backingUp, setBackingUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Modals
@@ -33,6 +33,23 @@ export default function UsersManagementPage() {
 
   const [newPassword, setNewPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const handleDownloadBackup = async () => {
+    setBackingUp(true);
+    try {
+      showToast('Sedang membuat file cadangan database...', 'info');
+      await backupService.downloadSqlBackup();
+      showToast('Cadangan database (.sql) berhasil diunduh!', 'success');
+    } catch (err: any) {
+      await showAlert({
+        title: 'Gagal Mengunduh Backup',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat mengekspor database.',
+        type: 'error',
+      });
+    } finally {
+      setBackingUp(false);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -152,6 +169,15 @@ export default function UsersManagementPage() {
           <p className="text-text-muted text-sm">Kelola akun kasir, hak akses, dan reset password.</p>
         </div>
         <div className="flex gap-3">
+          <button 
+            onClick={handleDownloadBackup}
+            disabled={backingUp}
+            className="flex items-center gap-2 px-4 py-2.5 font-bold skeuo-button text-emerald-600 dark:text-emerald-400 text-sm rounded-xl"
+            title="Download cadangan seluruh database (.sql)"
+          >
+            <Download className={`w-4 h-4 ${backingUp ? 'animate-pulse' : ''}`} />
+            <span>{backingUp ? 'Mengekspor...' : 'Backup Database'}</span>
+          </button>
           <button 
             onClick={fetchUsers} 
             className="flex items-center gap-2 px-4 py-2.5 font-bold skeuo-button text-text-main text-sm rounded-xl"

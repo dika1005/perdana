@@ -1,8 +1,7 @@
-'use client';
-
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Layers } from 'lucide-react';
 import { ProductVariant, RangePriceType } from '../../types/product';
+import { RawMaterial } from '../../types/rawMaterial';
 
 interface VariantFormData {
   variant_name: string;
@@ -10,11 +9,14 @@ interface VariantFormData {
   price: number;
   min_price: number;
   max_price: number;
+  raw_material_id?: number;
+  material_amount?: number;
 }
 
 interface VariantFormModalProps {
   isOpen: boolean;
   item: ProductVariant | null;
+  rawMaterials?: RawMaterial[];
   formData: VariantFormData;
   onChange: (field: keyof VariantFormData, value: any) => void;
   submitting: boolean;
@@ -25,6 +27,7 @@ interface VariantFormModalProps {
 export const VariantFormModal: React.FC<VariantFormModalProps> = ({
   isOpen,
   item,
+  rawMaterials = [],
   formData,
   onChange,
   submitting,
@@ -68,6 +71,43 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
               <option value="FIXED">FIXED (Harga Tetap)</option>
               <option value="RANGE">RANGE (Rentang)</option>
             </select>
+          </div>
+
+          {/* BOM: Bahan Baku Varian */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-brand-600">
+              <Layers className="w-4 h-4" />
+              <span>Resep Bahan Baku Varian</span>
+            </div>
+            <div className="grid grid-cols-1 gap-2.5">
+              <div>
+                <label className="block text-[11px] font-semibold text-text-muted mb-1">Bahan Baku Terkait</label>
+                <select
+                  value={formData.raw_material_id || ''}
+                  onChange={e => onChange('raw_material_id', e.target.value ? Number(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 skeuo outline-none text-xs text-text-main rounded-lg bg-transparent"
+                >
+                  <option value="">-- Ikuti Bahan Produk Utama / Tidak Terhubung --</option>
+                  {rawMaterials.map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.unit}) - Stok: {m.stock}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-text-muted mb-1">Konsumsi per Unit / m²</label>
+                <input
+                  type="number"
+                  step="any"
+                  min="0.01"
+                  value={formData.material_amount !== undefined ? formData.material_amount : 1}
+                  onChange={e => onChange('material_amount', Number(e.target.value))}
+                  placeholder="1.0"
+                  className="w-full px-3 py-2 skeuo-inset outline-none text-xs text-text-main rounded-lg font-bold"
+                />
+              </div>
+            </div>
           </div>
 
           {formData.price_type === 'FIXED' ? (
