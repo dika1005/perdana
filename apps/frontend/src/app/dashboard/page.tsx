@@ -5,6 +5,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { RefreshCw } from 'lucide-react';
 
 import { reportService } from '../../services/reportService';
+import { authService, UserProfile } from '../../services/authService';
 import { DailySalesReport, DashboardSummary, TopProductReport } from '../../types/report';
 
 // Modular Dashboard Components
@@ -13,6 +14,7 @@ import { DashboardSalesChart } from '../../components/dashboard/DashboardSalesCh
 import { DashboardTopProducts } from '../../components/dashboard/DashboardTopProducts';
 
 export default function Dashboard() {
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [salesData, setSalesData] = useState<DailySalesReport[]>([]);
   const [topProducts, setTopProducts] = useState<TopProductReport[]>([]);
@@ -40,8 +42,11 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    authService.me().then(u => setUser(u)).catch(() => {});
     fetchDashboardData();
   }, []);
+
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const formattedSalesData = salesData.map(item => ({
     name: new Date(item.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }),
@@ -53,8 +58,14 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-text-main mb-2">Ringkasan Bisnis</h1>
-          <p className="text-text-muted">Data performa langsung dari database percetakan.</p>
+          <h1 className="text-3xl font-bold text-text-main mb-2">
+            {isSuperAdmin ? 'Ringkasan Bisnis' : 'Ringkasan Operasional'}
+          </h1>
+          <p className="text-text-muted">
+            {isSuperAdmin 
+              ? 'Data performa keuangan & operasional percetakan.' 
+              : 'Pantau antrian pesanan, siap diambil, dan status kasir hari ini.'}
+          </p>
         </div>
         <button 
           onClick={fetchDashboardData} 
@@ -74,12 +85,20 @@ export default function Dashboard() {
       )}
 
       {/* Stats Cards */}
-      <DashboardStatCards summary={summary} />
+      <DashboardStatCards summary={summary} isSuperAdmin={isSuperAdmin} />
 
       {/* Charts & Top Products Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <DashboardSalesChart data={formattedSalesData} />
-        <DashboardTopProducts topProducts={topProducts} />
+        {isSuperAdmin ? (
+          <>
+            <DashboardSalesChart data={formattedSalesData} />
+            <DashboardTopProducts topProducts={topProducts} />
+          </>
+        ) : (
+          <div className="lg:col-span-3">
+            <DashboardTopProducts topProducts={topProducts} />
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

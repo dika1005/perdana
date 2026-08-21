@@ -33,9 +33,40 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, colorClas
 
 interface DashboardStatCardsProps {
   summary: DashboardSummary | null;
+  isSuperAdmin?: boolean;
 }
 
-export const DashboardStatCards: React.FC<DashboardStatCardsProps> = ({ summary }) => {
+export const DashboardStatCards: React.FC<DashboardStatCardsProps> = ({ summary, isSuperAdmin = false }) => {
+  if (!isSuperAdmin) {
+    // Tampilan Kasir: Hanya metrik operasional kasir (Tanpa Omset, Pengeluaran, Laba Bersih, & Bahan Baku)
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <StatCard 
+          title="Pesanan Aktif" 
+          value={`${summary?.active_orders || 0} Pesanan`} 
+          icon={Clock} 
+          colorClass="text-indigo-600 bg-indigo-50 border-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-400 dark:border-indigo-900/50" 
+          subtitle="Dalam antrian & proses"
+        />
+        <StatCard 
+          title="Siap Diambil" 
+          value={`${summary?.ready_orders || 0} Pesanan`} 
+          icon={Clock} 
+          colorClass="text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900/50" 
+          subtitle="Selesai dikerjakan"
+        />
+        <StatCard 
+          title="Tagihan Belum Lunas" 
+          value={`${Number(summary?.dp_transactions || 0) + Number(summary?.unpaid_transactions || 0)} Transaksi`} 
+          icon={CreditCard} 
+          colorClass="text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-900/50" 
+          subtitle="Status DP / Piutang"
+        />
+      </div>
+    );
+  }
+
+  // Tampilan Super Admin / Owner: Lengkap dengan Laporan Keuangan & Laba Rugi
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
       <StatCard 

@@ -110,6 +110,162 @@ body {
   transform: translateY(0);
 }
 
+/* Neo-Brutalism Utilities */
+.neo-box {
+  background-color: var(--color-bg-skeuo);
+  border: 2.5px solid #0f172a;
+  box-shadow: 4px 4px 0px 0px #0f172a;
+  border-radius: 1rem;
+}
+
+.dark .neo-box {
+  border-color: #e2e8f0;
+  box-shadow: 4px 4px 0px 0px #e2e8f0;
+}
+
+.neo-box-sm {
+  background-color: var(--color-bg-skeuo);
+  border: 2px solid #0f172a;
+  box-shadow: 3px 3px 0px 0px #0f172a;
+  border-radius: 0.75rem;
+}
+
+.dark .neo-box-sm {
+  border-color: #e2e8f0;
+  box-shadow: 3px 3px 0px 0px #e2e8f0;
+}
+
+.neo-btn {
+  border: 2.5px solid #0f172a;
+  box-shadow: 4px 4px 0px 0px #0f172a;
+  border-radius: 0.75rem;
+  font-weight: 800;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.dark .neo-btn {
+  border-color: #e2e8f0;
+  box-shadow: 4px 4px 0px 0px #e2e8f0;
+}
+
+.neo-btn:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px #0f172a;
+}
+
+.dark .neo-btn:hover {
+  box-shadow: 2px 2px 0px 0px #e2e8f0;
+}
+
+.neo-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px 0px #0f172a;
+}
+
+.dark .neo-btn:active {
+  box-shadow: 0px 0px 0px 0px #e2e8f0;
+}
+
+/* Modern Glass & Animation Utilities */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 35px -10px rgba(37, 99, 235, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.dark .glass-card-hover:hover {
+  box-shadow: 0 20px 35px -10px rgba(59, 130, 246, 0.25), 0 0 20px 0 rgba(59, 130, 246, 0.15);
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+@keyframes float-reverse {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(10px) rotate(-1deg); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.08); }
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 7s ease-in-out infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 4s ease-in-out infinite;
+}
+
+.shimmer-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+  animation: shimmer-sweep 3s ease-in-out infinite;
+}
+
+/* Neo Brutalism Marquee */
+@keyframes neo-marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-neo-marquee {
+  display: flex;
+  width: max-content;
+  animation: neo-marquee 28s linear infinite;
+}
+
+.animate-neo-marquee:hover {
+  animation-play-state: paused;
+}
+
 /* Scrollbar customization */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

@@ -41,8 +41,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     db.execute(Statement::from_string(DbBackend::MySql, "SET FOREIGN_KEY_CHECKS = 1;")).await?;
     println!("✅ Database berhasil dikosongkan.");
 
-    println!("\n🌱 Menanam User (1 Owner + 3 Kasir)...");
-    let superadmin_hash = hash("superadmin123", DEFAULT_COST)?;
+    let superadmin_password = env::var("SEED_SUPERADMIN_PASSWORD").unwrap_or_else(|_| "perdana1".to_string());
+    let superadmin_hash = hash(&superadmin_password, DEFAULT_COST)?;
     let cashier_hash = hash("password123", DEFAULT_COST)?;
 
     let _u_owner = users::ActiveModel {
@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         is_active: Set(true),
         ..Default::default()
     }.insert(&db).await?;
-    println!("  -> Owner: superadmin (Password: superadmin123)");
+    println!("  -> Owner: superadmin (Password: {})", superadmin_password);
 
     let _u_kasir1 = users::ActiveModel {
         name: Set("Budi Kasir Pagi".to_string()),

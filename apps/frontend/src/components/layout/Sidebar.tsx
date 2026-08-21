@@ -38,10 +38,10 @@ const menuItems: MenuItem[] = [
   { name: 'Kasir POS', path: '/pos', icon: ShoppingCart },
   { name: 'Antrian Pesanan', path: '/tracking', icon: ClipboardList },
   { name: 'Riwayat Transaksi', path: '/transactions', icon: History },
-  { name: 'Pengeluaran', path: '/expenses', icon: CreditCard },
-  { name: 'Master Produk', path: '/products', icon: Package },
-  { name: 'Inventaris Bahan', path: '/inventory', icon: Layers },
   { name: 'Pelanggan', path: '/customers', icon: Users },
+  { name: 'Pengeluaran', path: '/expenses', icon: CreditCard, superAdminOnly: true },
+  { name: 'Master Produk', path: '/products', icon: Package, superAdminOnly: true },
+  { name: 'Inventaris Bahan', path: '/inventory', icon: Layers, superAdminOnly: true },
   { name: 'Laporan', path: '/reports', icon: FileText, superAdminOnly: true },
   { name: 'Kelola Kasir', path: '/users', icon: UserCog, superAdminOnly: true },
 ];
