@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { X, Clock, User } from 'lucide-react';
+import { X, Calendar, User, Clock, CheckCircle, AlertCircle, ShoppingBag } from 'lucide-react';
+import { formatRupiah } from '../../utils/format';
 import { OrderStatus, PaymentStatus } from '../../types/transaction';
 
 interface TransactionDetailDrawerProps {
@@ -72,10 +73,10 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
                 <div key={item.id} className="p-3 skeuo-inset rounded-xl bg-white/40 dark:bg-black/20 text-xs">
                   <div className="flex justify-between font-bold text-text-main">
                     <span>{item.product_name || `Produk #${item.product_id}`}</span>
-                    <span>Rp {(Number(item.custom_price || 0) * item.qty).toLocaleString('id-ID')}</span>
+                    <span>{formatRupiah(Number(item.custom_price || 0) * item.qty)}</span>
                   </div>
                   <div className="flex justify-between text-[11px] text-text-muted mt-1">
-                    <span>{item.qty} pcs @ Rp {Number(item.custom_price || 0).toLocaleString('id-ID')}</span>
+                    <span>{item.qty} pcs @ {formatRupiah(item.custom_price || 0)}</span>
                     {item.length && item.width && (
                       <span className="text-purple-600 dark:text-purple-400 font-mono">
                         {item.length}m × {item.width}m ({item.length * item.width} m²)
@@ -92,24 +93,24 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
             <div className="flex justify-between text-text-muted">
               <span>Total Belanja:</span>
               <span className="font-bold text-text-main">
-                Rp {Number(transaction.total_amount).toLocaleString('id-ID')}
+                {formatRupiah(transaction.total_amount)}
               </span>
             </div>
             {Number(transaction.discount_amount) > 0 && (
               <div className="flex justify-between text-red-500">
                 <span>Diskon:</span>
-                <span>- Rp {Number(transaction.discount_amount).toLocaleString('id-ID')}</span>
+                <span>- {formatRupiah(transaction.discount_amount)}</span>
               </div>
             )}
             <div className="flex justify-between text-emerald-600 font-bold">
               <span>Dibayar:</span>
-              <span>Rp {Number(transaction.pay_amount).toLocaleString('id-ID')}</span>
+              <span>{formatRupiah(transaction.pay_amount)}</span>
             </div>
             {Number(transaction.total_amount) - Number(transaction.pay_amount) > 0 && (
               <div className="flex justify-between text-red-500 font-bold text-sm pt-2 border-t border-black/5">
                 <span>Sisa Piutang:</span>
                 <span>
-                  Rp {(Number(transaction.total_amount) - Number(transaction.pay_amount)).toLocaleString('id-ID')}
+                  {formatRupiah(Number(transaction.total_amount) - Number(transaction.pay_amount))}
                 </span>
               </div>
             )}

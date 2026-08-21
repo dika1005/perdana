@@ -8,6 +8,8 @@ import { transactionService } from '../../services/transactionService';
 import { Product } from '../../types/product';
 import { Category } from '../../types/category';
 import { Customer } from '../../types/customer';
+import { RawMaterial } from '../../types/rawMaterial';
+import { formatRupiah } from '../../utils/format';
 import { PaymentStatus } from '../../types/transaction';
 
 // Modular POS Components
@@ -165,7 +167,7 @@ export default function POSPage() {
         const minP = Number(item.product.min_price) || 0;
         const maxP = Number(item.product.max_price) || 0;
         if (item.price < minP || item.price > maxP) {
-          alert(`Harga produk "${item.product.name}" harus di antara Rp ${minP.toLocaleString('id-ID')} dan Rp ${maxP.toLocaleString('id-ID')}`);
+          alert(`Harga produk "${item.product.name}" harus di antara ${formatRupiah(minP)} dan ${formatRupiah(maxP)}`);
           return;
         }
       }

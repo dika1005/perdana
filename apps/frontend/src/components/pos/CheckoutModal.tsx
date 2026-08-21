@@ -3,6 +3,7 @@
 import React from 'react';
 import { CreditCard, X, Calendar, Check, Clock, Wallet } from 'lucide-react';
 import { PaymentStatus } from '../../types/transaction';
+import { formatRupiah } from '../../utils/format';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -83,7 +84,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <div className="p-4 rounded-xl skeuo-inset bg-brand-50/80 dark:bg-brand-950/70 border border-brand-200 dark:border-brand-800 flex justify-between items-center">
             <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Total Tagihan:</span>
             <span className="text-2xl font-black text-brand-600 dark:text-brand-400 font-mono">
-              Rp {total.toLocaleString('id-ID')}
+              {formatRupiah(total)}
             </span>
           </div>
 
@@ -148,7 +149,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   onClick={() => onPayAmountChange(val)}
                   className="px-3 py-1.5 text-xs font-bold skeuo-button text-slate-600 dark:text-slate-400 rounded-lg whitespace-nowrap hover:text-text-main"
                 >
-                  Rp {(val / 1000).toFixed(0)}rb
+                  {formatRupiah(val)}
                 </button>
               ))}
             </div>
@@ -157,13 +158,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             {payAmount > total && (
               <div className="mt-2.5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-sm flex justify-between items-center">
                 <span>💵 Uang Kembalian:</span>
-                <span className="font-mono text-base font-black">Rp {(payAmount - total).toLocaleString('id-ID')}</span>
+                <span className="font-mono text-base font-black">{formatRupiah(payAmount - total)}</span>
               </div>
             )}
             {payAmount < total && paymentStatus !== 'PAID' && (
               <div className="mt-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-bold text-sm flex justify-between items-center">
                 <span>📋 Sisa Tagihan (Piutang):</span>
-                <span className="font-mono text-base font-black">Rp {(total - payAmount).toLocaleString('id-ID')}</span>
+                <span className="font-mono text-base font-black">{formatRupiah(total - payAmount)}</span>
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatRupiah } from '../../utils/format';
 
 interface FormattedSaleItem {
   name: string;
@@ -34,7 +35,7 @@ export const DashboardSalesChart: React.FC<DashboardSalesChartProps> = ({ data }
             <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.4} vertical={false} />
               <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(value) => `Rp ${(value / 1000).toLocaleString('id-ID')}k`} />
+              <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(value) => `${formatRupiah(value / 1000, true)}k`} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'var(--color-bg-skeuo)', 
@@ -47,7 +48,7 @@ export const DashboardSalesChart: React.FC<DashboardSalesChartProps> = ({ data }
                 }}
                 itemStyle={{ color: '#2563eb', fontWeight: 'bold' }}
                 labelStyle={{ color: 'var(--color-text-main)', fontWeight: 'bold', marginBottom: '2px' }}
-                formatter={(value: any) => [`Rp ${Number(value).toLocaleString('id-ID')}`, 'Total Penjualan']}
+                formatter={(value: any) => [formatRupiah(value), 'Total Penjualan']}
               />
               <Line type="monotone" dataKey="total" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 3.5, fill: '#2563eb', strokeWidth: 2, stroke: '#ffffff' }} activeDot={{ r: 5 }} />
             </LineChart>

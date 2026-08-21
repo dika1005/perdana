@@ -4,6 +4,7 @@ import React from 'react';
 import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
 import { Product } from '../../types/product';
 import { Category } from '../../types/category';
+import { formatRupiah } from '../../utils/format';
 
 interface ProductListTabProps {
   products: Product[];
@@ -82,7 +83,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                       </span>
                     </td>
                     <td className="py-3 px-4 font-bold text-xs text-text-main font-mono">
-                      Rp {Number(p.default_price).toLocaleString('id-ID')}
+                      {formatRupiah(p.default_price)}
                     </td>
                     <td className="py-3 px-4 text-slate-500 dark:text-slate-400 text-xs">
                       {p.min_order} {p.unit_name}

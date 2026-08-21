@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TopProductReport } from '../../types/report';
+import { formatRupiah } from '../../utils/format';
 
 interface DashboardTopProductsProps {
   topProducts: TopProductReport[];
@@ -37,7 +38,7 @@ export const DashboardTopProducts: React.FC<DashboardTopProductsProps> = ({ topP
               </div>
               <div className="text-right shrink-0">
                 <p className="text-xs font-bold text-text-main font-mono">
-                  Rp {Number(product.total_revenue).toLocaleString('id-ID')}
+                  {formatRupiah(product.total_revenue)}
                 </p>
               </div>
             </div>

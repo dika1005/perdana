@@ -9,6 +9,7 @@ import {
   FileText, Tag, ShoppingBag, FolderTree, ArrowUpDown, Filter
 } from 'lucide-react';
 import { publicService, PublicCatalog, PublicProduct } from '../services/publicService';
+import { formatRupiah } from '../utils/format';
 
 // Standard Printing Services with description & keyword matcher
 const PRESET_SERVICES = [
@@ -219,7 +220,7 @@ export default function HomePage() {
     return clean || found.name;
   };
 
-  const formatPrice = (price: number) => `Rp ${Number(price).toLocaleString('id-ID')}`;
+  const formatPrice = (price: number | string) => formatRupiah(price);
 
   const waLink = (productName: string) => {
     const phone = (catalog?.store.phone || '').replace(/[^0-9]/g, '');

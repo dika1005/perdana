@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, X, Check } from 'lucide-react';
 import { Product } from '../../types/product';
+import { formatRupiah } from '../../utils/format';
 import { CartItem } from './types';
 
 interface BannerCalculatorModalProps {
@@ -97,7 +98,7 @@ export const BannerCalculatorModal: React.FC<BannerCalculatorModalProps> = ({
             >
               {products.map(p => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({p.unit_name}) - Default: Rp {Number(p.default_price).toLocaleString('id-ID')}
+                  {p.name} ({p.unit_name}) - Default: {formatRupiah(p.default_price)}
                 </option>
               ))}
             </select>
@@ -216,7 +217,7 @@ export const BannerCalculatorModal: React.FC<BannerCalculatorModalProps> = ({
             </div>
             <div className="flex justify-between text-text-muted">
               <span>Harga per Lembar:</span>
-              <span className="font-bold">Rp {unitPrice.toLocaleString('id-ID')}</span>
+              <span className="font-bold">{formatRupiah(unitPrice)}</span>
             </div>
             <div className="flex justify-between text-text-muted">
               <span>Total Luas Cetak:</span>
@@ -224,7 +225,7 @@ export const BannerCalculatorModal: React.FC<BannerCalculatorModalProps> = ({
             </div>
             <div className="flex justify-between font-black text-sm text-brand-600 pt-2 border-t border-black/5">
               <span>TOTAL BIAYA:</span>
-              <span className="text-base">Rp {totalCost.toLocaleString('id-ID')}</span>
+              <span className="text-base">{formatRupiah(totalCost)}</span>
             </div>
           </div>
 

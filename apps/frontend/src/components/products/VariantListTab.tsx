@@ -3,6 +3,7 @@
 import React from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { Product, ProductVariant } from '../../types/product';
+import { formatRupiah } from '../../utils/format';
 
 interface VariantListTabProps {
   products: Product[];
@@ -99,8 +100,8 @@ export const VariantListTab: React.FC<VariantListTabProps> = ({
                     </td>
                     <td className="py-3 px-4 font-bold text-xs text-text-main font-mono">
                       {v.price_type === 'RANGE' 
-                        ? `Rp ${Number(v.min_price).toLocaleString('id-ID')} - ${Number(v.max_price).toLocaleString('id-ID')}`
-                        : `Rp ${Number(v.price).toLocaleString('id-ID')}`}
+                        ? `${formatRupiah(v.min_price)} - ${formatRupiah(v.max_price)}`
+                        : formatRupiah(v.price)}
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex justify-end gap-1">

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Check, X, Printer } from 'lucide-react';
+import { formatRupiah } from '../../utils/format';
 
 interface ReceiptModalProps {
   invoiceData: any | null;
@@ -61,9 +62,9 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <div key={idx} className="space-y-0.5">
                 <p className="font-bold">{item.product_name}</p>
                 <div className="flex justify-between text-[10px] text-slate-600 pl-2">
-                  <span>{item.qty} × Rp {Number(item.custom_price || item.price || 0).toLocaleString('id-ID')}</span>
+                  <span>{item.qty} × {formatRupiah(item.custom_price || item.price || 0)}</span>
                   <span className="font-bold text-black">
-                    Rp {(Number(item.custom_price || item.price || 0) * item.qty).toLocaleString('id-ID')}
+                    {formatRupiah(Number(item.custom_price || item.price || 0) * item.qty)}
                   </span>
                 </div>
               </div>
@@ -74,31 +75,31 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           <div className="space-y-1 pt-1 text-[10px]">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span>Rp {Number(invoiceData.subtotal || invoiceData.total_amount).toLocaleString('id-ID')}</span>
+              <span>{formatRupiah(invoiceData.subtotal || invoiceData.total_amount)}</span>
             </div>
             {Number(invoiceData.discount_amount) > 0 && (
               <div className="flex justify-between text-slate-600">
                 <span>Diskon</span>
-                <span>- Rp {Number(invoiceData.discount_amount).toLocaleString('id-ID')}</span>
+                <span>- {formatRupiah(invoiceData.discount_amount)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-xs pt-1 border-t border-slate-300">
               <span>TOTAL</span>
-              <span>Rp {Number(invoiceData.total_amount).toLocaleString('id-ID')}</span>
+              <span>{formatRupiah(invoiceData.total_amount)}</span>
             </div>
             <div className="flex justify-between">
               <span>BAYAR</span>
-              <span>Rp {Number(invoiceData.pay_amount).toLocaleString('id-ID')}</span>
+              <span>{formatRupiah(invoiceData.pay_amount)}</span>
             </div>
             {Number(invoiceData.remaining_amount) > 0 ? (
               <div className="flex justify-between text-red-600 font-bold">
                 <span>SISA PIUTANG</span>
-                <span>Rp {Number(invoiceData.remaining_amount).toLocaleString('id-ID')}</span>
+                <span>{formatRupiah(invoiceData.remaining_amount)}</span>
               </div>
             ) : (
               <div className="flex justify-between">
                 <span>KEMBALI</span>
-                <span>Rp {Number(invoiceData.change_amount || 0).toLocaleString('id-ID')}</span>
+                <span>{formatRupiah(invoiceData.change_amount || 0)}</span>
               </div>
             )}
           </div>

@@ -3,6 +3,7 @@
 import React from 'react';
 import { CreditCard } from 'lucide-react';
 import { ReceivableItem } from '../../types/report';
+import { formatRupiah } from '../../utils/format';
 
 interface ReportReceivablesTabProps {
   receivables: ReceivableItem[];
@@ -51,9 +52,9 @@ export const ReportReceivablesTab: React.FC<ReportReceivablesTabProps> = ({
                     {new Date(r.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                   </td>
                   <td className="py-3 px-4 font-semibold text-text-main text-xs">{r.customer_name}</td>
-                  <td className="py-3 px-4 font-mono text-xs text-text-main">Rp {Number(r.total_amount).toLocaleString('id-ID')}</td>
-                  <td className="py-3 px-4 font-mono text-emerald-600 dark:text-emerald-400 text-xs font-semibold">Rp {Number(r.pay_amount).toLocaleString('id-ID')}</td>
-                  <td className="py-3 px-4 font-mono text-rose-600 dark:text-rose-400 font-bold text-xs">Rp {Number(r.remaining_amount).toLocaleString('id-ID')}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-text-main">{formatRupiah(r.total_amount)}</td>
+                  <td className="py-3 px-4 font-mono text-emerald-600 dark:text-emerald-400 text-xs font-semibold">{formatRupiah(r.pay_amount)}</td>
+                  <td className="py-3 px-4 font-mono text-rose-600 dark:text-rose-400 font-bold text-xs">{formatRupiah(r.remaining_amount)}</td>
                   <td className="py-3 px-4">
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60">
                       {r.payment_status}

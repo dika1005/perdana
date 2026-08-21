@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { X, Check } from 'lucide-react';
+import { formatRupiah } from '../../utils/format';
 
 interface TrackingSettleModalProps {
   isOpen: boolean;
@@ -44,15 +45,15 @@ export const TrackingSettleModal: React.FC<TrackingSettleModalProps> = ({
         <div className="p-4 rounded-xl skeuo-inset bg-brand-50/40 text-xs space-y-1.5 mb-4">
           <div className="flex justify-between text-text-muted">
             <span>Total Belanja:</span>
-            <span className="font-bold">Rp {totalAmount.toLocaleString('id-ID')}</span>
+            <span className="font-bold">{formatRupiah(totalAmount)}</span>
           </div>
           <div className="flex justify-between text-emerald-600">
             <span>Telah Dibayar (DP):</span>
-            <span className="font-bold">Rp {currentPaid.toLocaleString('id-ID')}</span>
+            <span className="font-bold">{formatRupiah(currentPaid)}</span>
           </div>
           <div className="flex justify-between text-red-500 font-bold text-sm pt-2 border-t border-black/5">
             <span>Sisa Tagihan:</span>
-            <span>Rp {remaining.toLocaleString('id-ID')}</span>
+            <span>{formatRupiah(remaining)}</span>
           </div>
         </div>
 

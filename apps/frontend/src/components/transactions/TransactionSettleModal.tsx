@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { X, Check } from 'lucide-react';
+import { formatRupiah } from '../../utils/format';
 
 interface TransactionSettleModalProps {
   isOpen: boolean;
@@ -44,15 +45,15 @@ export const TransactionSettleModal: React.FC<TransactionSettleModalProps> = ({
         <div className="p-4 rounded-xl skeuo-inset bg-brand-50/40 text-xs space-y-1.5 mb-4">
           <div className="flex justify-between text-text-muted">
             <span>Total Belanja:</span>
-            <span className="font-bold">Rp {total.toLocaleString('id-ID')}</span>
+            <span className="font-bold">{formatRupiah(total)}</span>
           </div>
           <div className="flex justify-between text-emerald-600">
             <span>Sudah Dibayar (DP):</span>
-            <span className="font-bold">Rp {alreadyPaid.toLocaleString('id-ID')}</span>
+            <span className="font-bold">{formatRupiah(alreadyPaid)}</span>
           </div>
           <div className="flex justify-between text-red-500 font-bold text-sm pt-2 border-t border-black/5">
             <span>Sisa Kurang Bayar:</span>
-            <span>Rp {remaining.toLocaleString('id-ID')}</span>
+            <span>{formatRupiah(remaining)}</span>
           </div>
         </div>
 
@@ -74,7 +75,7 @@ export const TransactionSettleModal: React.FC<TransactionSettleModalProps> = ({
           {payAmount > remaining && (
             <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 font-bold text-xs flex justify-between">
               <span>Kembalian:</span>
-              <span className="font-mono">Rp {(payAmount - remaining).toLocaleString('id-ID')}</span>
+              <span className="font-mono">{formatRupiah(payAmount - remaining)}</span>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import React from 'react';
 import { ShoppingCart, User, Trash2, Calculator, Minus, Plus, Banknote, CreditCard } from 'lucide-react';
 import { Customer } from '../../types/customer';
 import { CartItem } from './types';
+import { formatRupiah } from '../../utils/format';
 
 interface CartSidebarProps {
   cart: CartItem[];
@@ -146,13 +147,13 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                         </div>
                       ) : (
                         <span className="font-mono font-bold text-text-main">
-                          Rp {item.price.toLocaleString('id-ID')}
+                          {formatRupiah(item.price)}
                         </span>
                       )}
 
                       {isRange && (
                         <span className="text-[10px] text-slate-400">
-                          ({Number(item.product.min_price).toLocaleString('id-ID')} - {Number(item.product.max_price).toLocaleString('id-ID')})
+                          ({formatRupiah(item.product.min_price)} - {formatRupiah(item.product.max_price)})
                         </span>
                       )}
                     </div>
@@ -210,7 +211,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                 {/* Subtotal & Quantity Controls */}
                 <div className="flex justify-between items-center pt-2 border-t border-slate-200/80 dark:border-slate-800">
                   <span className="font-bold text-text-main text-xs font-mono">
-                    Rp {(item.price * item.qty).toLocaleString('id-ID')}
+                    {formatRupiah(item.price * item.qty)}
                   </span>
                   
                   <div className="flex items-center gap-1 bg-white dark:bg-slate-950 rounded-lg p-0.5 border border-slate-200 dark:border-slate-800">
@@ -240,7 +241,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
         <div className="space-y-1 text-xs">
           <div className="flex justify-between text-slate-500 dark:text-slate-400">
             <span>Subtotal:</span>
-            <span className="font-semibold font-mono text-text-main">Rp {subtotal.toLocaleString('id-ID')}</span>
+            <span className="font-semibold font-mono text-text-main">{formatRupiah(subtotal)}</span>
           </div>
 
           <div className="flex justify-between items-center">
@@ -260,7 +261,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
           <div className="flex justify-between font-bold text-sm text-text-main pt-1.5 border-t border-slate-200/80 dark:border-slate-800">
             <span>Total:</span>
             <span className="text-base text-blue-600 dark:text-blue-400 font-mono">
-              Rp {total.toLocaleString('id-ID')}
+              {formatRupiah(total)}
             </span>
           </div>
         </div>
@@ -272,7 +273,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
           className="w-full py-2.5 font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs flex items-center justify-center gap-2 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
           <CreditCard className="w-4 h-4" />
-          <span>Proses Bayar — Rp {total.toLocaleString('id-ID')}</span>
+          <span>Proses Bayar — {formatRupiah(total)}</span>
         </button>
       </div>
     </div>

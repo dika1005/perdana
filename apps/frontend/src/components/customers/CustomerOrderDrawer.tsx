@@ -3,6 +3,8 @@
 import React from 'react';
 import { History, X } from 'lucide-react';
 import { Customer } from '../../types/customer';
+import { customerService } from '../../services/customerService';
+import { formatRupiah } from '../../utils/format';
 
 interface CustomerOrderDrawerProps {
   customer: Customer | null;
@@ -57,7 +59,7 @@ export const CustomerOrderDrawer: React.FC<CustomerOrderDrawerProps> = ({
                 <div key={ord.id} className="p-4 rounded-xl skeuo-inset text-xs space-y-2">
                   <div className="flex justify-between items-center font-bold">
                     <span className="text-text-main font-mono">{ord.invoice_number}</span>
-                    <span className="text-brand-600">Rp {Number(ord.total_amount).toLocaleString('id-ID')}</span>
+                    <span className="text-brand-600">{formatRupiah(ord.total_amount)}</span>
                   </div>
                   <div className="flex justify-between text-text-muted text-[11px]">
                     <span>{new Date(ord.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
@@ -69,7 +71,7 @@ export const CustomerOrderDrawer: React.FC<CustomerOrderDrawerProps> = ({
                     </span>
                     {Number(ord.total_amount) > Number(ord.pay_amount) && (
                       <span className="text-red-500 font-bold">
-                        Sisa DP: Rp {(Number(ord.total_amount) - Number(ord.pay_amount)).toLocaleString('id-ID')}
+                        Sisa DP: {formatRupiah(Number(ord.total_amount) - Number(ord.pay_amount))}
                       </span>
                     )}
                   </div>

@@ -5,6 +5,7 @@ import { Search, X, Calculator, Sparkles, RefreshCw, FileText, Plus } from 'luci
 import { Product } from '../../types/product';
 import { Category } from '../../types/category';
 import { CartItem } from './types';
+import { formatRupiah } from '../../utils/format';
 
 interface ProductCatalogProps {
   products: Product[];
@@ -134,8 +135,8 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
               const isRange = product.price_type === 'RANGE';
 
               const priceDisplay = isRange
-                ? `Rp ${Number(product.min_price).toLocaleString('id-ID')} - ${Number(product.max_price).toLocaleString('id-ID')}`
-                : `Rp ${Number(product.default_price).toLocaleString('id-ID')}`;
+                ? `${formatRupiah(product.min_price)} - ${formatRupiah(product.max_price)}`
+                : formatRupiah(product.default_price);
 
               return (
                 <div 

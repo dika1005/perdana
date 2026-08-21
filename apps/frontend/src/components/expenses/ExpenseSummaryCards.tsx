@@ -3,6 +3,7 @@
 import React from 'react';
 import { Wallet, TrendingDown, Clock, Receipt } from 'lucide-react';
 import { ExpenseSummary } from '../../types/expense';
+import { formatRupiah } from '../../utils/format';
 
 interface ExpenseSummaryCardsProps {
   summary: ExpenseSummary | null;
@@ -16,7 +17,7 @@ export const ExpenseSummaryCards: React.FC<ExpenseSummaryCardsProps> = ({ summar
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Pengeluaran Hari Ini</p>
           <h3 className="text-xl font-bold text-text-main mt-1 font-mono tracking-tight">
-            Rp {Number(summary?.today_amount || 0).toLocaleString('id-ID')}
+            {formatRupiah(summary?.today_amount)}
           </h3>
         </div>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-rose-600 bg-rose-50 border border-rose-100 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-900/50 shrink-0">
@@ -29,7 +30,7 @@ export const ExpenseSummaryCards: React.FC<ExpenseSummaryCardsProps> = ({ summar
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Pengeluaran Bulan Ini</p>
           <h3 className="text-xl font-bold text-text-main mt-1 font-mono tracking-tight">
-            Rp {Number(summary?.month_amount || 0).toLocaleString('id-ID')}
+            {formatRupiah(summary?.month_amount)}
           </h3>
         </div>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-amber-600 bg-amber-50 border border-amber-100 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-900/50 shrink-0">
@@ -42,7 +43,7 @@ export const ExpenseSummaryCards: React.FC<ExpenseSummaryCardsProps> = ({ summar
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Pengeluaran</p>
           <h3 className="text-xl font-bold text-text-main mt-1 font-mono tracking-tight">
-            Rp {Number(summary?.total_amount || 0).toLocaleString('id-ID')}
+            {formatRupiah(summary?.total_amount)}
           </h3>
         </div>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-blue-600 bg-blue-50 border border-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900/50 shrink-0">

@@ -3,6 +3,7 @@
 import React from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { ProductAddon } from '../../types/product';
+import { formatRupiah } from '../../utils/format';
 
 interface AddonListTabProps {
   addons: ProductAddon[];
@@ -61,8 +62,8 @@ export const AddonListTab: React.FC<AddonListTabProps> = ({
                   </td>
                   <td className="py-3 font-bold text-brand-600">
                     {a.price_type === 'RANGE' 
-                      ? `Rp ${Number(a.min_price).toLocaleString('id-ID')} - ${Number(a.max_price).toLocaleString('id-ID')}`
-                      : `Rp ${Number(a.default_price).toLocaleString('id-ID')}`}
+                      ? `${formatRupiah(a.min_price)} - ${formatRupiah(a.max_price)}`
+                      : formatRupiah(a.default_price)}
                   </td>
                   <td className="py-3 text-right">
                     <div className="flex justify-end gap-2">

@@ -3,6 +3,7 @@
 import React from 'react';
 import { RefreshCw, FileText, Edit3, Trash2, ChevronLeft, ChevronRight, Layers, Wrench, Users, Receipt } from 'lucide-react';
 import { ExpenseCategory, ExpenseItem } from '../../types/expense';
+import { formatRupiah } from '../../utils/format';
 
 const categoryLabels: Record<ExpenseCategory, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
   'BAHAN_BAKU': { label: 'Bahan Baku', icon: Layers, color: 'text-blue-700 bg-blue-50 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60' },
@@ -95,7 +96,7 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
                       </span>
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-xs text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                      Rp {Number(exp.amount).toLocaleString('id-ID')}
+                      {formatRupiah(exp.amount)}
                     </td>
                     <td className="py-3 px-4">
                       <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60">

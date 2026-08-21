@@ -3,6 +3,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { ReceivableItem } from '../../types/report';
+import { formatRupiah } from '../../utils/format';
 
 interface ReportPayModalProps {
   isOpen: boolean;
@@ -41,15 +42,15 @@ export const ReportPayModal: React.FC<ReportPayModalProps> = ({
         <div className="p-4 rounded-xl skeuo-inset bg-amber-50/40 text-xs space-y-1.5 mb-4">
           <div className="flex justify-between text-text-muted">
             <span>Total Belanja:</span>
-            <span className="font-bold">Rp {Number(item.total_amount).toLocaleString('id-ID')}</span>
+            <span className="font-bold">{formatRupiah(item.total_amount)}</span>
           </div>
           <div className="flex justify-between text-emerald-600">
             <span>Telah Dibayar Sebelumnya (DP):</span>
-            <span className="font-bold">Rp {Number(item.pay_amount).toLocaleString('id-ID')}</span>
+            <span className="font-bold">{formatRupiah(item.pay_amount)}</span>
           </div>
           <div className="flex justify-between text-red-500 font-bold text-sm pt-2 border-t border-black/5">
             <span>Sisa Tagihan:</span>
-            <span>Rp {Number(item.remaining_amount).toLocaleString('id-ID')}</span>
+            <span>{formatRupiah(item.remaining_amount)}</span>
           </div>
         </div>
 

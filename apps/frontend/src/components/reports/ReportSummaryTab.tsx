@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { DashboardSummary, DailySalesReport, TopProductReport } from '../../types/report';
+import { formatRupiah } from '../../utils/format';
 
 interface ReportSummaryTabProps {
   summary: DashboardSummary | null;
@@ -19,21 +20,21 @@ export const ReportSummaryTab: React.FC<ReportSummaryTabProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <div className="skeuo p-4">
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Omset</span>
-          <p className="text-base font-bold text-text-main font-mono mt-1">Rp {(summary?.total_omset || 0).toLocaleString('id-ID')}</p>
+          <p className="text-base font-bold text-text-main font-mono mt-1">{formatRupiah(summary?.total_omset)}</p>
         </div>
         <div className="skeuo p-4">
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Pengeluaran</span>
-          <p className="text-base font-bold text-rose-600 dark:text-rose-400 font-mono mt-1">Rp {(summary?.total_expenses || 0).toLocaleString('id-ID')}</p>
+          <p className="text-base font-bold text-rose-600 dark:text-rose-400 font-mono mt-1">{formatRupiah(summary?.total_expenses)}</p>
         </div>
         <div className="skeuo p-4">
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Laba Bersih</span>
-          <p className={`text-base font-bold font-mono mt-1 ${(summary?.net_profit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-            Rp {(summary?.net_profit || 0).toLocaleString('id-ID')}
+          <p className={`text-base font-bold font-mono mt-1 ${Number(summary?.net_profit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            {formatRupiah(summary?.net_profit)}
           </p>
         </div>
         <div className="skeuo p-4">
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Piutang (DP)</span>
-          <p className="text-base font-bold text-amber-600 dark:text-amber-400 font-mono mt-1">Rp {(summary?.total_piutang || 0).toLocaleString('id-ID')}</p>
+          <p className="text-base font-bold text-amber-600 dark:text-amber-400 font-mono mt-1">{formatRupiah(summary?.total_piutang)}</p>
         </div>
         <div className="skeuo p-4">
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Transaksi Lunas</span>
@@ -56,7 +57,7 @@ export const ReportSummaryTab: React.FC<ReportSummaryTabProps> = ({
                 <div key={i} className="flex justify-between items-center p-3 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-xs">
                   <span className="font-medium text-text-main">{new Date(d.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
                   <span className="text-slate-500 dark:text-slate-400">{d.total_transactions} nota</span>
-                  <span className="font-bold text-text-main font-mono">Rp {Number(d.total_sales).toLocaleString('id-ID')}</span>
+                  <span className="font-bold text-text-main font-mono">{formatRupiah(d.total_sales)}</span>
                 </div>
               ))
             )}
@@ -73,7 +74,7 @@ export const ReportSummaryTab: React.FC<ReportSummaryTabProps> = ({
                 <div key={i} className="flex justify-between items-center p-3 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-xs">
                   <span className="truncate max-w-[200px] font-medium text-text-main">#{i+1} {p.product_name}</span>
                   <span className="text-slate-500 dark:text-slate-400">{p.total_qty} terjual</span>
-                  <span className="font-bold text-text-main font-mono">Rp {Number(p.total_revenue).toLocaleString('id-ID')}</span>
+                  <span className="font-bold text-text-main font-mono">{formatRupiah(p.total_revenue)}</span>
                 </div>
               ))
             )}

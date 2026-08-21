@@ -4,6 +4,7 @@ import React from 'react';
 import { CreditCard, MessageSquare, ArrowRight } from 'lucide-react';
 import { OrderStatus } from '../../types/transaction';
 import { Customer } from '../../types/customer';
+import { formatRupiah } from '../../utils/format';
 
 interface TrackingCardProps {
   job: any;
@@ -42,7 +43,7 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
           {job.invoice_number}
         </span>
         <span className="text-xs font-bold text-text-main font-mono">
-          Rp {Number(job.total_amount).toLocaleString('id-ID')}
+          {formatRupiah(job.total_amount)}
         </span>
       </div>
 
@@ -67,7 +68,7 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60">
-            DP — Sisa Rp {remaining.toLocaleString('id-ID')}
+            DP — Sisa {formatRupiah(remaining)}
           </span>
         )}
       </div>

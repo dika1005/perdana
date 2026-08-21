@@ -7,6 +7,7 @@ import { transactionService } from '../../services/transactionService';
 import { customerService } from '../../services/customerService';
 import { OrderStatus } from '../../types/transaction';
 import { Customer } from '../../types/customer';
+import { formatRupiah } from '../../utils/format';
 
 // Modular Tracking Components
 import { TrackingColumn } from '../../components/tracking/TrackingColumn';
@@ -113,14 +114,14 @@ export default function JobTrackingPage() {
     const remaining = Number(waModal.job.total_amount) - Number(waModal.job.pay_amount);
     const paymentNote = waModal.job.payment_status === 'PAID'
       ? '✅ *Status: LUNAS*'
-      : `⚠️ *Sisa Pembayaran: Rp ${remaining.toLocaleString('id-ID')}*`;
+      : `⚠️ *Sisa Pembayaran: ${formatRupiah(remaining)}*`;
 
     const message = 
 `Halo Kak *${waModal.job.customer_name || 'Pelanggan'}*,
 Pesanan Anda di *Perdana POS Percetakan* sudah selesai diproses dan siap diambil! 📦✨
 
 📄 *No. Nota:* ${waModal.job.invoice_number}
-💰 *Total:* Rp ${Number(waModal.job.total_amount).toLocaleString('id-ID')}
+💰 *Total:* ${formatRupiah(waModal.job.total_amount)}
 ${paymentNote}
 
 Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;

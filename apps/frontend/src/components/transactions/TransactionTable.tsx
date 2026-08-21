@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Eye, CreditCard, Printer, ChevronLeft, ChevronRight, RefreshCw, FileText } from 'lucide-react';
-import { OrderStatus, PaymentStatus } from '../../types/transaction';
+import { PaymentStatus, OrderStatus } from '../../types/transaction';
+import { formatRupiah } from '../../utils/format';
 
 interface TransactionTableProps {
   transactions: any[];
@@ -111,12 +112,12 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                       )}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-xs text-text-main whitespace-nowrap">
-                      Rp {Number(tx.total_amount).toLocaleString('id-ID')}
+                      {formatRupiah(tx.total_amount)}
                     </td>
                     <td className="py-3 px-4 font-mono font-semibold text-xs whitespace-nowrap">
                       {sisa > 0 ? (
                         <span className="text-amber-600 dark:text-amber-400">
-                          Rp {sisa.toLocaleString('id-ID')}
+                          {formatRupiah(sisa)}
                         </span>
                       ) : (
                         <span className="text-slate-400">-</span>
