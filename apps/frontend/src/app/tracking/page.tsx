@@ -59,64 +59,73 @@ export default function JobTrackingPage() {
     if (nextStatus) {
       try {
         await transactionService.updateOrderStatus(id, nextStatus);
-        setTransactions(prev => prev.map(job => job.id === id ? { ...job, order_status: nextStatus } : job));
+        fetchJobs();
       } catch (err: any) {
-        alert(err?.response?.data?.message || 'Gagal mengubah status antrian');
+        console.error('Failed to update status:', err);
+        alert(err?.response?.data?.message || 'Gagal mengubah status pesanan');
       }
     }
   };
 
   const handleOpenSettle = (job: any) => {
     const remaining = Number(job.total_amount) - Number(job.pay_amount);
+    setPayAmount(remaining);
     setSettleModal({ open: true, job });
-    setPayAmount(remaining > 0 ? remaining : 0);
   };
 
-  const handleSettleAndRelease = async (e: React.FormEvent) => {
+  const handleSettleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settleModal.job) return;
+
     setSubmittingSettle(true);
     try {
-      if (payAmount > 0) {
-        await transactionService.updatePayment(settleModal.job.id, payAmount, 'PAID');
-      }
+      await transactionService.updatePayment(settleModal.job.id, payAmount, 'PAID');
       await transactionService.updateOrderStatus(settleModal.job.id, 'DIAMBIL');
-      
-      setSettleModal({ open: false });
-      alert('Pelunasan berhasil dan pesanan telah diserahkan (DIAMBIL)!');
-      await fetchJobs();
+      setSettleModal({ open: false, job: null });
+      fetchJobs();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal menyelesaikan pelunasan dan penyerahan');
+      console.error('Failed to settle payment:', err);
+      alert(err?.response?.data?.message || 'Gagal memproses pelunasan');
     } finally {
       setSubmittingSettle(false);
     }
   };
 
-  const handleSendWhatsApp = (job: any, customPhone?: string) => {
+  const handleSendWhatsApp = (job: any) => {
     const cust = customers.find(c => c.id === job.customer_id);
-    const targetPhone = customPhone || cust?.phone || '';
+    const initialPhone = cust?.phone || '';
+    setWaModal({ open: true, job, phone: initialPhone });
+  };
 
-    if (!targetPhone.trim()) {
-      setWaModal({ open: true, job, phone: '' });
+  const handleSendWhatsAppSubmit = () => {
+    if (!waModal.job) return;
+
+    let targetPhone = waModal.phone.replace(/[^0-9]/g, '');
+    if (targetPhone.startsWith('0')) {
+      targetPhone = '62' + targetPhone.slice(1);
+    }
+
+    if (!targetPhone) {
+      alert('Masukkan nomor WhatsApp yang valid');
       return;
     }
 
-    let cleanPhone = targetPhone.replace(/[^0-9]/g, '');
-    if (cleanPhone.startsWith('0')) {
-      cleanPhone = '62' + cleanPhone.slice(1);
-    } else if (cleanPhone.startsWith('8')) {
-      cleanPhone = '62' + cleanPhone;
-    }
+    const remaining = Number(waModal.job.total_amount) - Number(waModal.job.pay_amount);
+    const paymentNote = waModal.job.payment_status === 'PAID'
+      ? '✅ *Status: LUNAS*'
+      : `⚠️ *Sisa Pembayaran: Rp ${remaining.toLocaleString('id-ID')}*`;
 
-    const customerName = job.customer_name || 'Pelanggan';
-    const invoiceNumber = job.invoice_number;
-    const remaining = Number(job.total_amount) - Number(job.pay_amount);
-    const isPaid = job.payment_status === 'PAID' || remaining <= 0;
-    const paymentText = isPaid ? '*LUNAS*' : `*DP (Sisa Tagihan: Rp ${remaining.toLocaleString('id-ID')})*`;
+    const message = 
+`Halo Kak *${waModal.job.customer_name || 'Pelanggan'}*,
+Pesanan Anda di *Perdana POS Percetakan* sudah selesai diproses dan siap diambil! 📦✨
 
-    const message = `Halo Kak *${customerName}*,\n\nKabar gembira! Pesanan cetak Anda di *PERDANA PRINTING & POS* sudah *SELESAI* dan siap diambil. 🥳🎉\n\n📋 *Rincian Pesanan:*\n• No. Nota: *${invoiceNumber}*\n• Total Belanja: *Rp ${Number(job.total_amount).toLocaleString('id-ID')}*\n• Status Bayar: ${paymentText}\n\n📍 *Lokasi Pengambilan:*\nJl. Percetakan Perdana No. 1, Kota\nBuka setiap hari jam 08.00 - 21.00 WIB\n\nSilakan tunjukkan nomor nota ini kepada kasir saat pengambilan pesanan. Terima kasih banyak telah mempercayakan cetakan Anda di tempat kami! 🙏✨`;
+📄 *No. Nota:* ${waModal.job.invoice_number}
+💰 *Total:* Rp ${Number(waModal.job.total_amount).toLocaleString('id-ID')}
+${paymentNote}
 
-    const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
+
+    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank');
     setWaModal({ open: false, phone: '' });
   };
@@ -125,20 +134,20 @@ export default function JobTrackingPage() {
     <DashboardLayout>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-text-main mb-1">Antrian & Status Pesanan</h1>
-          <p className="text-text-muted text-sm">Pantau pesanan dari antrian sampai diambil pelanggan.</p>
+          <h1 className="text-2xl font-bold text-text-main mb-1">Antrian & Status Pesanan</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-xs">Pantau pesanan dari antrian produksi hingga siap diambil pelanggan.</p>
         </div>
         <button 
           onClick={fetchJobs} 
-          className="flex items-center gap-2 px-4 py-2.5 font-bold skeuo-button text-text-main text-sm rounded-xl"
+          className="flex items-center gap-2 px-3.5 py-2 font-semibold skeuo-button text-text-main text-xs rounded-xl"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           Segarkan
         </button>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50 text-red-600 text-sm">
+        <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
           {error}
         </div>
       )}
@@ -146,11 +155,11 @@ export default function JobTrackingPage() {
       {/* Kanban Board Columns */}
       <div className="flex gap-4 overflow-x-auto pb-4">
         <TrackingColumn
-          title="Antrian"
+          title="Antrian Cetak"
           status="ANTRIAN"
           icon={Clock}
-          colorClass="text-slate-600 dark:text-slate-300"
-          bgClass="bg-slate-100/60 dark:bg-slate-800/30"
+          colorClass="text-slate-700 dark:text-slate-300"
+          bgClass="bg-slate-100/70 dark:bg-slate-900/60 border-b border-slate-200/80 dark:border-slate-800"
           transactions={transactions}
           customers={customers}
           onOpenSettle={handleOpenSettle}
@@ -158,11 +167,11 @@ export default function JobTrackingPage() {
           onAdvanceStatus={advanceStatus}
         />
         <TrackingColumn
-          title="Proses Cetak"
+          title="Sedang Diproses"
           status="PROSES"
           icon={AlertCircle}
-          colorClass="text-amber-600 dark:text-amber-300"
-          bgClass="bg-amber-50/60 dark:bg-amber-900/20"
+          colorClass="text-blue-700 dark:text-blue-300"
+          bgClass="bg-blue-50/70 dark:bg-blue-950/40 border-b border-blue-100 dark:border-blue-900/50"
           transactions={transactions}
           customers={customers}
           onOpenSettle={handleOpenSettle}
@@ -173,8 +182,8 @@ export default function JobTrackingPage() {
           title="Selesai — Siap Ambil"
           status="SELESAI"
           icon={CheckCircle2}
-          colorClass="text-emerald-600 dark:text-emerald-300"
-          bgClass="bg-emerald-50/60 dark:bg-emerald-900/20"
+          colorClass="text-purple-700 dark:text-purple-300"
+          bgClass="bg-purple-50/70 dark:bg-purple-950/40 border-b border-purple-100 dark:border-purple-900/50"
           transactions={transactions}
           customers={customers}
           onOpenSettle={handleOpenSettle}
@@ -185,8 +194,8 @@ export default function JobTrackingPage() {
           title="Sudah Diambil"
           status="DIAMBIL"
           icon={PackageCheck}
-          colorClass="text-brand-600 dark:text-brand-300"
-          bgClass="bg-brand-50/60 dark:bg-brand-900/20"
+          colorClass="text-emerald-700 dark:text-emerald-300"
+          bgClass="bg-emerald-50/70 dark:bg-emerald-950/40 border-b border-emerald-100 dark:border-emerald-900/50"
           transactions={transactions}
           customers={customers}
           onOpenSettle={handleOpenSettle}
@@ -202,8 +211,8 @@ export default function JobTrackingPage() {
         payAmount={payAmount}
         onPayAmountChange={setPayAmount}
         submitting={submittingSettle}
-        onClose={() => setSettleModal({ open: false })}
-        onSubmit={handleSettleAndRelease}
+        onClose={() => setSettleModal({ open: false, job: null })}
+        onSubmit={handleSettleSubmit}
       />
 
       {/* WhatsApp Modal */}
@@ -211,9 +220,9 @@ export default function JobTrackingPage() {
         isOpen={waModal.open}
         job={waModal.job}
         phone={waModal.phone}
-        onPhoneChange={val => setWaModal(prev => ({ ...prev, phone: val }))}
+        onPhoneChange={(phone) => setWaModal(prev => ({ ...prev, phone }))}
         onClose={() => setWaModal({ open: false, phone: '' })}
-        onSubmit={() => handleSendWhatsApp(waModal.job, waModal.phone)}
+        onSubmit={handleSendWhatsAppSubmit}
       />
     </DashboardLayout>
   );

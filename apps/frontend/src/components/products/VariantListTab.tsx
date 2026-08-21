@@ -28,23 +28,23 @@ export const VariantListTab: React.FC<VariantListTabProps> = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* List Produk Induk */}
-      <div className="skeuo p-6">
-        <h2 className="text-base font-bold text-text-main mb-4">Pilih Produk Induk</h2>
-        <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
+      <div className="skeuo p-5">
+        <h2 className="text-xs font-bold text-text-main mb-3">Pilih Produk Induk</h2>
+        <div className="space-y-1.5 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
           {products.map(p => (
             <button
               key={p.id}
               onClick={() => onSelectProduct(p.id)}
-              className={`w-full text-left p-3 rounded-xl transition-all font-semibold text-sm ${
+              className={`w-full text-left px-3 py-2 rounded-xl transition-all text-xs ${
                 selectedProductId === p.id 
-                  ? 'skeuo-inset text-brand-600 font-bold' 
-                  : 'skeuo-button text-text-muted hover:text-text-main'
+                  ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/60 shadow-sm' 
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-100 font-medium'
               }`}
             >
               <div className="flex justify-between items-center">
                 <span className="truncate">{p.name}</span>
                 {p.has_variants && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 text-brand-600 font-bold">Varian</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">Varian</span>
                 )}
               </div>
             </button>
@@ -56,63 +56,63 @@ export const VariantListTab: React.FC<VariantListTabProps> = ({
       <div className="lg:col-span-2 skeuo p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-base font-bold text-text-main">
+            <h2 className="text-xs font-bold text-text-main">
               Daftar Varian: {selectedProduct?.name || '-'}
             </h2>
-            <p className="text-xs text-text-muted">Kelola opsi ukuran, ketebalan, atau tipe cetak varian.</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Kelola opsi ukuran, ketebalan, atau tipe cetak varian.</p>
           </div>
           <button
             onClick={onOpenAddModal}
             disabled={!selectedProductId}
-            className="flex items-center gap-2 px-4 py-2 font-bold skeuo-button text-brand-600 text-sm disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 font-semibold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-sm disabled:opacity-40 transition-colors"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             Tambah Varian
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-text-muted/20 text-xs font-bold text-text-muted">
-                <th className="pb-3">Nama Varian</th>
-                <th className="pb-3">Tipe Harga</th>
-                <th className="pb-3">Harga</th>
-                <th className="pb-3 text-right">Aksi</th>
+              <tr className="bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <th className="py-3 px-4">Nama Varian</th>
+                <th className="py-3 px-4">Tipe Harga</th>
+                <th className="py-3 px-4">Harga</th>
+                <th className="py-3 px-4 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="text-sm">
+            <tbody className="text-sm divide-y divide-slate-100 dark:divide-slate-800/60">
               {variants.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-text-muted text-xs">
+                  <td colSpan={4} className="py-10 text-center text-slate-400 text-xs">
                     Produk ini belum memiliki varian. Klik 'Tambah Varian' di atas.
                   </td>
                 </tr>
               ) : (
                 variants.map(v => (
-                  <tr key={v.id} className="border-b border-text-muted/10 last:border-0 hover:bg-white/10 transition-colors">
-                    <td className="py-3 font-bold text-text-main">{v.variant_name}</td>
-                    <td className="py-3">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold skeuo-inset text-brand-600">
+                  <tr key={v.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 px-4 font-semibold text-xs text-text-main">{v.variant_name}</td>
+                    <td className="py-3 px-4">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60">
                         {v.price_type}
                       </span>
                     </td>
-                    <td className="py-3 font-bold text-brand-600">
+                    <td className="py-3 px-4 font-bold text-xs text-text-main font-mono">
                       {v.price_type === 'RANGE' 
                         ? `Rp ${Number(v.min_price).toLocaleString('id-ID')} - ${Number(v.max_price).toLocaleString('id-ID')}`
                         : `Rp ${Number(v.price).toLocaleString('id-ID')}`}
                     </td>
-                    <td className="py-3 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex justify-end gap-1">
                         <button
                           onClick={() => onOpenEditModal(v)}
-                          className="w-8 h-8 flex items-center justify-center skeuo-button text-brand-500 rounded-lg"
+                          className="p-1.5 skeuo-button text-blue-600 dark:text-blue-400 rounded-lg"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => onDeleteVariant(v.id)}
-                          className="w-8 h-8 flex items-center justify-center skeuo-button text-red-400 hover:text-red-500 rounded-lg"
+                          className="p-1.5 skeuo-button text-rose-500 hover:text-rose-600 rounded-lg"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

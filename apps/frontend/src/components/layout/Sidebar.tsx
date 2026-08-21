@@ -6,56 +6,65 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   ShoppingCart, 
-  Package, 
-  Users, 
-  FileText, 
-  LogOut, 
   ClipboardList, 
   History, 
-  Tag, 
+  CreditCard, 
+  Package, 
+  Layers, 
+  Users, 
+  FileText, 
   UserCog, 
-  Wallet,
-  Sun, 
+  LogOut,
   Moon,
+  Sun,
   ShieldCheck,
   UserCheck
 } from 'lucide-react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { authService, UserProfile } from '../../services/authService';
 
-export function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
+function cn(...classes: (string | undefined | false | null)[]) {
+  return classes.filter(Boolean).join(' ');
 }
 
 interface MenuItem {
   name: string;
-  icon: React.ComponentType<{ className?: string }>;
   path: string;
+  icon: React.ComponentType<{ className?: string }>;
   superAdminOnly?: boolean;
 }
 
-const allMenuItems: MenuItem[] = [
-  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', superAdminOnly: true },
-  { name: 'Kasir POS', icon: ShoppingCart, path: '/pos' },
-  { name: 'Antrian Pesanan', icon: ClipboardList, path: '/tracking' },
-  { name: 'Riwayat Transaksi', icon: History, path: '/transactions' },
-  { name: 'Pengeluaran', icon: Wallet, path: '/expenses' },
-  { name: 'Master Produk', icon: Tag, path: '/products', superAdminOnly: true },
-  { name: 'Inventaris Bahan', icon: Package, path: '/inventory', superAdminOnly: true },
-  { name: 'Pelanggan', icon: Users, path: '/customers' },
-  { name: 'Laporan', icon: FileText, path: '/reports', superAdminOnly: true },
-  { name: 'Kelola Kasir', icon: UserCog, path: '/users', superAdminOnly: true },
+const menuItems: MenuItem[] = [
+  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { name: 'Kasir POS', path: '/pos', icon: ShoppingCart },
+  { name: 'Antrian Pesanan', path: '/tracking', icon: ClipboardList },
+  { name: 'Riwayat Transaksi', path: '/transactions', icon: History },
+  { name: 'Pengeluaran', path: '/expenses', icon: CreditCard },
+  { name: 'Master Produk', path: '/products', icon: Package },
+  { name: 'Inventaris Bahan', path: '/inventory', icon: Layers },
+  { name: 'Pelanggan', path: '/customers', icon: Users },
+  { name: 'Laporan', path: '/reports', icon: FileText, superAdminOnly: true },
+  { name: 'Kelola Kasir', path: '/users', icon: UserCog, superAdminOnly: true },
 ];
 
 export const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
   useEffect(() => {
-    // 1. Theme sync
+    // 1. Ambil data user login
+    const fetchUser = async () => {
+      try {
+        const u = await authService.me();
+        setUser(u);
+      } catch (err) {
+        console.error('Sidebar me error:', err);
+      }
+    };
+    fetchUser();
+
+    // 2. Baca preferensi tema
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
@@ -65,26 +74,12 @@ export const Sidebar = () => {
       setIsDarkMode(false);
       document.documentElement.classList.remove('dark');
     }
+  }, []);
 
-    // 2. Fetch logged in user profile
-    const fetchMe = async () => {
-      try {
-        const u = await authService.me();
-        setUser(u);
-
-        // Client-side route protection for Kasir (ADMIN)
-        if (u.role === 'ADMIN') {
-          const restrictedPaths = ['/dashboard', '/reports', '/users', '/products', '/inventory'];
-          if (restrictedPaths.includes(pathname)) {
-            router.replace('/pos');
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch user:', err);
-      }
-    };
-    fetchMe();
-  }, [pathname, router]);
+  const handleLogout = () => {
+    authService.logout();
+    router.push('/login');
+  };
 
   const toggleTheme = () => {
     if (isDarkMode) {
@@ -98,99 +93,87 @@ export const Sidebar = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch (e) {
-      console.error('Logout error:', e);
-    } finally {
-      router.push('/login');
-    }
-  };
-
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
-  const menuItems = allMenuItems.filter(item => {
-    if (item.superAdminOnly && !isSuperAdmin) {
-      return false;
-    }
-    return true;
-  });
-
   return (
-    <aside className="w-64 h-[calc(100vh-2rem)] p-6 flex flex-col skeuo bg-bg-skeuo my-4 ml-4 sticky top-4">
+    <aside className="w-64 h-[calc(100vh-2rem)] p-5 flex flex-col skeuo bg-bg-skeuo my-4 ml-4 sticky top-4">
       {/* Brand Header */}
       <div className="flex items-center gap-3 mb-4 px-2">
-        <div className="w-10 h-10 rounded-xl skeuo flex items-center justify-center text-brand-500 font-bold text-xl">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
           P
         </div>
         <div>
-          <h1 className="font-bold text-lg text-text-main tracking-tight leading-none">Perdana POS</h1>
-          <span className="text-[10px] text-text-muted font-medium">Percetakan Digital</span>
+          <h1 className="font-bold text-base text-text-main tracking-tight leading-none">Perdana POS</h1>
+          <span className="text-[10px] text-slate-500 font-medium">Percetakan Digital</span>
         </div>
       </div>
 
       {/* User Role Badge */}
       {user && (
-        <div className="mb-4 px-3 py-2 rounded-xl skeuo-inset flex items-center gap-2.5">
+        <div className="mb-4 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center gap-2.5">
           {isSuperAdmin ? (
-            <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           ) : (
-            <UserCheck className="w-4 h-4 text-brand-500 shrink-0" />
+            <UserCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
           )}
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-text-main truncate leading-tight">{user.name}</p>
-            <p className="text-[10px] font-semibold text-text-muted">
+            <p className="text-xs font-semibold text-text-main truncate leading-tight">{user.name}</p>
+            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
               {isSuperAdmin ? 'SUPER ADMIN / OWNER' : 'KASIR OPERASIONAL'}
             </p>
           </div>
         </div>
       )}
 
-      <nav className="flex-1 space-y-1.5 overflow-y-auto custom-scrollbar pr-1">
+      <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-1">
         {menuItems.map((item) => {
+          // Hanya tampilkan menu super admin jika login sebagai SUPER_ADMIN
+          if (item.superAdminOnly && !isSuperAdmin) {
+            return null;
+          }
+
           const isActive = pathname === item.path;
           return (
             <Link
               key={item.path}
               href={item.path}
               className={cn(
-                "flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 font-semibold text-sm",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-xs",
                 isActive 
-                  ? "skeuo-inset text-brand-600 font-bold" 
-                  : "skeuo-button text-text-muted hover:text-text-main"
+                  ? "bg-blue-50 text-blue-700 font-bold border border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/60 shadow-sm" 
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-100 font-medium"
               )}
             >
-              <item.icon className="w-4 h-4 shrink-0" />
+              <item.icon className={cn("w-4 h-4 shrink-0", isActive ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500")} />
               <span className="truncate">{item.name}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="pt-3 border-t border-black/5 dark:border-white/10 mt-auto space-y-2">
+      <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 mt-auto space-y-2">
         {/* Dark / Light Mode Toggle */}
         <button
           onClick={toggleTheme}
-          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl w-full transition-all duration-200 font-semibold text-sm skeuo-button text-text-main"
+          className="flex items-center justify-between px-3 py-2 rounded-xl w-full transition-all font-medium text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-text-main"
           title="Ganti Tema (Dark/Light)"
         >
           <div className="flex items-center gap-2.5">
-            {isDarkMode ? <Moon className="w-4 h-4 text-brand-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
-            <span className="text-xs">{isDarkMode ? 'Mode Gelap' : 'Mode Terang'}</span>
+            {isDarkMode ? <Moon className="w-4 h-4 text-blue-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
+            <span>{isDarkMode ? 'Mode Gelap' : 'Mode Terang'}</span>
           </div>
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded skeuo-inset text-text-muted">
-            {isDarkMode ? 'DARK' : 'LIGHT'}
+          <span className="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+            {isDarkMode ? '🌙 Dark' : '☀️ Light'}
           </span>
         </button>
 
-        {/* Logout */}
-        <button 
+        {/* Logout Button */}
+        <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl w-full transition-all duration-200 font-semibold text-sm skeuo-button text-red-500 hover:text-red-600"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-xl w-full text-left font-medium text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
         >
-          <LogOut className="w-4 h-4" />
-          <span className="text-xs">Keluar</span>
+          <LogOut className="w-4 h-4 shrink-0" />
+          <span>Keluar</span>
         </button>
       </div>
     </aside>

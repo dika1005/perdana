@@ -33,22 +33,22 @@ export const TrackingColumn: React.FC<TrackingColumnProps> = ({
   const columnJobs = transactions.filter(j => j.order_status === status);
 
   return (
-    <div className="flex-1 min-w-[300px] flex flex-col skeuo bg-bg-skeuo h-[calc(100vh-180px)]">
-      {/* Column Header with colored background band */}
-      <div className={`p-4 border-b border-white/20 flex justify-between items-center ${bgClass}`}>
-        <div className={`flex items-center gap-2.5 font-bold text-sm ${colorClass}`}>
-          <Icon className="w-5 h-5" />
-          {title}
+    <div className="flex-1 min-w-[280px] max-w-[340px] flex flex-col skeuo bg-bg-skeuo h-[calc(100vh-180px)] overflow-hidden">
+      {/* Column Header */}
+      <div className={`px-4 py-3.5 flex justify-between items-center ${bgClass}`}>
+        <div className={`flex items-center gap-2 font-semibold text-xs ${colorClass}`}>
+          <Icon className="w-4 h-4" />
+          <span>{title}</span>
         </div>
-        <span className={`w-7 h-7 rounded-full skeuo-inset flex items-center justify-center text-xs font-bold ${colorClass}`}>
+        <span className={`px-2 py-0.5 rounded-full text-xs font-bold bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 ${colorClass}`}>
           {columnJobs.length}
         </span>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-2.5 bg-slate-50/40 dark:bg-slate-950/20">
         {columnJobs.length === 0 ? (
-          <div className="text-center py-12 text-text-muted text-xs opacity-60">
-            <p className="text-sm">Tidak ada pesanan</p>
+          <div className="text-center py-16 text-slate-400 text-xs">
+            <p>Tidak ada pesanan</p>
           </div>
         ) : (
           columnJobs.map(job => (

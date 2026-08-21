@@ -13,16 +13,18 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, colorClass, subtitle }) => (
-  <div className="skeuo p-6 flex flex-col gap-4">
+  <div className="skeuo p-5 flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
     <div className="flex items-center justify-between">
-      <div className={`w-12 h-12 rounded-xl skeuo-inset flex items-center justify-center ${colorClass}`}>
-        <Icon className="w-6 h-6" />
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${colorClass}`}>
+        <Icon className="w-5 h-5" />
       </div>
-      <span className="text-sm font-medium text-text-muted">{subtitle}</span>
+      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100/80 dark:bg-slate-800/60 px-2.5 py-0.5 rounded-full border border-slate-200/60 dark:border-slate-700/60">
+        {subtitle}
+      </span>
     </div>
-    <div>
-      <h3 className="text-text-muted font-medium mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-text-main">{value}</p>
+    <div className="mt-4">
+      <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{title}</h3>
+      <p className="text-lg sm:text-xl font-bold text-text-main font-mono tracking-tight">{value}</p>
     </div>
   </div>
 );
@@ -38,42 +40,44 @@ export const DashboardStatCards: React.FC<DashboardStatCardsProps> = ({ summary 
         title="Total Omset" 
         value={`Rp ${(summary?.total_omset || 0).toLocaleString('id-ID')}`} 
         icon={TrendingUp} 
-        colorClass="text-brand-500" 
+        colorClass="text-blue-600 bg-blue-50 border-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900/50" 
         subtitle={`${summary?.total_transactions || 0} transaksi`}
       />
       <StatCard 
         title="Total Pengeluaran" 
         value={`Rp ${(summary?.total_expenses || 0).toLocaleString('id-ID')}`} 
         icon={TrendingDown} 
-        colorClass="text-red-500" 
-        subtitle="Biaya & operasional"
+        colorClass="text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-900/50" 
+        subtitle="Biaya operasional"
       />
       <StatCard 
         title="Laba Bersih" 
         value={`Rp ${(summary?.net_profit || 0).toLocaleString('id-ID')}`} 
         icon={TrendingUp} 
-        colorClass={(summary?.net_profit || 0) >= 0 ? "text-emerald-500" : "text-red-500"} 
+        colorClass={(summary?.net_profit || 0) >= 0 
+          ? "text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900/50" 
+          : "text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-900/50"} 
         subtitle="Omset - Pengeluaran"
       />
       <StatCard 
         title="Total Piutang" 
         value={`Rp ${(summary?.total_piutang || 0).toLocaleString('id-ID')}`} 
         icon={CreditCard} 
-        colorClass="text-amber-500" 
+        colorClass="text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-900/50" 
         subtitle={`${(summary?.dp_transactions || 0) + (summary?.unpaid_transactions || 0)} belum lunas`}
       />
       <StatCard 
         title="Pesanan Aktif" 
         value={`${summary?.active_orders || 0}`} 
         icon={Clock} 
-        colorClass="text-blue-500" 
+        colorClass="text-indigo-600 bg-indigo-50 border-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-400 dark:border-indigo-900/50" 
         subtitle={`${summary?.ready_orders || 0} siap diambil`}
       />
       <StatCard 
         title="Bahan Menipis" 
         value={`${summary?.low_stock_raw_materials_count || 0} Item`} 
         icon={AlertTriangle} 
-        colorClass="text-rose-500" 
+        colorClass="text-purple-600 bg-purple-50 border-purple-100 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-900/50" 
         subtitle="Perlu restock"
       />
     </div>

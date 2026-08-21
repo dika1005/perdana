@@ -21,32 +21,32 @@ export const CategoryListTab: React.FC<CategoryListTabProps> = ({
     <div className="skeuo p-6 max-w-2xl">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-base font-bold text-text-main">Kategori Produk</h2>
-          <p className="text-xs text-text-muted">Pengelompokan produk cetak (Banner, Stiker, Undangan, Brosur, dll).</p>
+          <h2 className="text-xs font-bold text-text-main">Kategori Produk</h2>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">Pengelompokan produk cetak (Banner, Stiker, Undangan, Brosur, dll).</p>
         </div>
         <button
           onClick={onOpenAddModal}
-          className="flex items-center gap-2 px-5 py-2.5 font-bold skeuo-button text-brand-600 text-sm"
+          className="flex items-center gap-1.5 px-3.5 py-2 font-semibold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-sm transition-colors"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           Tambah Kategori
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {categories.map(c => (
-          <div key={c.id} className="flex justify-between items-center p-3.5 rounded-xl skeuo-inset">
-            <span className="font-bold text-sm text-text-main">{c.name}</span>
-            <div className="flex gap-2">
+          <div key={c.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+            <span className="font-semibold text-xs text-text-main">{c.name}</span>
+            <div className="flex gap-1">
               <button
                 onClick={() => onOpenEditModal(c)}
-                className="w-8 h-8 flex items-center justify-center skeuo-button text-brand-500 rounded-lg"
+                className="p-1.5 skeuo-button text-blue-600 dark:text-blue-400 rounded-lg"
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => onDeleteCategory(c.id)}
-                className="w-8 h-8 flex items-center justify-center skeuo-button text-red-400 hover:text-red-500 rounded-lg"
+                className="p-1.5 skeuo-button text-rose-500 hover:text-rose-600 rounded-lg"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

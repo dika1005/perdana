@@ -41,55 +41,55 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       label: 'Bayar Lunas', 
       desc: 'Langsung lunas 100%',
       icon: Check,
-      activeColor: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
-      iconColor: 'text-emerald-500',
+      activeColor: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
     },
     { 
       id: 'DP' as PaymentStatus, 
       label: 'Uang Muka (DP)', 
       desc: 'Bayar sebagian dulu',
       icon: Wallet,
-      activeColor: 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
-      iconColor: 'text-amber-500',
+      activeColor: 'border-amber-500 bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20',
+      iconColor: 'text-amber-600 dark:text-amber-400',
     },
     { 
       id: 'UNPAID' as PaymentStatus, 
       label: 'Belum Bayar', 
       desc: 'Bayar saat ambil barang',
       icon: Clock,
-      activeColor: 'border-red-400 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300',
-      iconColor: 'text-red-400',
+      activeColor: 'border-red-500 bg-red-50 dark:bg-red-950/70 text-red-700 dark:text-red-300 ring-2 ring-red-500/20',
+      iconColor: 'text-red-500 dark:text-red-400',
     },
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="skeuo p-6 sm:p-7 w-full max-w-md bg-bg-skeuo">
-        <div className="flex justify-between items-start mb-5 pb-3 border-b border-black/10">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="skeuo p-6 sm:p-7 w-full max-w-md bg-bg-skeuo border border-border-main shadow-2xl">
+        <div className="flex justify-between items-start mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
-            <CreditCard className="w-5 h-5 text-brand-600" />
+            <CreditCard className="w-5 h-5 text-brand-600 dark:text-brand-400" />
             <div>
-              <h3 className="font-bold text-base text-text-main">Pembayaran</h3>
-              <p className="text-xs text-text-muted mt-0.5">Pelanggan: <strong>{customerName}</strong></p>
+              <h3 className="font-bold text-base text-text-main">Proses Pembayaran</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pelanggan: <strong className="text-text-main">{customerName}</strong></p>
             </div>
           </div>
-          <button onClick={onClose} className="text-text-muted hover:text-text-main p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5">
           {/* Total Tagihan Box */}
-          <div className="p-4 rounded-xl skeuo-inset bg-brand-50/50 dark:bg-brand-950/20 flex justify-between items-center">
-            <span className="text-sm font-bold text-text-muted">Total Tagihan:</span>
-            <span className="text-2xl font-black text-brand-600 font-mono">
+          <div className="p-4 rounded-xl skeuo-inset bg-brand-50/80 dark:bg-brand-950/70 border border-brand-200 dark:border-brand-800 flex justify-between items-center">
+            <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Total Tagihan:</span>
+            <span className="text-2xl font-black text-brand-600 dark:text-brand-400 font-mono">
               Rp {total.toLocaleString('id-ID')}
             </span>
           </div>
 
-          {/* Status Bayar Selector — Larger with icons and color */}
+          {/* Status Bayar Selector */}
           <div>
-            <label className="block text-sm font-bold text-text-muted mb-2">Cara Bayar:</label>
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">Pilih Skema Bayar:</label>
             <div className="grid grid-cols-3 gap-2.5">
               {paymentTypes.map(st => {
                 const Icon = st.icon;
@@ -106,12 +106,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     className={`py-3 px-2 text-center rounded-xl transition-all border-2 ${
                       isActive 
                         ? `${st.activeColor} font-bold shadow-sm` 
-                        : 'border-transparent skeuo-button text-text-muted hover:text-text-main'
+                        : 'border-slate-200 dark:border-slate-800 skeuo-button text-slate-600 dark:text-slate-400 hover:text-text-main'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 mx-auto mb-1.5 ${isActive ? st.iconColor : 'text-text-muted'}`} />
+                    <Icon className={`w-5 h-5 mx-auto mb-1.5 ${isActive ? st.iconColor : 'text-slate-400 dark:text-slate-500'}`} />
                     <p className="text-xs font-bold">{st.label}</p>
-                    <p className="text-[10px] opacity-70 mt-0.5">{st.desc}</p>
+                    <p className="text-[10px] opacity-75 mt-0.5">{st.desc}</p>
                   </button>
                 );
               })}
@@ -120,8 +120,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
           {/* Input Nominal Bayar */}
           <div>
-            <label className="block text-sm font-bold text-text-muted mb-1.5">Uang Diterima (Rp):</label>
-            <div className="px-4 py-3 skeuo-inset rounded-xl bg-white/40 dark:bg-black/20">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Uang Diterima / DP Masuk (Rp):</label>
+            <div className="px-4 py-3 skeuo-inset rounded-xl bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
               <input 
                 type="number" 
                 min="0"
@@ -137,7 +137,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <button
                 type="button"
                 onClick={() => onPayAmountChange(total)}
-                className="px-3 py-1.5 text-xs font-bold skeuo-button text-brand-600 rounded-lg whitespace-nowrap"
+                className="px-3 py-1.5 text-xs font-bold skeuo-button text-brand-600 dark:text-brand-400 rounded-lg whitespace-nowrap bg-brand-50/80 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-800"
               >
                 💰 Uang Pas
               </button>
@@ -146,7 +146,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   key={val}
                   type="button"
                   onClick={() => onPayAmountChange(val)}
-                  className="px-3 py-1.5 text-xs font-bold skeuo-button text-text-muted rounded-lg whitespace-nowrap hover:text-text-main"
+                  className="px-3 py-1.5 text-xs font-bold skeuo-button text-slate-600 dark:text-slate-400 rounded-lg whitespace-nowrap hover:text-text-main"
                 >
                   Rp {(val / 1000).toFixed(0)}rb
                 </button>
@@ -155,38 +155,38 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
             {/* Kembalian / Piutang Alert */}
             {payAmount > total && (
-              <div className="mt-2.5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold text-sm flex justify-between items-center">
-                <span>💵 Kembalian:</span>
-                <span className="font-mono text-base">Rp {(payAmount - total).toLocaleString('id-ID')}</span>
+              <div className="mt-2.5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-sm flex justify-between items-center">
+                <span>💵 Uang Kembalian:</span>
+                <span className="font-mono text-base font-black">Rp {(payAmount - total).toLocaleString('id-ID')}</span>
               </div>
             )}
             {payAmount < total && paymentStatus !== 'PAID' && (
-              <div className="mt-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 font-bold text-sm flex justify-between items-center">
-                <span>📋 Sisa Tagihan:</span>
-                <span className="font-mono text-base">Rp {(total - payAmount).toLocaleString('id-ID')}</span>
+              <div className="mt-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-bold text-sm flex justify-between items-center">
+                <span>📋 Sisa Tagihan (Piutang):</span>
+                <span className="font-mono text-base font-black">Rp {(total - payAmount).toLocaleString('id-ID')}</span>
               </div>
             )}
           </div>
 
           {/* Estimasi Selesai */}
           <div>
-            <label className="block text-sm font-bold text-text-muted mb-1.5 flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" /> Estimasi Selesai Cetak:
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-brand-500" /> Estimasi Selesai Cetak:
             </label>
             <input 
               type="date" 
               value={estimatedDoneAt}
               onChange={e => onEstimatedDoneAtChange(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm text-text-main skeuo-inset rounded-xl outline-none bg-transparent border border-black/10"
+              className="w-full px-3.5 py-2.5 text-sm text-text-main skeuo-inset rounded-xl outline-none bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 font-medium"
             />
-            <p className="text-[11px] text-text-muted mt-1 opacity-70">Opsional — kapan pesanan selesai dicetak.</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Opsional — tanggal pesanan siap diambil.</p>
           </div>
 
           <div className="flex gap-2.5 pt-1">
             <button 
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 font-bold skeuo-button text-text-muted text-sm rounded-xl"
+              className="flex-1 py-3 font-bold skeuo-button text-slate-600 dark:text-slate-300 text-sm rounded-xl"
               disabled={submitting}
             >
               Kembali
