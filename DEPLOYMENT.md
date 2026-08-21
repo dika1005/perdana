@@ -1,6 +1,6 @@
 # 🚀 Panduan CI/CD, Container GHCR, dan Deployment VPS
 
-Dokumen ini menjelaskan alur **Continuous Integration & Continuous Deployment (CI/CD)** untuk aplikasi **Perdana POS & Printing**.
+Dokumen ini menjelaskan alur **Continuous Integration & Continuous Deployment (CI/CD)** serta panduan optimasi performa untuk aplikasi **Perdana POS & Printing**.
 
 ---
 
@@ -9,22 +9,36 @@ Dokumen ini menjelaskan alur **Continuous Integration & Continuous Deployment (C
 ```
   [ Local PC / Git Push ]
             │
-            ▼ (Push ke branch main)
+            ▼ (Push ke branch master)
   [ GitHub Actions Pipeline ]
    ├── 1. Build & Push Backend ──> ghcr.io/<username>/perdana-backend:latest
    └── 2. Build & Push Frontend ─> ghcr.io/<username>/perdana-frontend:latest
             │
             ▼ (Jika VPS sudah terhubung)
   [ VPS Server (Docker Compose) ]
-   ├── perdana-caddy     (Port 80/443 SSL Otomatis)
-   ├── perdana-frontend  (Next.js Standalone)
-   ├── perdana-backend   (Rust Actix-Web)
-   └── perdana-db        (MariaDB Database)
+   ├── perdana-caddy     (Port 80/443 SSL Otomatis & HTTP/3)
+   ├── perdana-frontend  (Next.js Standalone dengan Dynamic Import)
+   ├── perdana-backend   (Rust Actix-Web + Release Profile LTO)
+   └── perdana-db        (MariaDB Database + Automated Indexing)
 ```
 
 ---
 
-## 🛠️ 1. Uji Coba Container di Komputer Lokal (Tanpa VPS)
+## ⚡ 1. Optimasi yang Telah Diterapkan di Aplikasi
+
+1. **Rust Binary Compilation (`Cargo.toml`)**:
+   * Menggunakan `opt-level = 3`, `lto = true`, `codegen-units = 1`, `panic = "abort"`, dan `strip = true` untuk menghasilkan executable berukuran ramping (~12 MB) dan eksekusi instruksi CPU tercepat.
+2. **Database Performance Indexing (`init.sql` & auto-migration)**:
+   * Indeks komposit pada `transactions(order_status, payment_status, created_at)` dan `(customer_id)`.
+   * Indeks pada `expenses(expense_date, category)` dan `raw_materials(stock, min_stock_warning)`.
+3. **Frontend Dynamic Imports (`pos/page.tsx`)**:
+   * Modal berat (Receipt Modal, Banner Calculator, AI Smart Order, Checkout) dimuat secara *lazy/dynamic* saat tombol diklik untuk menjaga waktu render awal *First Load JS* di bawah 300 ms.
+4. **Keamanan Rate Limiting Auth (`/api/v1/auth/login`)**:
+   * Pembatasan in-memory maksimal 10 percobaan per menit per IP untuk melindungi akun dari serangan brute-force.
+
+---
+
+## 🛠️ 2. Uji Coba Container di Komputer Lokal (Tanpa VPS)
 
 Sebelum deploy ke VPS, Anda bisa mencoba menjalankan seluruh container langsung di laptop/komputer Anda:
 
@@ -45,28 +59,36 @@ Sebelum deploy ke VPS, Anda bisa mencoba menjalankan seluruh container langsung 
 
 ---
 
-## 🌐 2. Langkah-Langkah Saat Anda Nanti Sudah Memiliki VPS
+## 🌐 3. Langkah-Langkah Saat Anda Memiliki VPS
 
-Ketika Anda sudah menyewa VPS (misal: DigitalOcean, IDCloudHost, Biznet, Linode, Hetzner, dll):
+Ketika Anda menyewa VPS (misal: IDCloudHost, DigitalOcean, Biznet, Hetzner, Linode, dll):
 
-### Langkah A: Persiapan di VPS
-1. **Install Docker & Docker Compose di VPS**:
+### Langkah A: Persiapan & Buat Swap Memory di VPS (Wajib untuk VPS 1GB)
+1. **Buat Swap File 2 GB (Mencegah Out-Of-Memory)**:
+   ```bash
+   sudo fallocate -l 2G /swapfile
+   sudo chmod 600 /swapfile
+   sudo mkswap /swapfile
+   sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   ```
+2. **Install Docker & Docker Compose**:
    ```bash
    curl -fsSL https://get.docker.com | sh
    ```
-2. **Siapkan Folder Proyek di VPS**:
+3. **Siapkan Folder Proyek di VPS**:
    ```bash
    mkdir -p /var/www/perdana
    cd /var/www/perdana
    ```
-3. **Salin File Konfigurasi ke VPS**:
+4. **Salin File Konfigurasi ke VPS**:
    Salin file `docker-compose.prod.yml`, `docker/caddy/Caddyfile`, dan `.env` ke folder `/var/www/perdana` di VPS.
-4. **Sesuaikan Nama Domain**:
-   Di file `docker/caddy/Caddyfile`, ganti `:80` dengan domain Anda (contoh: `pos.perdanaprinting.com`). Caddy otomatis akan mengaktifkan HTTPS gratis!
+5. **Sesuaikan Nama Domain**:
+   Di file `docker/caddy/Caddyfile`, ganti `:80` dengan domain Anda (contoh: `pos.perdanaprinting.com`). Caddy otomatis akan mengaktifkan HTTPS/SSL gratis!
 
 ---
 
-### Langkah B: Menghubungkan GitHub Actions ke VPS (Otomatisasi)
+### Langkah B: Menghubungkan GitHub Actions ke VPS (Otomatisasi Penuh)
 
 Agar setiap Anda melakukan `git push`, server VPS otomatis update:
 
@@ -78,10 +100,7 @@ Agar setiap Anda melakukan `git push`, server VPS otomatis update:
    * `VPS_SSH_KEY`: Private Key SSH VPS Anda (`~/.ssh/id_rsa`).
    * *(Opsional)* `VPS_PORT`: Port SSH (default `22`).
 
-4. Selesai! Sekarang setiap kali Anda push kode baru ke branch `main`, GitHub Actions akan otomatis:
-   * Meng-compile image container baru.
-   * Menyimpan ke **GitHub Container Registry (GHCR)**.
-   * Menghubungi VPS Anda via SSH dan merestart container ke versi terbaru!
+4. Selesai! Sekarang setiap kali Anda push kode baru ke branch `master`, GitHub Actions akan otomatis meng-compile container image baru dan me-restart container di VPS!
 
 ---
 

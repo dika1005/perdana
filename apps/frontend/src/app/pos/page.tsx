@@ -13,14 +13,29 @@ import { formatRupiah } from '../../utils/format';
 import { PaymentStatus } from '../../types/transaction';
 import { useAlert } from '../../context/AlertContext';
 
+import dynamic from 'next/dynamic';
+
 // Modular POS Components
 import { ProductCatalog } from '../../components/pos/ProductCatalog';
 import { CartSidebar } from '../../components/pos/CartSidebar';
-import { CheckoutModal } from '../../components/pos/CheckoutModal';
-import { BannerCalculatorModal } from '../../components/pos/BannerCalculatorModal';
-import { AISmartOrderModal } from '../../components/pos/AISmartOrderModal';
-import { ReceiptModal } from '../../components/pos/ReceiptModal';
 import { CartItem } from '../../components/pos/types';
+
+const CheckoutModal = dynamic(
+  () => import('../../components/pos/CheckoutModal').then(mod => mod.CheckoutModal),
+  { ssr: false }
+);
+const BannerCalculatorModal = dynamic(
+  () => import('../../components/pos/BannerCalculatorModal').then(mod => mod.BannerCalculatorModal),
+  { ssr: false }
+);
+const AISmartOrderModal = dynamic(
+  () => import('../../components/pos/AISmartOrderModal').then(mod => mod.AISmartOrderModal),
+  { ssr: false }
+);
+const ReceiptModal = dynamic(
+  () => import('../../components/pos/ReceiptModal').then(mod => mod.ReceiptModal),
+  { ssr: false }
+);
 
 export default function POSPage() {
   const { showAlert, showConfirm, showToast } = useAlert();

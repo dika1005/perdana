@@ -1,4 +1,4 @@
--- DDL Database MySQL: perdana (Revisi 2)
+-- DDL Database MySQL: perdana (Revisi 2 + Optimasi Indexing)
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -56,8 +56,11 @@ CREATE TABLE IF NOT EXISTS products (
     min_order INT DEFAULT 1,
     unit_name VARCHAR(50) DEFAULT 'pcs',
     has_variants BOOLEAN NOT NULL DEFAULT FALSE,
+    raw_material_id INT DEFAULT NULL,
+    material_amount DECIMAL(12, 4) DEFAULT 1.0000,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL
+    FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS product_variants (
@@ -68,8 +71,11 @@ CREATE TABLE IF NOT EXISTS product_variants (
     price DECIMAL(12, 2) DEFAULT 0.00,
     min_price DECIMAL(12, 2) DEFAULT 0.00,
     max_price DECIMAL(12, 2) DEFAULT 0.00,
+    raw_material_id INT DEFAULT NULL,
+    material_amount DECIMAL(12, 4) DEFAULT 1.0000,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS product_addons (
@@ -147,3 +153,9 @@ CREATE TABLE IF NOT EXISTS expenses (
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_transactions_status_date ON transactions(order_status, payment_status, created_at);
+CREATE INDEX IF NOT EXISTS idx_transactions_customer ON transactions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_date_cat ON expenses(expense_date, category);
+CREATE INDEX IF NOT EXISTS idx_products_cat ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_raw_materials_low_stock ON raw_materials(stock, min_stock_warning);

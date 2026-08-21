@@ -35,20 +35,56 @@ pub fn make_removal_cookie<'a>(name: &'a str) -> Cookie<'a> {
         .finish()
 }
 
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+use std::time::{Duration as StdDuration, Instant};
+
+static LOGIN_ATTEMPTS: LazyLock<Mutex<HashMap<String, Vec<Instant>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn check_login_rate_limit(client_ip: &str) -> Result<(), AppError> {
+    let now = Instant::now();
+    let window = StdDuration::from_secs(60);
+    let max_attempts = 10;
+
+    let mut map = LOGIN_ATTEMPTS.lock().unwrap_or_else(|e| e.into_inner());
+    let attempts = map.entry(client_ip.to_string()).or_default();
+    attempts.retain(|&time| now.duration_since(time) < window);
+
+    if attempts.len() >= max_attempts {
+        return Err(AppError::TooManyRequests(
+            "Terlalu banyak percobaan login. Harap tunggu 1 menit sebelum mencoba lagi.".to_string(),
+        ));
+    }
+
+    attempts.push(now);
+    Ok(())
+}
+
 #[utoipa::path(
     post,
     path = "/api/v1/auth/login",
     request_body = LoginRequest,
     responses(
         (status = 200, description = "Login berhasil, mengembalikan token JWT dan memasang HttpOnly Cookie", body = ApiResponse<LoginData>),
-        (status = 401, description = "Username atau password salah / akun non-aktif")
+        (status = 401, description = "Username atau password salah / akun non-aktif"),
+        (status = 429, description = "Terlalu banyak percobaan login (Rate limit 10/menit)")
     ),
     tag = "Auth"
 )]
 pub async fn login(
     state: web::Data<AppState>,
+    req: HttpRequest,
     payload: web::Json<LoginRequest>,
 ) -> Result<HttpResponse, AppError> {
+    let client_ip = req
+        .connection_info()
+        .realip_remote_addr()
+        .unwrap_or("127.0.0.1")
+        .to_string();
+
+    check_login_rate_limit(&client_ip)?;
+
     let data = auth_service::login(&state.db, &state.jwt, payload.into_inner()).await?;
 
     let access_cookie = make_access_cookie(&data.token, state.jwt.access_ttl_secs);
