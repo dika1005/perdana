@@ -68,6 +68,8 @@ async fn test_pos_transaction_complete_lifecycle() {
             min_order: Some(1),
             unit_name: Some("box".to_string()),
             has_variants: Some(false),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await
@@ -86,6 +88,8 @@ async fn test_pos_transaction_complete_lifecycle() {
             min_order: Some(10),
             unit_name: Some("buku".to_string()),
             has_variants: Some(true),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await
@@ -100,6 +104,8 @@ async fn test_pos_transaction_complete_lifecycle() {
             price: None,
             min_price: Some(Decimal::from(25000)),
             max_price: Some(Decimal::from(40000)),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await

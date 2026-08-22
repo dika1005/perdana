@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import { X, Calendar, User, Clock, CheckCircle, AlertCircle, ShoppingBag } from 'lucide-react';
+import { X, User, Clock } from 'lucide-react';
 import { formatRupiah } from '../../utils/format';
-import { OrderStatus, PaymentStatus } from '../../types/transaction';
 
 interface TransactionDetailDrawerProps {
   transaction: any | null;

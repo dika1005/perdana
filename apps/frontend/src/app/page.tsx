@@ -4,9 +4,9 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Search, Phone, MapPin, LogIn, Layers, Printer, X, Sun, Moon,
-  RefreshCw, ChevronDown, ChevronUp, Star, Zap, Clock, Shield,
+  RefreshCw, ChevronDown, Star, Zap, Clock, Shield,
   CheckCircle2, MessageSquare, Sparkles, Package, Truck, HelpCircle, Award, Check,
-  FileText, Tag, ShoppingBag, FolderTree, ArrowUpDown, Filter, ArrowRight, ExternalLink
+  FileText, Tag, FolderTree, ArrowUpDown, Filter, ArrowRight, ExternalLink
 } from 'lucide-react';
 import { publicService, PublicCatalog, PublicProduct } from '../services/publicService';
 import { formatRupiah } from '../utils/format';

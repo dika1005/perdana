@@ -3,7 +3,6 @@
 import React from 'react';
 import { History, X } from 'lucide-react';
 import { Customer } from '../../types/customer';
-import { customerService } from '../../services/customerService';
 import { formatRupiah } from '../../utils/format';
 
 interface CustomerOrderDrawerProps {

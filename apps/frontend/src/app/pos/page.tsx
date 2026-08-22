@@ -8,7 +8,6 @@ import { transactionService } from '../../services/transactionService';
 import { Product } from '../../types/product';
 import { Category } from '../../types/category';
 import { Customer } from '../../types/customer';
-import { RawMaterial } from '../../types/rawMaterial';
 import { formatRupiah } from '../../utils/format';
 import { PaymentStatus } from '../../types/transaction';
 import { useAlert } from '../../context/AlertContext';
@@ -272,7 +271,7 @@ export default function POSPage() {
       let msg = errData?.message || 'Gagal memproses transaksi';
       if (errData?.errors && typeof errData.errors === 'object') {
         const details = Object.entries(errData.errors)
-          .map(([field, errs]) => Array.isArray(errs) ? errs.join(', ') : errs)
+          .map(([_field, errs]) => Array.isArray(errs) ? errs.join(', ') : errs)
           .join('\n');
         if (details) {
           msg = `${msg}:\n• ${details}`;
@@ -293,7 +292,7 @@ export default function POSPage() {
   };
 
   const handleApplyAIItems = (items: CartItem[], customerNameHint?: string) => {
-    let updatedCart = [...cart];
+    const updatedCart = [...cart];
     for (const newItem of items) {
       const existingIdx = updatedCart.findIndex(c => c.product.id === newItem.product.id);
       if (existingIdx > -1) {

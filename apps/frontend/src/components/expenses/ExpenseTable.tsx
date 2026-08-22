@@ -64,7 +64,7 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
                 <td colSpan={7} className="p-12 text-center text-slate-400">
                   <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="text-xs font-semibold text-text-main">Belum ada pengeluaran</p>
-                  <p className="text-[11px] mt-0.5 opacity-70">Klik tombol "Catat Pengeluaran" untuk memulai.</p>
+                  <p className="text-[11px] mt-0.5 opacity-70">Klik tombol &quot;Catat Pengeluaran&quot; untuk memulai.</p>
                 </td>
               </tr>
             ) : (

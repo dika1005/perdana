@@ -152,6 +152,8 @@ async fn test_category_and_product_validation_and_errors() {
             min_order: Some(1),
             unit_name: Some("pcs".to_string()),
             has_variants: Some(false),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await;
@@ -170,6 +172,8 @@ async fn test_category_and_product_validation_and_errors() {
             min_order: Some(1),
             unit_name: Some("pcs".to_string()),
             has_variants: Some(false),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await;
@@ -185,6 +189,8 @@ async fn test_category_and_product_validation_and_errors() {
             price: Some(Decimal::from(10000)),
             min_price: None,
             max_price: None,
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await;
@@ -322,6 +328,8 @@ async fn test_pos_transaction_business_rule_errors() {
             min_order: Some(100), // Min order is 100!
             unit_name: Some("lembar".to_string()),
             has_variants: Some(false),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await
@@ -339,6 +347,8 @@ async fn test_pos_transaction_business_rule_errors() {
             min_order: Some(1),
             unit_name: Some("lembar".to_string()),
             has_variants: Some(false),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await
@@ -356,6 +366,8 @@ async fn test_pos_transaction_business_rule_errors() {
             min_order: Some(1),
             unit_name: Some("desain".to_string()),
             has_variants: Some(false),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await

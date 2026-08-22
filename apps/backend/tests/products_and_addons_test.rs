@@ -41,6 +41,8 @@ async fn test_products_variants_and_addons_lifecycle() {
             min_order: Some(1),
             unit_name: Some("pack".to_string()),
             has_variants: Some(false),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await
@@ -61,6 +63,8 @@ async fn test_products_variants_and_addons_lifecycle() {
             min_order: Some(20),
             unit_name: Some("buku".to_string()),
             has_variants: Some(true),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await
@@ -77,6 +81,8 @@ async fn test_products_variants_and_addons_lifecycle() {
             price: Some(Decimal::from(12000)),
             min_price: None,
             max_price: None,
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await
@@ -92,6 +98,8 @@ async fn test_products_variants_and_addons_lifecycle() {
             price: None,
             min_price: Some(Decimal::from(25000)),
             max_price: Some(Decimal::from(35000)),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await
@@ -114,6 +122,8 @@ async fn test_products_variants_and_addons_lifecycle() {
             price: Some(Decimal::from(13500)),
             min_price: None,
             max_price: None,
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await

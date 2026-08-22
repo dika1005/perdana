@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Check, X, Printer, Sparkles } from 'lucide-react';
+import { Check, X, Printer } from 'lucide-react';
 import { formatRupiah } from '../../utils/format';
 
 interface ReceiptModalProps {
@@ -52,7 +52,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Tanggal:</span>
-              <span>{new Date(invoiceData.created_at || Date.now()).toLocaleString('id-ID')}</span>
+              <span>{invoiceData.created_at ? new Date(invoiceData.created_at).toLocaleString('id-ID') : '-'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Pelanggan:</span>

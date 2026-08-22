@@ -7,17 +7,12 @@ import {
   ArrowLeft, 
   Printer, 
   Clock, 
-  CheckCircle2, 
   PackageCheck, 
   AlertCircle, 
-  Layers, 
   MessageSquare, 
-  CreditCard,
   Sun,
   Moon,
-  Calendar,
   Sparkles,
-  Phone
 } from 'lucide-react';
 import { publicService, PublicTrackingData } from '../../services/publicService';
 import { formatRupiah } from '../../utils/format';
@@ -32,8 +27,8 @@ export default function CekPesananPage() {
   // Sync theme
   useEffect(() => {
     const isDarkStored = localStorage.getItem('theme') === 'dark';
-    setIsDark(isDarkStored);
     if (isDarkStored) {
+      setIsDark(true);
       document.documentElement.classList.add('dark');
     }
   }, []);
@@ -49,22 +44,6 @@ export default function CekPesananPage() {
       localStorage.setItem('theme', 'light');
     }
   };
-
-  // URL Query param auto-search
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const inv = params.get('invoice');
-      const phone = params.get('phone');
-      if (inv) {
-        setQueryInput(inv);
-        performSearch(inv);
-      } else if (phone) {
-        setQueryInput(phone);
-        performSearch(phone);
-      }
-    }
-  }, []);
 
   const performSearch = async (val: string) => {
     const clean = val.trim();
@@ -89,6 +68,22 @@ export default function CekPesananPage() {
       setLoading(false);
     }
   };
+
+  // URL Query param auto-search
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const inv = params.get('invoice');
+      const phone = params.get('phone');
+      if (inv) {
+        setQueryInput(inv);
+        performSearch(inv);
+      } else if (phone) {
+        setQueryInput(phone);
+        performSearch(phone);
+      }
+    }
+  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

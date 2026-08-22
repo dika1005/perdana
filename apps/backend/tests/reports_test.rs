@@ -65,6 +65,8 @@ async fn test_reports_and_analytics() {
             min_order: Some(1),
             unit_name: Some("meter".to_string()),
             has_variants: Some(false),
+            raw_material_id: None,
+            material_amount: None,
         },
     )
     .await

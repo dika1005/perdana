@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { Bell, Search, AlertTriangle, PackageCheck, CreditCard, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Bell, Search, AlertTriangle, PackageCheck, CreditCard, CheckCircle2 } from 'lucide-react';
 import { authService, UserProfile } from '../../services/authService';
 import { reportService } from '../../services/reportService';
 import { DashboardSummary, LowStockItem } from '../../types/report';

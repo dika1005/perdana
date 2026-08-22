@@ -86,7 +86,7 @@ export const VariantListTab: React.FC<VariantListTabProps> = ({
               {variants.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-10 text-center text-slate-400 text-xs">
-                    Produk ini belum memiliki varian. Klik 'Tambah Varian' di atas.
+                    Produk ini belum memiliki varian. Klik &apos;Tambah Varian&apos; di atas.
                   </td>
                 </tr>
               ) : (
