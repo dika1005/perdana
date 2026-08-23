@@ -70,6 +70,7 @@ export default function ProductsPage() {
 
   const [aForm, setAForm] = useState({
     name: '',
+    category_id: null as number | null,
     price_type: 'FIXED' as RangePriceType,
     default_price: 0,
     min_price: 0,
@@ -468,6 +469,7 @@ export default function ProductsPage() {
           onOpenAddModal={() => {
             setAForm({
               name: '',
+              category_id: null,
               price_type: 'FIXED',
               default_price: 0,
               min_price: 0,
@@ -478,6 +480,7 @@ export default function ProductsPage() {
           onOpenEditModal={a => {
             setAForm({
               name: a.name,
+              category_id: a.category_id || null,
               price_type: a.price_type,
               default_price: Number(a.default_price),
               min_price: Number(a.min_price),
@@ -532,6 +535,7 @@ export default function ProductsPage() {
       <AddonFormModal
         isOpen={addonModal.open}
         item={addonModal.item || null}
+        categories={categories}
         formData={aForm}
         onChange={(field, value) => setAForm(prev => ({ ...prev, [field]: value }))}
         submitting={submitting}

@@ -201,6 +201,7 @@ async fn test_category_and_product_validation_and_errors() {
         &db,
         CreateAddonRequest {
             name: format!("Invalid Addon {}", unique_suffix),
+            category_id: None,
             price_type: RangePriceType::Range,
             default_price: None,
             min_price: Some(Decimal::from(15000)),

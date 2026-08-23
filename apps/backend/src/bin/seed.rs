@@ -43,7 +43,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM customers;")).await?;
     db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM users;")).await?;
     db.execute(Statement::from_string(DbBackend::MySql, "SET FOREIGN_KEY_CHECKS = 1;")).await?;
-    println!("✅ Database berhasil dikosongkan.");
+
+    // Migrasi Skema Tabel jika kolom belum ada
+    let _ = db.execute(Statement::from_string(DbBackend::MySql, "ALTER TABLE product_addons ADD COLUMN category_id INT NULL DEFAULT NULL;")).await;
+    let _ = db.execute(Statement::from_string(DbBackend::MySql, "ALTER TABLE product_addons ADD CONSTRAINT fk_product_addons_category FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL;")).await;
+
+    println!("✅ Database berhasil dikosongkan dan skema diselaraskan.");
 
     // 1. Akun Pengguna
     println!("\n👤 Membuat Akun Pengguna...");
@@ -1158,22 +1163,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("  -> 41 Produk Asli Percetakan Perdana berhasil ditanam.");
 
-    // 5. Add-on & Finishing Asli
-    println!("\n✨ Menanam Add-ons / Finishing Asli...");
+    // 5. Add-on & Finishing Asli Spesifik Kategori & Global
+    println!("\n✨ Menanam Add-ons / Finishing Asli Berelasi Kategori...");
     let addons_list = vec![
-        ("Cutting Stiker (Kiss Cut / Die Cut)", RangePriceType::Range, Decimal::from(5000), Decimal::from(5000), Decimal::from(15000)),
-        ("Tambah Warna Stempel", RangePriceType::Fixed, Decimal::from(5000), Decimal::ZERO, Decimal::ZERO),
-        ("Tambah Pita Rumbai (Buku Yasin)", RangePriceType::Fixed, Decimal::from(1000), Decimal::ZERO, Decimal::ZERO),
-        ("Tambah Sudut Siku Emas (Buku Yasin)", RangePriceType::Fixed, Decimal::from(2000), Decimal::ZERO, Decimal::ZERO),
-        ("Mata Ayam / Ring Banner (per lubang)", RangePriceType::Fixed, Decimal::from(1000), Decimal::ZERO, Decimal::ZERO),
-        ("Laminasi Glossy A3+", RangePriceType::Fixed, Decimal::from(3000), Decimal::ZERO, Decimal::ZERO),
-        ("Laminasi Doff A3+", RangePriceType::Fixed, Decimal::from(3000), Decimal::ZERO, Decimal::ZERO),
-        ("Potong Sudut Bulat (Round Corner)", RangePriceType::Fixed, Decimal::from(5000), Decimal::ZERO, Decimal::ZERO),
+        ("Cutting Stiker (Kiss Cut / Die Cut)", Some(cat_stiker.id), RangePriceType::Range, Decimal::from(5000), Decimal::from(5000), Decimal::from(15000)),
+        ("Tambah Warna Stempel", Some(cat_merchandise.id), RangePriceType::Fixed, Decimal::from(5000), Decimal::ZERO, Decimal::ZERO),
+        ("Tambah Pita Rumbai (Buku Yasin)", Some(cat_yasin.id), RangePriceType::Fixed, Decimal::from(1000), Decimal::ZERO, Decimal::ZERO),
+        ("Tambah Sudut Siku Emas (Buku Yasin)", Some(cat_yasin.id), RangePriceType::Fixed, Decimal::from(2000), Decimal::ZERO, Decimal::ZERO),
+        ("Mata Ayam / Ring Banner (per lubang)", Some(cat_banner.id), RangePriceType::Fixed, Decimal::from(1000), Decimal::ZERO, Decimal::ZERO),
+        ("Laminasi Glossy A3+", None, RangePriceType::Fixed, Decimal::from(3000), Decimal::ZERO, Decimal::ZERO),
+        ("Laminasi Doff A3+", None, RangePriceType::Fixed, Decimal::from(3000), Decimal::ZERO, Decimal::ZERO),
+        ("Potong Sudut Bulat (Round Corner)", None, RangePriceType::Fixed, Decimal::from(5000), Decimal::ZERO, Decimal::ZERO),
     ];
 
-    for (name, ptype, def_p, min_p, max_p) in addons_list {
+    for (name, cat_id, ptype, def_p, min_p, max_p) in addons_list {
         product_addons::ActiveModel {
             name: Set(name.to_string()),
+            category_id: Set(cat_id),
             price_type: Set(ptype),
             default_price: Set(def_p),
             min_price: Set(min_p),

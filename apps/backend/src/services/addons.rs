@@ -3,16 +3,18 @@ use entity::prelude::*;
 use entity::product_addons;
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, LoaderTrait, QueryFilter, QueryOrder, Set,
 };
 use validator::Validate;
 
 use crate::dto::{AddonQuery, AddonResponse, CreateAddonRequest, Pagination, PaginationMeta, UpdateAddonRequest};
 use crate::error::AppError;
 
-pub fn map_addon(m: &product_addons::Model) -> AddonResponse {
+pub fn map_addon(m: &product_addons::Model, cat_name: Option<String>) -> AddonResponse {
     AddonResponse {
         id: m.id,
+        category_id: m.category_id,
+        category_name: cat_name,
         name: m.name.clone(),
         price_type: m.price_type.clone(),
         default_price: m.default_price,
@@ -34,18 +36,35 @@ pub async fn list(
         select = select.filter(product_addons::Column::Name.like(&keyword));
     }
 
+    if let Some(cat_id) = query.category_id {
+        select = select.filter(
+            product_addons::Column::CategoryId.is_null()
+                .or(product_addons::Column::CategoryId.eq(cat_id))
+        );
+    }
+
     let (items, meta) = pagination.fetch(select, db).await?;
-    let result = items.iter().map(map_addon).collect();
+    
+    // Load categories for items
+    let categories = items.load_one(ProductCategory, db).await.unwrap_or_default();
+    
+    let result = items
+        .into_iter()
+        .zip(categories.into_iter())
+        .map(|(item, cat)| map_addon(&item, cat.map(|c| c.name)))
+        .collect();
+
     Ok((result, meta))
 }
 
 pub async fn get_by_id(db: &DatabaseConnection, id: i32) -> Result<AddonResponse, AppError> {
-    let addon = ProductAddon::find_by_id(id)
+    let (addon, cat) = ProductAddon::find_by_id(id)
+        .find_also_related(ProductCategory)
         .one(db)
         .await?
         .ok_or_else(|| AppError::not_found("Add-on tidak ditemukan"))?;
 
-    Ok(map_addon(&addon))
+    Ok(map_addon(&addon, cat.map(|c| c.name)))
 }
 
 pub async fn create(
@@ -67,8 +86,17 @@ pub async fn create(
         return Err(AppError::field("min_price", "Harga minimum add-on tidak boleh melebihi harga maksimum"));
     }
 
+    let mut cat_name = None;
+    if let Some(c_id) = payload.category_id {
+        let cat = ProductCategory::find_by_id(c_id).one(db).await?;
+        if let Some(c) = cat {
+            cat_name = Some(c.name);
+        }
+    }
+
     let active_model = product_addons::ActiveModel {
         name: Set(name),
+        category_id: Set(payload.category_id),
         price_type: Set(payload.price_type),
         default_price: Set(default_price),
         min_price: Set(min_price),
@@ -77,7 +105,7 @@ pub async fn create(
     };
 
     let item = active_model.insert(db).await?;
-    Ok(map_addon(&item))
+    Ok(map_addon(&item, cat_name))
 }
 
 pub async fn update(
@@ -105,15 +133,24 @@ pub async fn update(
         return Err(AppError::field("min_price", "Harga minimum add-on tidak boleh melebihi harga maksimum"));
     }
 
+    let mut cat_name = None;
+    if let Some(c_id) = payload.category_id {
+        let cat = ProductCategory::find_by_id(c_id).one(db).await?;
+        if let Some(c) = cat {
+            cat_name = Some(c.name);
+        }
+    }
+
     let mut active_model: product_addons::ActiveModel = addon.into();
     active_model.name = Set(name);
+    active_model.category_id = Set(payload.category_id);
     active_model.price_type = Set(payload.price_type);
     active_model.default_price = Set(default_price);
     active_model.min_price = Set(min_price);
     active_model.max_price = Set(max_price);
 
     let updated = active_model.update(db).await?;
-    Ok(map_addon(&updated))
+    Ok(map_addon(&updated, cat_name))
 }
 
 pub async fn delete(db: &DatabaseConnection, id: i32) -> Result<(), AppError> {

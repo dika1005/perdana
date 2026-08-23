@@ -157,6 +157,7 @@ async fn test_products_variants_and_addons_lifecycle() {
         &db,
         CreateAddonRequest {
             name: format!("Pita Pembatas {}", unique_suffix),
+            category_id: Some(cat.id),
             price_type: RangePriceType::Fixed,
             default_price: Some(Decimal::from(1000)),
             min_price: None,
@@ -166,11 +167,13 @@ async fn test_products_variants_and_addons_lifecycle() {
     .await
     .expect("Create fixed addon");
     assert_eq!(addon_fixed.default_price, Decimal::from(1000));
+    assert_eq!(addon_fixed.category_id, Some(cat.id));
 
     let addon_range = addon_service::create(
         &db,
         CreateAddonRequest {
             name: format!("Finishing Cutting {}", unique_suffix),
+            category_id: None,
             price_type: RangePriceType::Range,
             default_price: None,
             min_price: Some(Decimal::from(5000)),
@@ -187,6 +190,7 @@ async fn test_products_variants_and_addons_lifecycle() {
         addon_fixed.id,
         UpdateAddonRequest {
             name: format!("Pita Emas {}", unique_suffix),
+            category_id: Some(cat.id),
             price_type: RangePriceType::Fixed,
             default_price: Some(Decimal::from(1500)),
             min_price: None,
@@ -203,6 +207,7 @@ async fn test_products_variants_and_addons_lifecycle() {
         &pagination,
         AddonQuery {
             search: Some(format!("{}", unique_suffix)),
+            category_id: None,
         },
     )
     .await

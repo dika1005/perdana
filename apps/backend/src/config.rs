@@ -142,11 +142,16 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     let _ = db.execute_unprepared("ALTER TABLE product_variants ADD COLUMN material_amount DECIMAL(12,4) NULL DEFAULT 1.0000;").await;
     let _ = db.execute_unprepared("ALTER TABLE product_variants ADD CONSTRAINT fk_product_variants_raw_material FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE SET NULL;").await;
 
+    // Migrasi Kategori Spesifik pada Add-ons
+    let _ = db.execute_unprepared("ALTER TABLE product_addons ADD COLUMN category_id INT NULL DEFAULT NULL;").await;
+    let _ = db.execute_unprepared("ALTER TABLE product_addons ADD CONSTRAINT fk_product_addons_category FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL;").await;
+
     // Performance Indexes
     let _ = db.execute_unprepared("CREATE INDEX idx_transactions_status_date ON transactions(order_status, payment_status, created_at);").await;
     let _ = db.execute_unprepared("CREATE INDEX idx_transactions_customer ON transactions(customer_id);").await;
     let _ = db.execute_unprepared("CREATE INDEX idx_expenses_date_cat ON expenses(expense_date, category);").await;
     let _ = db.execute_unprepared("CREATE INDEX idx_products_cat ON products(category_id);").await;
+    let _ = db.execute_unprepared("CREATE INDEX idx_product_addons_cat ON product_addons(category_id);").await;
     let _ = db.execute_unprepared("CREATE INDEX idx_raw_materials_low_stock ON raw_materials(stock, min_stock_warning);").await;
 
     Ok(db)

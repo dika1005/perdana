@@ -116,6 +116,7 @@ async fn test_pos_transaction_complete_lifecycle() {
         &db,
         CreateAddonRequest {
             name: format!("Pita Rumbai {}", unique_suffix),
+            category_id: Some(cat.id),
             price_type: RangePriceType::Fixed,
             default_price: Some(Decimal::from(1500)),
             min_price: None,

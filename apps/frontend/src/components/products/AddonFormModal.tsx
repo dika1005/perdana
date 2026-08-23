@@ -3,9 +3,11 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { ProductAddon, RangePriceType } from '../../types/product';
+import { Category } from '../../types/category';
 
 interface AddonFormData {
   name: string;
+  category_id?: number | null;
   price_type: RangePriceType;
   default_price: number;
   min_price: number;
@@ -15,6 +17,7 @@ interface AddonFormData {
 interface AddonFormModalProps {
   isOpen: boolean;
   item: ProductAddon | null;
+  categories: Category[];
   formData: AddonFormData;
   onChange: (field: keyof AddonFormData, value: any) => void;
   submitting: boolean;
@@ -25,6 +28,7 @@ interface AddonFormModalProps {
 export const AddonFormModal: React.FC<AddonFormModalProps> = ({
   isOpen,
   item,
+  categories,
   formData,
   onChange,
   submitting,
@@ -47,15 +51,32 @@ export const AddonFormModal: React.FC<AddonFormModalProps> = ({
 
         <div className="space-y-4 text-sm">
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">Nama Finishing *</label>
+            <label className="block text-xs font-semibold text-text-muted mb-1">Nama Finishing / Add-on *</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={e => onChange('name', e.target.value)}
-              placeholder="Contoh: Laminasi Doff / Spot UV"
+              placeholder="Contoh: Tambah Pita Rumbai / Cutting Stiker"
               className="w-full px-4 py-2.5 skeuo-inset outline-none text-text-main rounded-xl"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">Kategori Produk Terkait</label>
+            <select
+              value={formData.category_id || ''}
+              onChange={e => onChange('category_id', e.target.value ? Number(e.target.value) : null)}
+              className="w-full px-4 py-2.5 skeuo outline-none text-text-main rounded-xl bg-transparent font-medium"
+            >
+              <option value="">Semua Kategori (Global / Umum)</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-text-muted mt-1">
+              Jika dipilih, add-on hanya akan muncul di kasir saat produk dalam kategori ini dipilih.
+            </p>
           </div>
 
           <div>
@@ -66,7 +87,7 @@ export const AddonFormModal: React.FC<AddonFormModalProps> = ({
               className="w-full px-4 py-2.5 skeuo outline-none text-text-main rounded-xl bg-transparent font-medium"
             >
               <option value="FIXED">FIXED (Harga Tetap)</option>
-              <option value="RANGE">RANGE (Rentang)</option>
+              <option value="RANGE">RANGE (Rentang Harga)</option>
             </select>
           </div>
 

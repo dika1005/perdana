@@ -33,6 +33,8 @@ export interface Product {
 
 export interface ProductAddon {
   id: number;
+  category_id?: number | null;
+  category_name?: string | null;
   name: string;
   price_type: RangePriceType;
   default_price: number;

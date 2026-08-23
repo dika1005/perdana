@@ -1,14 +1,16 @@
 'use client';
 
 import React from 'react';
-import { ShoppingCart, User, Trash2, Calculator, Minus, Plus, Banknote, CreditCard } from 'lucide-react';
+import { ShoppingCart, User, Trash2, Calculator, Minus, Plus, Banknote, CreditCard, Sparkles, Check } from 'lucide-react';
 import { Customer } from '../../types/customer';
+import { ProductAddon } from '../../types/product';
 import { CartItem } from './types';
 import { formatRupiah } from '../../utils/format';
 
 interface CartSidebarProps {
   cart: CartItem[];
   customers: Customer[];
+  availableAddons: ProductAddon[];
   selectedCustomer: Customer | null;
   onSelectCustomer: (cust: Customer | null) => void;
   customCustomerName: string;
@@ -16,6 +18,7 @@ interface CartSidebarProps {
   onUpdateQty: (id: number, delta: number) => void;
   onUpdatePrice: (id: number, price: number) => void;
   onUpdateDimensions: (id: number, length: number, width: number) => void;
+  onToggleAddon: (productId: number, addon: ProductAddon) => void;
   onRemoveFromCart: (id: number) => void;
   onClearCart: () => void;
   discountAmount: number;
@@ -28,6 +31,7 @@ interface CartSidebarProps {
 export const CartSidebar: React.FC<CartSidebarProps> = ({
   cart,
   customers,
+  availableAddons,
   selectedCustomer,
   onSelectCustomer,
   customCustomerName,
@@ -35,6 +39,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   onUpdateQty,
   onUpdatePrice,
   onUpdateDimensions,
+  onToggleAddon,
   onRemoveFromCart,
   onClearCart,
   discountAmount,
@@ -116,6 +121,18 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
             const isRange = item.product.price_type === 'RANGE';
             const isCustom = item.product.price_type === 'CUSTOM';
             const minOrder = Number(item.product.min_order) || 1;
+
+            // Filter add-on relevan untuk produk ini:
+            // Hanya add-on Global (category_id == null) ATAU yang category_id nya sama persis dengan produk ini!
+            const relevantAddons = availableAddons.filter(a => 
+              a.category_id === null || 
+              a.category_id === undefined || 
+              a.category_id === item.product.category_id
+            );
+
+            const itemBaseTotal = item.price * item.qty;
+            const itemAddonsTotal = (item.addons || []).reduce((sum, a) => sum + (a.price * a.qty), 0);
+            const itemGrandTotal = itemBaseTotal + itemAddonsTotal;
 
             return (
               <div key={item.product.id} className="p-3 rounded-xl flex flex-col gap-2 bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
@@ -208,11 +225,51 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                   </div>
                 )}
 
+                {/* Finishing & Add-on Relevan Kategori */}
+                {relevantAddons.length > 0 && (
+                  <div className="pt-1.5 border-t border-slate-200/60 dark:border-slate-800/60">
+                    <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                      <Sparkles className="w-3 h-3 text-blue-500" />
+                      <span>Opsi Finishing / Tambahan:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {relevantAddons.map(addon => {
+                        const isSelected = item.addons?.some(a => a.addon.id === addon.id);
+                        return (
+                          <button
+                            key={addon.id}
+                            type="button"
+                            onClick={() => onToggleAddon(item.product.id, addon)}
+                            className={`px-2 py-0.5 text-[10px] rounded-md font-medium flex items-center gap-1 transition-all ${
+                              isSelected
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-blue-300'
+                            }`}
+                          >
+                            {isSelected && <Check className="w-2.5 h-2.5 shrink-0" />}
+                            <span>{addon.name}</span>
+                            <span className={isSelected ? 'text-blue-100' : 'text-blue-600 dark:text-blue-400 font-bold font-mono'}>
+                              (+{formatRupiah(addon.default_price)})
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Subtotal & Quantity Controls */}
                 <div className="flex justify-between items-center pt-2 border-t border-slate-200/80 dark:border-slate-800">
-                  <span className="font-bold text-text-main text-xs font-mono">
-                    {formatRupiah(item.price * item.qty)}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-text-main text-xs font-mono">
+                      {formatRupiah(itemGrandTotal)}
+                    </span>
+                    {(item.addons?.length || 0) > 0 && (
+                      <span className="text-[9px] text-blue-600 dark:text-blue-400">
+                        (Termasuk {item.addons?.length} finishing)
+                      </span>
+                    )}
+                  </div>
                   
                   <div className="flex items-center gap-1 bg-white dark:bg-slate-950 rounded-lg p-0.5 border border-slate-200 dark:border-slate-800">
                     <button 

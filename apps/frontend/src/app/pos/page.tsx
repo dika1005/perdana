@@ -5,7 +5,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { productService } from '../../services/productService';
 import { customerService } from '../../services/customerService';
 import { transactionService } from '../../services/transactionService';
-import { Product } from '../../types/product';
+import { Product, ProductAddon } from '../../types/product';
 import { Category } from '../../types/category';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
@@ -47,6 +47,7 @@ export default function POSPage() {
 
   // Cart State
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [availableAddons, setAvailableAddons] = useState<ProductAddon[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customCustomerName, setCustomCustomerName] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
@@ -68,17 +69,19 @@ export default function POSPage() {
   const fetchCatalog = async () => {
     setLoading(true);
     try {
-      const [prodRes, catRes, custRes] = await Promise.all([
+      const [prodRes, catRes, custRes, addonRes] = await Promise.all([
         productService.getProducts({ 
           search: searchTerm || undefined, 
           category_id: activeCategoryId 
         }),
         productService.getCategories(),
         customerService.getCustomers(),
+        productService.getAddons(),
       ]);
       setProducts(prodRes.data);
       setCategories(catRes);
       setCustomers(custRes.data);
+      setAvailableAddons(addonRes);
     } catch (err: any) {
       console.error('Failed to load POS catalog:', err);
     } finally {
@@ -104,16 +107,40 @@ export default function POSPage() {
 
     const existing = cart.find(item => item.product.id === product.id);
     if (existing) {
-      setCart(cart.map(item => item.product.id === product.id ? { ...item, qty: item.qty + 1 } : item));
+      setCart(cart.map(item => item.product.id === product.id ? { 
+        ...item, 
+        qty: item.qty + 1,
+        addons: (item.addons || []).map(a => ({ ...a, qty: item.qty + 1 }))
+      } : item));
     } else {
       setCart([...cart, { 
         product, 
         qty: initialQty, 
         price: initialPrice,
         length: 1,
-        width: 1
+        width: 1,
+        addons: []
       }]);
     }
+  };
+
+  const handleToggleAddon = (productId: number, addon: ProductAddon) => {
+    setCart(cart.map(item => {
+      if (item.product.id !== productId) return item;
+      const existingAddons = item.addons || [];
+      const isExisting = existingAddons.some(a => a.addon.id === addon.id);
+      let updatedAddons;
+      if (isExisting) {
+        updatedAddons = existingAddons.filter(a => a.addon.id !== addon.id);
+      } else {
+        updatedAddons = [...existingAddons, {
+          addon,
+          price: Number(addon.default_price) || 0,
+          qty: item.qty,
+        }];
+      }
+      return { ...item, addons: updatedAddons };
+    }));
   };
 
   const updateQty = (id: number, delta: number) => {
@@ -125,7 +152,8 @@ export default function POSPage() {
           showToast(`Kuantitas minimal produk "${item.product.name}" adalah ${minOrder} ${item.product.unit_name || 'pcs'}`, 'warning');
           return item;
         }
-        return { ...item, qty: newQty };
+        const updatedAddons = (item.addons || []).map(a => ({ ...a, qty: newQty }));
+        return { ...item, qty: newQty, addons: updatedAddons };
       }
       return item;
     }));
@@ -172,7 +200,11 @@ export default function POSPage() {
     }
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const subtotal = cart.reduce((sum, item) => {
+    const itemBase = item.price * item.qty;
+    const addonsBase = (item.addons || []).reduce((aSum, a) => aSum + (a.price * a.qty), 0);
+    return sum + itemBase + addonsBase;
+  }, 0);
   const total = Math.max(0, subtotal - discountAmount);
 
   const handleOpenCheckout = async () => {
@@ -239,6 +271,12 @@ export default function POSPage() {
           product_id: item.product.id,
           custom_price: item.price,
           qty: item.qty,
+          addons: (item.addons || []).map(a => ({
+            addon_id: a.addon.id,
+            addon_name: a.addon.name,
+            price: a.price,
+            qty: a.qty,
+          })),
         })),
       };
 
@@ -336,6 +374,7 @@ export default function POSPage() {
         <CartSidebar
           cart={cart}
           customers={customers}
+          availableAddons={availableAddons}
           selectedCustomer={selectedCustomer}
           onSelectCustomer={setSelectedCustomer}
           customCustomerName={customCustomerName}
@@ -343,6 +382,7 @@ export default function POSPage() {
           onUpdateQty={updateQty}
           onUpdatePrice={updatePrice}
           onUpdateDimensions={updateDimensions}
+          onToggleAddon={handleToggleAddon}
           onRemoveFromCart={removeFromCart}
           onClearCart={clearCart}
           discountAmount={discountAmount}

@@ -159,6 +159,8 @@ pub struct CreateAddonRequest {
     #[validate(length(min = 1, max = 150, message = "Nama add-on harus 1 - 150 karakter"))]
     #[schema(example = "Laminasi Doff")]
     pub name: String,
+    #[schema(example = 1)]
+    pub category_id: Option<i32>,
     pub price_type: RangePriceType,
     #[serde(alias = "price")]
     #[schema(value_type = Option<f64>, example = 1500)]
@@ -174,6 +176,8 @@ pub struct UpdateAddonRequest {
     #[validate(length(min = 1, max = 150, message = "Nama add-on harus 1 - 150 karakter"))]
     #[schema(example = "Laminasi Glossy")]
     pub name: String,
+    #[schema(example = 1)]
+    pub category_id: Option<i32>,
     pub price_type: RangePriceType,
     #[serde(alias = "price")]
     #[schema(value_type = Option<f64>, example = 1200)]
@@ -187,11 +191,14 @@ pub struct UpdateAddonRequest {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct AddonQuery {
     pub search: Option<String>,
+    pub category_id: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AddonResponse {
     pub id: i32,
+    pub category_id: Option<i32>,
+    pub category_name: Option<String>,
     pub name: String,
     pub price_type: RangePriceType,
     #[schema(value_type = f64, example = 1500)]

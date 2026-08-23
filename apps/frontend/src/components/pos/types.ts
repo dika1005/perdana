@@ -1,4 +1,10 @@
-import { Product } from '../../types/product';
+import { Product, ProductAddon } from '../../types/product';
+
+export interface CartItemAddon {
+  addon: ProductAddon;
+  price: number;
+  qty: number;
+}
 
 export interface CartItem {
   product: Product;
@@ -6,4 +12,5 @@ export interface CartItem {
   price: number;
   length?: number;
   width?: number;
+  addons?: CartItemAddon[];
 }
