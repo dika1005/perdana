@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Download } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
 import { OrderStatus, PaymentStatus } from '../../types/transaction';
 
@@ -136,20 +136,57 @@ export default function TransactionsHistoryPage() {
     }
   };
 
+  const handleExportCsv = () => {
+    if (transactions.length === 0) return;
+    const headers = ['No. Nota', 'Tanggal', 'Pelanggan', 'No. Telepon', 'Total Belanja', 'Telah Dibayar', 'Sisa Piutang', 'Status Bayar', 'Status Pesanan'];
+    const rows = transactions.map(t => [
+      `"${t.invoice_number}"`,
+      `"${new Date(t.created_at).toISOString().slice(0, 10)}"`,
+      `"${(t.customer_name || 'Pelanggan Umum').replace(/"/g, '""')}"`,
+      `"${(t.customer_phone || '').replace(/"/g, '""')}"`,
+      t.total_amount,
+      t.pay_amount,
+      t.remaining_amount || (Number(t.total_amount) - Number(t.pay_amount)),
+      `"${t.payment_status}"`,
+      `"${t.order_status}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `transaksi_perdana_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    showToast('Data transaksi berhasil diekspor ke CSV!', 'success');
+  };
+
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-text-main mb-1">Riwayat Transaksi</h1>
-          <p className="text-text-muted text-sm">Daftar semua transaksi, status pembayaran DP, dan cetak ulang nota.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-main mb-1">Riwayat Transaksi</h1>
+          <p className="text-text-muted text-xs sm:text-sm">Daftar semua transaksi kasir, status pembayaran DP, pelunasan, dan cetak ulang nota.</p>
         </div>
-        <button 
-          onClick={fetchTransactions}
-          className="flex items-center gap-2 px-4 py-2 font-bold skeuo-button text-text-main text-xs"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Segarkan
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleExportCsv}
+            disabled={transactions.length === 0}
+            className="flex items-center gap-2 px-3.5 py-2 font-bold skeuo-button text-text-main text-xs rounded-xl disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            title="Ekspor daftar transaksi saat ini ke CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-500" />
+            <span>Ekspor CSV</span>
+          </button>
+          <button 
+            onClick={fetchTransactions}
+            className="flex items-center gap-2 px-3.5 py-2 font-bold skeuo-button text-text-main text-xs rounded-xl cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Segarkan</span>
+          </button>
+        </div>
       </div>
 
       {error && (

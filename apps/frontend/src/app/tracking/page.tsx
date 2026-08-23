@@ -14,6 +14,7 @@ import { useAlert } from '../../context/AlertContext';
 import { TrackingColumn } from '../../components/tracking/TrackingColumn';
 import { TrackingSettleModal } from '../../components/tracking/TrackingSettleModal';
 import { TrackingWhatsAppModal } from '../../components/tracking/TrackingWhatsAppModal';
+import { ReceiptModal } from '../../components/pos/ReceiptModal';
 
 export default function JobTrackingPage() {
   const { showAlert, showToast } = useAlert();
@@ -27,6 +28,7 @@ export default function JobTrackingPage() {
   const [payAmount, setPayAmount] = useState<number>(0);
   const [submittingSettle, setSubmittingSettle] = useState(false);
   const [waModal, setWaModal] = useState<{ open: boolean; job: any | null; phone: string }>({ open: false, job: null, phone: '' });
+  const [printModal, setPrintModal] = useState<{ open: boolean; invoiceData: any | null }>({ open: false, invoiceData: null });
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -103,82 +105,71 @@ export default function JobTrackingPage() {
 
   const handleSendWhatsApp = (job: any) => {
     const cust = customers.find(c => c.id === job.customer_id);
-    const initialPhone = cust?.phone || '';
-    setWaModal({ open: true, job, phone: initialPhone });
+    const phone = cust?.phone || '';
+    setWaModal({ open: true, job, phone });
   };
 
-  const handleSendWhatsAppSubmit = async () => {
+  const handleSendWhatsAppSubmit = () => {
     if (!waModal.job) return;
 
-    let targetPhone = waModal.phone.replace(/[^0-9]/g, '');
-    if (targetPhone.startsWith('0')) {
-      targetPhone = '62' + targetPhone.slice(1);
+    let phone = waModal.phone.replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) {
+      phone = '62' + phone.slice(1);
     }
 
-    if (!targetPhone) {
-      await showAlert({
-        title: 'Nomor WhatsApp Tidak Valid',
-        message: 'Silakan masukkan nomor WhatsApp tujuan yang valid (contoh: 081234567890).',
-        type: 'warning',
-      });
-      return;
-    }
+    const message = `Halo Kak ${waModal.job.customer_name || 'Pelanggan'},\n\nPesanan percetakan Anda dengan nomor nota *${waModal.job.invoice_number}* sudah *SELESAI DIKERJAKAN* dan siap diambil di toko Perdana Percetakan.\n\nTotal: ${formatRupiah(waModal.job.total_amount)}\nStatus: ${waModal.job.payment_status === 'PAID' ? 'LUNAS' : `Sisa Tagihan ${formatRupiah(Number(waModal.job.total_amount) - Number(waModal.job.pay_amount))}`}\n\nTerima kasih!`;
 
-    const remaining = Number(waModal.job.total_amount) - Number(waModal.job.pay_amount);
-    const paymentNote = waModal.job.payment_status === 'PAID'
-      ? '✅ *Status: LUNAS*'
-      : `⚠️ *Sisa Pembayaran: ${formatRupiah(remaining)}*`;
-
-    const message = 
-`Halo Kak *${waModal.job.customer_name || 'Pelanggan'}*,
-Pesanan Anda di *Perdana POS Percetakan* sudah selesai diproses dan siap diambil! 📦✨
-
-📄 *No. Nota:* ${waModal.job.invoice_number}
-💰 *Total:* ${formatRupiah(waModal.job.total_amount)}
-${paymentNote}
-
-Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
-
-    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank');
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
     setWaModal({ open: false, job: null, phone: '' });
+  };
+
+  const handlePrintSpk = async (job: any) => {
+    try {
+      const invoice = await transactionService.getInvoiceData(job.id);
+      setPrintModal({ open: true, invoiceData: invoice });
+    } catch (err: any) {
+      console.error('Failed to load invoice for SPK:', err);
+      showToast('Gagal memuat data struk/SPK', 'error');
+    }
   };
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-text-main mb-1">Antrian & Status Pesanan</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs">Pantau pesanan dari antrian produksi hingga siap diambil pelanggan.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-main mb-1">Kanban Antrian Produksi & Tracking</h1>
+          <p className="text-text-muted text-xs sm:text-sm">Pantau proses cetak, cetak tiket SPK kerja, notifikasi WhatsApp, dan serah terima pesanan.</p>
         </div>
         <button 
           onClick={fetchJobs} 
-          className="flex items-center gap-2 px-3.5 py-2 font-semibold skeuo-button text-text-main text-xs rounded-xl"
+          className="flex items-center gap-2 px-4 py-2 font-bold skeuo-button text-text-main text-xs sm:text-sm rounded-xl cursor-pointer"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Segarkan
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <span>Segarkan Antrian</span>
         </button>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50 text-red-600 text-sm">
           {error}
         </div>
       )}
 
-      {/* Kanban Board Columns */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      {/* Kanban Columns */}
+      <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
         <TrackingColumn
           title="Antrian Cetak"
           status="ANTRIAN"
           icon={Clock}
-          colorClass="text-slate-700 dark:text-slate-300"
-          bgClass="bg-slate-100/70 dark:bg-slate-900/60 border-b border-slate-200/80 dark:border-slate-800"
+          colorClass="text-amber-700 dark:text-amber-300"
+          bgClass="bg-amber-50/70 dark:bg-amber-950/40 border-b border-amber-100 dark:border-amber-900/50"
           transactions={transactions}
           customers={customers}
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
+          onPrintSpk={handlePrintSpk}
         />
         <TrackingColumn
           title="Sedang Diproses"
@@ -191,6 +182,7 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
+          onPrintSpk={handlePrintSpk}
         />
         <TrackingColumn
           title="Selesai — Siap Ambil"
@@ -203,6 +195,7 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
+          onPrintSpk={handlePrintSpk}
         />
         <TrackingColumn
           title="Sudah Diambil"
@@ -215,6 +208,7 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
+          onPrintSpk={handlePrintSpk}
         />
       </div>
 
@@ -238,6 +232,15 @@ Silakan datang ke toko kami untuk pengambilan barang. Terima kasih! 🙏`;
         onClose={() => setWaModal({ open: false, job: null, phone: '' })}
         onSubmit={handleSendWhatsAppSubmit}
       />
+
+      {/* SPK / Receipt Print Modal */}
+      {printModal.open && printModal.invoiceData && (
+        <ReceiptModal
+          invoiceData={printModal.invoiceData}
+          onClose={() => setPrintModal({ open: false, invoiceData: null })}
+          onPrint={() => window.print()}
+        />
+      )}
     </DashboardLayout>
   );
 }

@@ -282,7 +282,7 @@ body {
   background-color: rgba(148, 163, 184, 0.7);
 }
 
-/* Print Invoice Styling */
+/* Print Invoice & Thermal Receipt Styling */
 @media print {
   @page {
     size: 80mm auto;
@@ -302,18 +302,25 @@ body {
     visibility: hidden;
   }
   
-  #printable-receipt, #printable-receipt * {
+  #printable-receipt, 
+  #printable-receipt *,
+  #thermal-receipt,
+  #thermal-receipt * {
     visibility: visible;
   }
   
-  #printable-receipt {
+  #printable-receipt,
+  #thermal-receipt {
     position: absolute;
     left: 0;
     top: 0;
     width: 80mm !important;
+    max-width: 80mm !important;
     margin: 0 auto !important;
-    padding: 6mm !important;
+    padding: 4mm !important;
     box-shadow: none !important;
     border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 }

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, Download } from 'lucide-react';
 import { expenseService } from '../../services/expenseService';
 import { authService, UserProfile } from '../../services/authService';
 import { 
@@ -203,25 +203,59 @@ export default function ExpensesPage() {
     }
   };
 
+  const handleExportCsv = () => {
+    if (expenses.length === 0) return;
+    const headers = ['ID', 'Judul / Keperluan', 'Kategori', 'Nominal (Rp)', 'Metode Bayar', 'Catatan', 'Tanggal Pengeluaran'];
+    const rows = expenses.map(e => [
+      e.id,
+      `"${(e.title || '').replace(/"/g, '""')}"`,
+      `"${e.category}"`,
+      e.amount,
+      `"${e.payment_method}"`,
+      `"${(e.notes || '').replace(/"/g, '""')}"`,
+      `"${new Date(e.expense_date || e.created_at).toISOString().slice(0, 10)}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `pengeluaran_perdana_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    showToast('Data pengeluaran berhasil diekspor ke CSV!', 'success');
+  };
+
   const canDelete = currentUser?.role === 'SUPER_ADMIN';
 
   return (
     <DashboardLayout>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-text-main mb-1">Pengeluaran</h1>
-          <p className="text-text-muted text-sm">
-            Catat biaya operasional, bahan baku, gaji, dan perawatan mesin.
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-main mb-1">Pengeluaran Operasional</h1>
+          <p className="text-text-muted text-xs sm:text-sm">
+            Catat biaya operasional toko, pembelian bahan baku, gaji karyawan, dan maintenance mesin.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
+            onClick={handleExportCsv}
+            disabled={expenses.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 font-bold skeuo-button text-text-main text-xs rounded-xl disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            title="Ekspor pengeluaran ke CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-500" />
+            <span>Ekspor CSV</span>
+          </button>
+
+          <button
             onClick={() => {
               fetchExpenses();
               fetchSummary();
             }}
-            className="flex items-center gap-1.5 px-3 py-2.5 font-bold skeuo-button text-text-muted text-xs rounded-xl"
+            className="flex items-center gap-1.5 px-3 py-2.5 font-bold skeuo-button text-text-muted text-xs rounded-xl cursor-pointer"
             title="Segarkan data"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -230,9 +264,9 @@ export default function ExpensesPage() {
           
           <button
             onClick={handleOpenAddModal}
-            className="flex items-center gap-2 px-4 py-2.5 font-bold skeuo-button-primary bg-brand-500 hover:bg-brand-600 text-white text-xs rounded-xl shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 font-bold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-white" />
             <span>Catat Pengeluaran</span>
           </button>
         </div>

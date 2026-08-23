@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CreditCard, MessageSquare, ArrowRight } from 'lucide-react';
+import { CreditCard, MessageSquare, ArrowRight, Printer } from 'lucide-react';
 import { OrderStatus } from '../../types/transaction';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
@@ -13,6 +13,7 @@ interface TrackingCardProps {
   onOpenSettle: (job: any) => void;
   onSendWhatsApp: (job: any) => void;
   onAdvanceStatus: (id: number, currentStatus: OrderStatus) => void;
+  onPrintSpk: (job: any) => void;
 }
 
 // Label tombol sesuai konteks status saat ini
@@ -30,6 +31,7 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
   onOpenSettle,
   onSendWhatsApp,
   onAdvanceStatus,
+  onPrintSpk,
 }) => {
   const isDP = job.payment_status === 'DP' || job.payment_status === 'UNPAID';
   const remaining = Number(job.total_amount) - Number(job.pay_amount);
@@ -75,6 +77,15 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
       
       {/* Action Bar */}
       <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 dark:border-slate-800/80 pt-2.5">
+        {/* SPK Print Button */}
+        <button
+          onClick={() => onPrintSpk(job)}
+          className="p-1.5 rounded-lg skeuo-button text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors"
+          title="Cetak SPK / Struk Kerja"
+        >
+          <Printer className="w-3.5 h-3.5" />
+        </button>
+
         {/* WhatsApp Button (SELESAI only) */}
         {status === 'SELESAI' && (
           <button

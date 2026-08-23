@@ -76,9 +76,14 @@ export const Sidebar = () => {
     }
   }, []);
 
-  const handleLogout = () => {
-    authService.logout();
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      router.push('/login');
+    }
   };
 
   const toggleTheme = () => {

@@ -238,8 +238,17 @@ export default function HomePage() {
 
   const formatPrice = (price: number | string) => formatRupiah(price);
 
+  const formatWaNumber = (phone?: string) => {
+    if (!phone) return '';
+    let clean = phone.replace(/[^0-9]/g, '');
+    if (clean.startsWith('0')) {
+      clean = '62' + clean.slice(1);
+    }
+    return clean;
+  };
+
   const waLink = (productName: string) => {
-    const phone = (catalog?.store.phone || '').replace(/[^0-9]/g, '');
+    const phone = formatWaNumber(catalog?.store.phone);
     const message = `Halo ${catalog?.store.name || 'Perdana Printing'},\n\nSaya ingin pesan / konsultasi produk:\n• *${productName}*\n\nMohon info harga dan cara kirim file desain. Terima kasih!`;
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   };
@@ -345,7 +354,7 @@ export default function HomePage() {
               <span>Cek Status Pesanan</span>
             </Link>
             <a 
-              href={`https://wa.me/${(catalog?.store.phone || '').replace(/[^0-9]/g, '')}`} 
+              href={`https://wa.me/${formatWaNumber(catalog?.store.phone)}`} 
               target="_blank" 
               rel="noopener noreferrer" 
               className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1.5 py-1"
@@ -425,7 +434,7 @@ export default function HomePage() {
 
               {catalog?.store.phone && (
                 <a 
-                  href={`https://wa.me/${catalog.store.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Halo, saya ingin order cetak di Perdana Printing.')}`} 
+                  href={`https://wa.me/${formatWaNumber(catalog.store.phone)}?text=${encodeURIComponent('Halo, saya ingin order cetak di Perdana Printing.')}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/25 hover:scale-[1.02] active:scale-95 transition-all"
@@ -513,7 +522,7 @@ export default function HomePage() {
 
               {catalog?.store.phone && (
                 <a 
-                  href={`https://wa.me/${catalog.store.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Halo, saya mau konsultasi dan kirim file desain.')}`}
+                  href={`https://wa.me/${formatWaNumber(catalog.store.phone)}?text=${encodeURIComponent('Halo, saya mau konsultasi dan kirim file desain.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="shimmer-btn w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-center text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 active:scale-95 transition-all"
@@ -1062,8 +1071,8 @@ export default function HomePage() {
 
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3.5 justify-center">
               <a 
-                href={`https://wa.me/${(catalog?.store.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Halo, saya ingin konsultasi order cetak partai besar / penawaran harga khusus.')}`}
-                target="_blank"
+                href={`https://wa.me/${formatWaNumber(catalog?.store.phone)}?text=${encodeURIComponent('Halo, saya ingin konsultasi order cetak partai besar / penawaran harga khusus.')}`}
+                target="_blank" 
                 rel="noopener noreferrer"
                 className="shimmer-btn px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-center text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-95 transition-all"
               >
@@ -1121,7 +1130,7 @@ export default function HomePage() {
                   <div className="flex items-center gap-2.5">
                     <Phone className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <a 
-                      href={`https://wa.me/${catalog.store.phone.replace(/[^0-9]/g, '')}`} 
+                      href={`https://wa.me/${formatWaNumber(catalog.store.phone)}`} 
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
@@ -1241,7 +1250,7 @@ export default function HomePage() {
       {/* ===== FLOATING PULSE WHATSAPP BUTTON ===== */}
       {catalog?.store.phone && (
         <a 
-          href={`https://wa.me/${catalog.store.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Halo, saya ingin tanya produk cetak di Perdana Printing.')}`}
+          href={`https://wa.me/${formatWaNumber(catalog.store.phone)}?text=${encodeURIComponent('Halo, saya ingin tanya produk cetak di Perdana Printing.')}`}
           target="_blank"
           rel="noopener noreferrer"
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xl shadow-emerald-600/40 hover:scale-105 active:scale-95 transition-all group"

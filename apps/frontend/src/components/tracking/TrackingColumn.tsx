@@ -16,6 +16,7 @@ interface TrackingColumnProps {
   onOpenSettle: (job: any) => void;
   onSendWhatsApp: (job: any) => void;
   onAdvanceStatus: (id: number, currentStatus: OrderStatus) => void;
+  onPrintSpk: (job: any) => void;
 }
 
 export const TrackingColumn: React.FC<TrackingColumnProps> = ({
@@ -29,6 +30,7 @@ export const TrackingColumn: React.FC<TrackingColumnProps> = ({
   onOpenSettle,
   onSendWhatsApp,
   onAdvanceStatus,
+  onPrintSpk,
 }) => {
   const columnJobs = transactions.filter(j => j.order_status === status);
 
@@ -60,6 +62,7 @@ export const TrackingColumn: React.FC<TrackingColumnProps> = ({
               onOpenSettle={onOpenSettle}
               onSendWhatsApp={onSendWhatsApp}
               onAdvanceStatus={onAdvanceStatus}
+              onPrintSpk={onPrintSpk}
             />
           ))
         )}

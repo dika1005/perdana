@@ -2,17 +2,26 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Bell, Search, AlertTriangle, PackageCheck, CreditCard, CheckCircle2 } from 'lucide-react';
 import { authService, UserProfile } from '../../services/authService';
 import { reportService } from '../../services/reportService';
 import { DashboardSummary, LowStockItem } from '../../types/report';
 
 export const Navbar = () => {
+  const router = useRouter();
+  const [globalSearch, setGlobalSearch] = useState('');
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleGlobalSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!globalSearch.trim()) return;
+    router.push(`/transactions?search=${encodeURIComponent(globalSearch.trim())}`);
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -62,14 +71,16 @@ export const Navbar = () => {
   return (
     <header className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between mb-2">
       <div className="flex-1 max-w-xl">
-        <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-950 transition-all">
+        <form onSubmit={handleGlobalSearch} className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-950 transition-all">
           <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
           <input 
             type="text" 
-            placeholder="Cari transaksi, nota invoice, pelanggan..." 
+            placeholder="Cari transaksi, nota invoice, pelanggan... (tekan Enter)" 
+            value={globalSearch}
+            onChange={e => setGlobalSearch(e.target.value)}
             className="bg-transparent border-none outline-none w-full text-text-main placeholder:text-slate-400 text-xs font-medium"
           />
-        </div>
+        </form>
       </div>
 
       <div className="flex items-center gap-4 sm:gap-6">

@@ -19,8 +19,9 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Create Modal
+  // Create / Edit Modal State
   const [showModal, setShowModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -68,26 +69,53 @@ export default function CustomersPage() {
     }
   };
 
-  const handleCreateCustomer = async (e: React.FormEvent) => {
+  const handleOpenCreateModal = () => {
+    setEditingCustomer(null);
+    setName('');
+    setPhone('');
+    setAddress('');
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = (e: React.MouseEvent, cust: Customer) => {
+    e.stopPropagation();
+    setEditingCustomer(cust);
+    setName(cust.name);
+    setPhone(cust.phone || '');
+    setAddress(cust.address || '');
+    setShowModal(true);
+  };
+
+  const handleSubmitCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     setSubmitting(true);
     try {
-      await customerService.createCustomer({
-        name: name.trim(),
-        phone: phone.trim() || undefined,
-        address: address.trim() || undefined,
-      });
+      if (editingCustomer) {
+        await customerService.updateCustomer(editingCustomer.id, {
+          name: name.trim(),
+          phone: phone.trim() || undefined,
+          address: address.trim() || undefined,
+        });
+        showToast('Data pelanggan berhasil diperbarui!', 'success');
+      } else {
+        await customerService.createCustomer({
+          name: name.trim(),
+          phone: phone.trim() || undefined,
+          address: address.trim() || undefined,
+        });
+        showToast('Pelanggan berhasil ditambahkan!', 'success');
+      }
       setShowModal(false);
       setName('');
       setPhone('');
       setAddress('');
-      showToast('Pelanggan berhasil ditambahkan!', 'success');
+      setEditingCustomer(null);
       await fetchCustomers();
     } catch (err: any) {
       await showAlert({
-        title: 'Gagal Menambahkan Pelanggan',
-        message: err?.response?.data?.message || 'Terjadi kesalahan saat menambahkan pelanggan.',
+        title: editingCustomer ? 'Gagal Memperbarui Pelanggan' : 'Gagal Menambahkan Pelanggan',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat menyimpan data pelanggan.',
         type: 'error',
       });
     } finally {
@@ -118,27 +146,49 @@ export default function CustomersPage() {
     }
   };
 
+  const handleExportCsv = () => {
+    if (customers.length === 0) return;
+    const headers = ['ID', 'Nama Pelanggan', 'Nomor HP / WhatsApp', 'Alamat', 'Tanggal Terdaftar'];
+    const rows = customers.map(c => [
+      c.id,
+      `"${(c.name || '').replace(/"/g, '""')}"`,
+      `"${(c.phone || '').replace(/"/g, '""')}"`,
+      `"${(c.address || '').replace(/"/g, '""')}"`,
+      `"${new Date(c.created_at).toISOString().slice(0, 10)}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `pelanggan_perdana_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    showToast('Data pelanggan berhasil diekspor ke CSV!', 'success');
+  };
+
   return (
     <DashboardLayout>
       <div className="flex justify-between items-end mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-text-main mb-1">Master Pelanggan</h1>
-          <p className="text-text-muted text-sm">Kelola data pelanggan dan pantau riwayat repeat order.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-main mb-1">Master Pelanggan</h1>
+          <p className="text-text-muted text-xs sm:text-sm">Kelola data pelanggan, kontak WhatsApp, dan pantau riwayat repeat order.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2.5">
           <button 
             onClick={fetchCustomers} 
-            className="flex items-center gap-2 px-4 py-2.5 font-bold skeuo-button text-text-main text-sm"
+            className="flex items-center gap-2 px-3.5 py-2.5 font-bold skeuo-button text-text-main text-xs sm:text-sm rounded-xl cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Segarkan
+            <span className="hidden sm:inline">Segarkan</span>
           </button>
           <button 
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 font-bold skeuo-button text-brand-600 text-sm"
+            onClick={handleOpenCreateModal}
+            className="flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs sm:text-sm rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
           >
-            <UserPlus className="w-4 h-4" />
-            Pelanggan Baru
+            <UserPlus className="w-4 h-4 text-white" />
+            <span>Pelanggan Baru</span>
           </button>
         </div>
       </div>
@@ -157,7 +207,9 @@ export default function CustomersPage() {
         onSearchChange={setSearchTerm}
         onSearchSubmit={handleSearch}
         onSelectCustomer={handleOpenCustomerOrders}
+        onEditCustomer={handleOpenEditModal}
         onDeleteCustomer={handleDelete}
+        onExportCsv={handleExportCsv}
       />
 
       {/* Drawer Riwayat Repeat Order */}
@@ -168,9 +220,10 @@ export default function CustomersPage() {
         onClose={() => setSelectedCustomer(null)}
       />
 
-      {/* Modal Tambah Pelanggan */}
+      {/* Modal Tambah / Edit Pelanggan */}
       <CustomerFormModal
         isOpen={showModal}
+        editingCustomer={editingCustomer}
         name={name}
         onChangeName={setName}
         phone={phone}
@@ -178,8 +231,11 @@ export default function CustomersPage() {
         address={address}
         onChangeAddress={setAddress}
         submitting={submitting}
-        onClose={() => setShowModal(false)}
-        onSubmit={handleCreateCustomer}
+        onClose={() => {
+          setShowModal(false);
+          setEditingCustomer(null);
+        }}
+        onSubmit={handleSubmitCustomer}
       />
     </DashboardLayout>
   );

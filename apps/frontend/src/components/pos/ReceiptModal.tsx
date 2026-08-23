@@ -33,15 +33,15 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         </div>
 
         {/* Thermal Slip Preview */}
-        <div id="thermal-receipt" className="bg-white text-black p-5 font-mono text-[11px] leading-tight rounded-xl shadow-inner mb-4 space-y-2.5 border border-slate-300">
+        <div id="printable-receipt" className="bg-white text-black p-5 font-mono text-[11px] leading-tight rounded-xl shadow-inner mb-4 space-y-2.5 border border-slate-300">
           {/* Logo & Store Header */}
           <div className="text-center pb-2.5 border-b border-dashed border-slate-400">
             <div className="w-9 h-9 mx-auto mb-1.5 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
               <Printer className="w-5 h-5 text-white" />
             </div>
-            <p className="font-black text-sm tracking-wider uppercase">{invoiceData.store_name || 'PERDANA PERCETAKAN'}</p>
+            <p className="font-black text-sm tracking-wider uppercase">{invoiceData.store_name || 'PERDANA PRINTING & POS'}</p>
             <p className="text-[9px] text-slate-500 font-sans mt-0.5">Digital Printing & Offset Solution</p>
-            <p className="text-[10px] text-slate-600 mt-1">{invoiceData.store_address || 'Jl. Percetakan Perdana No. 1'}</p>
+            <p className="text-[10px] text-slate-600 mt-1">{invoiceData.store_address || 'Jl. Percetakan Perdana No. 1, Kota'}</p>
             <p className="text-[10px] text-slate-600 font-semibold">Telp: {invoiceData.store_phone || '0812-3456-7890'}</p>
           </div>
 
@@ -52,7 +52,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Tanggal:</span>
-              <span>{invoiceData.created_at ? new Date(invoiceData.created_at).toLocaleString('id-ID') : '-'}</span>
+              <span>{invoiceData.created_at ? new Date(invoiceData.created_at).toLocaleString('id-ID') : new Date().toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Pelanggan:</span>
@@ -66,24 +66,36 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
           {/* Item List */}
           <div className="space-y-2 py-1 border-b border-dashed border-slate-400">
-            {invoiceData.items && invoiceData.items.map((item: any, idx: number) => (
-              <div key={idx} className="space-y-0.5">
-                <p className="font-bold text-[11px]">{item.product_name}</p>
-                <div className="flex justify-between text-[10px] text-slate-600 pl-2">
-                  <span>{item.qty} × {formatRupiah(item.custom_price || item.price || 0)}</span>
-                  <span className="font-bold text-black">
-                    {formatRupiah(Number(item.custom_price || item.price || 0) * item.qty)}
-                  </span>
+            {invoiceData.items && invoiceData.items.map((item: any, idx: number) => {
+              const unitPrice = Number(item.price || item.custom_price || 0);
+              const subtotal = item.subtotal ? Number(item.subtotal) : (unitPrice * item.qty);
+
+              return (
+                <div key={idx} className="space-y-0.5">
+                  <p className="font-bold text-[11px]">
+                    {item.product_name} {item.variant_name ? `(${item.variant_name})` : ''}
+                  </p>
+                  {item.length && item.width && (
+                    <p className="text-[9px] text-slate-500">
+                      Ukuran: {item.length}m × {item.width}m ({((item.length || 1) * (item.width || 1)).toFixed(1)} m²)
+                    </p>
+                  )}
+                  <div className="flex justify-between text-[10px] text-slate-600 pl-2">
+                    <span>{item.qty} × {formatRupiah(unitPrice)}</span>
+                    <span className="font-bold text-black">
+                      {formatRupiah(subtotal)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Summary / Total */}
           <div className="space-y-1 pt-1 text-[10px]">
             <div className="flex justify-between text-slate-600">
               <span>Subtotal</span>
-              <span>{formatRupiah(invoiceData.subtotal || invoiceData.total_amount)}</span>
+              <span>{formatRupiah(invoiceData.subtotal || invoiceData.subtotal_amount || invoiceData.total_amount)}</span>
             </div>
             {Number(invoiceData.discount_amount) > 0 && (
               <div className="flex justify-between text-slate-600">
@@ -99,10 +111,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <span>BAYAR</span>
               <span className="font-semibold">{formatRupiah(invoiceData.pay_amount)}</span>
             </div>
-            {Number(invoiceData.remaining_amount) > 0 ? (
+            {Number(invoiceData.remaining_amount) > 0 || (Number(invoiceData.total_amount) > Number(invoiceData.pay_amount)) ? (
               <div className="flex justify-between text-red-600 font-bold">
                 <span>SISA PIUTANG</span>
-                <span>{formatRupiah(invoiceData.remaining_amount)}</span>
+                <span>
+                  {formatRupiah(invoiceData.remaining_amount || (Number(invoiceData.total_amount) - Number(invoiceData.pay_amount)))}
+                </span>
               </div>
             ) : (
               <div className="flex justify-between text-slate-800">
@@ -112,9 +126,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             )}
           </div>
 
-          <div className="text-center pt-2.5 border-t border-dashed border-slate-400 text-[9px] text-slate-500 font-sans space-y-0.5">
-            <p className="font-semibold text-slate-700">Terima kasih atas kepercayaan Anda!</p>
-            <p>Simpan struk nota ini untuk pengambilan pesanan.</p>
+          <div className="text-center pt-2.5 border-t border-dashed border-slate-400 text-[9px] text-slate-600 font-sans space-y-1">
+            <p className="font-semibold text-slate-800">Terima kasih atas pesanan Anda!</p>
+            <p className="text-[8.5px] text-slate-500">Pantau progres pesanan secara langsung di:</p>
+            <p className="text-[9px] font-mono font-bold text-blue-600">
+              /cek-pesanan?invoice={invoiceData.invoice_number}
+            </p>
           </div>
         </div>
 

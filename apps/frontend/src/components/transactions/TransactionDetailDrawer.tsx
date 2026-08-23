@@ -65,25 +65,35 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
           </div>
 
           {/* Rincian Item */}
-          <div className="mt-2 border-t border-black/10 pt-4">
+          <div className="mt-2 border-t border-black/10 dark:border-white/10 pt-4">
             <h3 className="font-bold text-xs text-text-main mb-3">Daftar Item Pesanan:</h3>
             <div className="space-y-2">
-              {transaction.items && transaction.items.map((item: any) => (
-                <div key={item.id} className="p-3 skeuo-inset rounded-xl bg-white/40 dark:bg-black/20 text-xs">
-                  <div className="flex justify-between font-bold text-text-main">
-                    <span>{item.product_name || `Produk #${item.product_id}`}</span>
-                    <span>{formatRupiah(Number(item.custom_price || 0) * item.qty)}</span>
-                  </div>
-                  <div className="flex justify-between text-[11px] text-text-muted mt-1">
-                    <span>{item.qty} pcs @ {formatRupiah(item.custom_price || 0)}</span>
-                    {item.length && item.width && (
-                      <span className="text-purple-600 dark:text-purple-400 font-mono">
-                        {item.length}m × {item.width}m ({item.length * item.width} m²)
-                      </span>
+              {transaction.items && transaction.items.map((item: any) => {
+                const unitPrice = Number(item.price || item.custom_price || 0);
+                const subtotal = item.subtotal ? Number(item.subtotal) : (unitPrice * item.qty);
+
+                return (
+                  <div key={item.id} className="p-3 skeuo-inset rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-xs">
+                    <div className="flex justify-between font-bold text-text-main">
+                      <span>{item.product_name || `Produk #${item.product_id}`} {item.variant_name ? `(${item.variant_name})` : ''}</span>
+                      <span className="font-mono">{formatRupiah(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                      <span>{item.qty} {item.unit_name || 'pcs'} @ {formatRupiah(unitPrice)}</span>
+                      {item.length && item.width && (
+                        <span className="text-purple-600 dark:text-purple-400 font-mono font-semibold">
+                          {item.length}m × {item.width}m ({((item.length || 1) * (item.width || 1)).toFixed(1)} m²)
+                        </span>
+                      )}
+                    </div>
+                    {item.addons && item.addons.length > 0 && (
+                      <div className="mt-1.5 pt-1 border-t border-slate-200/60 dark:border-slate-800/60 text-[10px] text-slate-500 dark:text-slate-400">
+                        Finishing: {item.addons.map((a: any) => a.addon_name || a).join(', ')}
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

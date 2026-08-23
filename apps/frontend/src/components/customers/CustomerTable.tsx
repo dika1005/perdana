@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, Phone, MapPin, Trash2 } from 'lucide-react';
+import { Search, Phone, MapPin, Trash2, Edit2, Download } from 'lucide-react';
 import { Customer } from '../../types/customer';
 
 interface CustomerTableProps {
@@ -11,7 +11,9 @@ interface CustomerTableProps {
   onSearchChange: (val: string) => void;
   onSearchSubmit: (e: React.FormEvent) => void;
   onSelectCustomer: (cust: Customer) => void;
+  onEditCustomer: (e: React.MouseEvent, cust: Customer) => void;
   onDeleteCustomer: (e: React.MouseEvent, id: number) => void;
+  onExportCsv: () => void;
 }
 
 export const CustomerTable: React.FC<CustomerTableProps> = ({
@@ -21,25 +23,39 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
   onSearchChange,
   onSearchSubmit,
   onSelectCustomer,
+  onEditCustomer,
   onDeleteCustomer,
+  onExportCsv,
 }) => {
   return (
     <div className="skeuo p-6">
-      <form onSubmit={onSearchSubmit} className="flex gap-4 mb-6">
-        <div className="flex-1 max-w-md flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-950 transition-all">
-          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-          <input 
-            type="text" 
-            placeholder="Cari nama atau no. HP pelanggan..." 
-            className="bg-transparent border-none outline-none w-full text-xs text-text-main placeholder:text-slate-400 font-medium"
-            value={searchTerm}
-            onChange={e => onSearchChange(e.target.value)}
-          />
-        </div>
-        <button type="submit" className="px-4 py-2 font-semibold skeuo-button text-text-main text-xs rounded-xl">
-          Cari
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <form onSubmit={onSearchSubmit} className="flex gap-2.5 w-full sm:max-w-md">
+          <div className="flex-1 flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-950 transition-all">
+            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+            <input 
+              type="text" 
+              placeholder="Cari nama atau no. HP pelanggan..." 
+              className="bg-transparent border-none outline-none w-full text-xs text-text-main placeholder:text-slate-400 font-medium"
+              value={searchTerm}
+              onChange={e => onSearchChange(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="px-4 py-2 font-semibold skeuo-button text-text-main text-xs rounded-xl">
+            Cari
+          </button>
+        </form>
+
+        <button
+          onClick={onExportCsv}
+          disabled={customers.length === 0}
+          className="px-3.5 py-2 rounded-xl skeuo-button text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+          title="Ekspor daftar pelanggan ke CSV"
+        >
+          <Download className="w-3.5 h-3.5 text-blue-500" />
+          <span>Ekspor CSV</span>
         </button>
-      </form>
+      </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
         <table className="w-full text-left border-collapse">
@@ -101,7 +117,14 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
                     {new Date(customer.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="py-3.5 px-4 text-right">
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end gap-1.5" onClick={e => e.stopPropagation()}>
+                      <button 
+                        onClick={(e) => onEditCustomer(e, customer)}
+                        className="p-1.5 skeuo-button text-blue-600 hover:text-blue-700 rounded-lg"
+                        title="Edit Data Pelanggan"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
                       <button 
                         onClick={(e) => onDeleteCustomer(e, customer.id)}
                         className="p-1.5 skeuo-button text-rose-500 hover:text-rose-600 rounded-lg"
