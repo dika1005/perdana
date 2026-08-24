@@ -8,6 +8,7 @@ import { customerService } from '../../services/customerService';
 import { OrderStatus } from '../../types/transaction';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
+import { createWaLink } from '../../utils/whatsapp';
 import { useAlert } from '../../context/AlertContext';
 
 // Modular Tracking Components
@@ -112,14 +113,9 @@ export default function JobTrackingPage() {
   const handleSendWhatsAppSubmit = () => {
     if (!waModal.job) return;
 
-    let phone = waModal.phone.replace(/[^0-9]/g, '');
-    if (phone.startsWith('0')) {
-      phone = '62' + phone.slice(1);
-    }
-
     const message = `Halo Kak ${waModal.job.customer_name || 'Pelanggan'},\n\nPesanan percetakan Anda dengan nomor nota *${waModal.job.invoice_number}* sudah *SELESAI DIKERJAKAN* dan siap diambil di toko Perdana Percetakan.\n\nTotal: ${formatRupiah(waModal.job.total_amount)}\nStatus: ${waModal.job.payment_status === 'PAID' ? 'LUNAS' : `Sisa Tagihan ${formatRupiah(Number(waModal.job.total_amount) - Number(waModal.job.pay_amount))}`}\n\nTerima kasih!`;
 
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const url = createWaLink(waModal.phone, message);
     window.open(url, '_blank');
     setWaModal({ open: false, job: null, phone: '' });
   };

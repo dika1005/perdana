@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { publicService, PublicTrackingData } from '../../services/publicService';
 import { formatRupiah } from '../../utils/format';
+import { createWaLink } from '../../utils/whatsapp';
 
 export default function CekPesananPage() {
   const [queryInput, setQueryInput] = useState('');
@@ -313,23 +314,18 @@ export default function CekPesananPage() {
                   )}
                 </div>
 
-                {(() => {
-                  let waPhone = (trackingData.store_phone || '').replace(/[^0-9]/g, '');
-                  if (waPhone.startsWith('0')) waPhone = '62' + waPhone.slice(1);
-                  return (
-                    <a
-                      href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
-                        `Halo CS ${trackingData.store_name}, saya ingin menanyakan progres pesanan dengan No. Nota: ${trackingData.invoice_number} atas nama ${trackingData.customer_name}.`
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      <span>Hubungi CS WhatsApp</span>
-                    </a>
-                  );
-                })()}
+                <a
+                  href={createWaLink(
+                    trackingData.store_phone,
+                    `Halo CS ${trackingData.store_name}, saya ingin menanyakan progres pesanan dengan No. Nota: ${trackingData.invoice_number} atas nama ${trackingData.customer_name}.`
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Hubungi CS WhatsApp</span>
+                </a>
               </div>
             </div>
           </div>
