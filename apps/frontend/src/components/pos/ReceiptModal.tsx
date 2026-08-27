@@ -39,9 +39,9 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             <div className="w-9 h-9 mx-auto mb-1.5 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
               <Printer className="w-5 h-5 text-white" />
             </div>
-            <p className="font-black text-sm tracking-wider uppercase">{invoiceData.store_name || 'PERDANA PRINTING & POS'}</p>
+            <p className="font-black text-sm tracking-wider uppercase">{invoiceData.store_name || 'PERCETAKAN PERDANA'}</p>
             <p className="text-[9px] text-slate-500 font-sans mt-0.5">Digital Printing & Offset Solution</p>
-            <p className="text-[10px] text-slate-600 mt-1">{invoiceData.store_address || 'Jl. Percetakan Perdana No. 1, Kota'}</p>
+            <p className="text-[10px] text-slate-600 mt-1">{invoiceData.store_address || 'Depan Polsek Ciawigebang - Kuningan'}</p>
             <p className="text-[10px] text-slate-600 font-semibold">Telp: {invoiceData.store_phone || '0812-3456-7890'}</p>
           </div>
 

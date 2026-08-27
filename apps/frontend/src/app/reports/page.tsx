@@ -13,6 +13,7 @@ import {
   ReceivableItem, 
   LowStockItem 
 } from '../../types/report';
+import { PaymentMethod } from '../../types/transaction';
 import { useAlert } from '../../context/AlertContext';
 
 // Modular Report Components
@@ -41,6 +42,7 @@ export default function ReportsPage() {
   // Modal Pelunasan DP
   const [payModal, setPayModal] = useState<{ open: boolean; item?: ReceivableItem | null }>({ open: false });
   const [payAmount, setPayAmount] = useState(0);
+  const [payPaymentMethod, setPayPaymentMethod] = useState<PaymentMethod>('CASH');
   const [submittingPay, setSubmittingPay] = useState(false);
 
   const fetchReportsData = async () => {
@@ -87,6 +89,7 @@ export default function ReportsPage() {
   const handleOpenPay = (item: ReceivableItem) => {
     setPayModal({ open: true, item });
     setPayAmount(Number(item.remaining_amount));
+    setPayPaymentMethod('CASH');
   };
 
   const handleSubmitPayment = async (e: React.FormEvent) => {
@@ -94,7 +97,7 @@ export default function ReportsPage() {
     if (!payModal.item || payAmount <= 0) return;
     setSubmittingPay(true);
     try {
-      await transactionService.updatePayment(payModal.item.id, payAmount, 'PAID');
+      await transactionService.updatePayment(payModal.item.id, payAmount, 'PAID', payPaymentMethod);
       showToast('Pelunasan berhasil dicatat!', 'success');
       setPayModal({ open: false });
       await fetchReportsData();
@@ -279,6 +282,8 @@ export default function ReportsPage() {
         item={payModal.item || null}
         payAmount={payAmount}
         onChangeAmount={setPayAmount}
+        paymentMethod={payPaymentMethod}
+        onPaymentMethodChange={setPayPaymentMethod}
         submitting={submittingPay}
         onClose={() => setPayModal({ open: false })}
         onSubmit={handleSubmitPayment}

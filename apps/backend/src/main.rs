@@ -1,5 +1,5 @@
 use actix_cors::Cors;
-use actix_web::{App, HttpServer, middleware::Logger, web};
+use actix_web::{App, HttpServer, middleware::{Compress, Logger}, web};
 use backend::config::{self, AppConfig};
 use backend::http::json_config;
 use backend::openapi::ApiDoc;
@@ -64,6 +64,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(Logger::default())
+            .wrap(Compress::default())
             .wrap(cors)
             .app_data(web::Data::new(state.clone()))
             .app_data(json_config())

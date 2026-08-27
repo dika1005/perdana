@@ -5,7 +5,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Clock, AlertCircle, CheckCircle2, PackageCheck, RefreshCw } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
 import { customerService } from '../../services/customerService';
-import { OrderStatus } from '../../types/transaction';
+import { OrderStatus, PaymentMethod } from '../../types/transaction';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
 import { createWaLink } from '../../utils/whatsapp';
@@ -27,6 +27,7 @@ export default function JobTrackingPage() {
   // Modals
   const [settleModal, setSettleModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
   const [payAmount, setPayAmount] = useState<number>(0);
+  const [settlePaymentMethod, setSettlePaymentMethod] = useState<PaymentMethod>('CASH');
   const [submittingSettle, setSubmittingSettle] = useState(false);
   const [waModal, setWaModal] = useState<{ open: boolean; job: any | null; phone: string }>({ open: false, job: null, phone: '' });
   const [printModal, setPrintModal] = useState<{ open: boolean; invoiceData: any | null }>({ open: false, invoiceData: null });
@@ -77,7 +78,8 @@ export default function JobTrackingPage() {
 
   const handleOpenSettle = (job: any) => {
     const remaining = Number(job.total_amount) - Number(job.pay_amount);
-    setPayAmount(remaining);
+    setPayAmount(remaining > 0 ? remaining : 0);
+    setSettlePaymentMethod('CASH');
     setSettleModal({ open: true, job });
   };
 
@@ -87,7 +89,7 @@ export default function JobTrackingPage() {
 
     setSubmittingSettle(true);
     try {
-      await transactionService.updatePayment(settleModal.job.id, payAmount, 'PAID');
+      await transactionService.updatePayment(settleModal.job.id, payAmount, 'PAID', settlePaymentMethod);
       await transactionService.updateOrderStatus(settleModal.job.id, 'DIAMBIL');
       setSettleModal({ open: false, job: null });
       showToast('Pelunasan berhasil dan barang diserahkan!', 'success');
@@ -214,6 +216,8 @@ export default function JobTrackingPage() {
         job={settleModal.job}
         payAmount={payAmount}
         onPayAmountChange={setPayAmount}
+        paymentMethod={settlePaymentMethod}
+        onPaymentMethodChange={setSettlePaymentMethod}
         submitting={submittingSettle}
         onClose={() => setSettleModal({ open: false, job: null })}
         onSubmit={handleSettleSubmit}
