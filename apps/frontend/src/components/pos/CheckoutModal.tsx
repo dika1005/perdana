@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { CreditCard, X, Calendar, Check, Clock, Wallet } from 'lucide-react';
-import { PaymentStatus } from '../../types/transaction';
+import { PaymentMethod, PaymentStatus } from '../../types/transaction';
 import { formatRupiah } from '../../utils/format';
 
 interface CheckoutModalProps {
@@ -12,6 +12,8 @@ interface CheckoutModalProps {
   customerName: string;
   paymentStatus: PaymentStatus;
   onPaymentStatusChange: (st: PaymentStatus) => void;
+  paymentMethod: PaymentMethod;
+  onPaymentMethodChange: (pm: PaymentMethod) => void;
   payAmount: number;
   onPayAmountChange: (val: number) => void;
   estimatedDoneAt: string;
@@ -27,6 +29,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   customerName,
   paymentStatus,
   onPaymentStatusChange,
+  paymentMethod,
+  onPaymentMethodChange,
   payAmount,
   onPayAmountChange,
   estimatedDoneAt,
@@ -35,6 +39,30 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onSubmit,
 }) => {
   if (!isOpen) return null;
+
+  const paymentMethods = [
+    {
+      id: 'CASH' as PaymentMethod,
+      label: 'Tunai (Cash)',
+      desc: 'Uang fisik laci',
+      emoji: '💵',
+      activeColor: 'border-emerald-500 bg-emerald-50/90 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20',
+    },
+    {
+      id: 'QRIS' as PaymentMethod,
+      label: 'QRIS',
+      desc: 'Scan digital / QR',
+      emoji: '📱',
+      activeColor: 'border-blue-500 bg-blue-50/90 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20',
+    },
+    {
+      id: 'TRANSFER' as PaymentMethod,
+      label: 'Transfer Bank',
+      desc: 'Mutasi rekening',
+      emoji: '🏦',
+      activeColor: 'border-purple-500 bg-purple-50/90 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500/20',
+    },
+  ];
 
   const paymentTypes = [
     { 
@@ -64,8 +92,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="skeuo p-6 sm:p-7 w-full max-w-md bg-bg-skeuo border border-border-main shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="skeuo p-6 sm:p-7 w-full max-w-md bg-bg-skeuo border border-border-main shadow-2xl my-auto">
         <div className="flex justify-between items-start mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
             <CreditCard className="w-5 h-5 text-brand-600 dark:text-brand-400" />
@@ -79,19 +107,45 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={onSubmit} className="space-y-4">
           {/* Total Tagihan Box */}
-          <div className="p-4 rounded-xl skeuo-inset bg-brand-50/80 dark:bg-brand-950/70 border border-brand-200 dark:border-brand-800 flex justify-between items-center">
+          <div className="p-3.5 rounded-xl skeuo-inset bg-brand-50/80 dark:bg-brand-950/70 border border-brand-200 dark:border-brand-800 flex justify-between items-center">
             <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Total Tagihan:</span>
             <span className="text-2xl font-black text-brand-600 dark:text-brand-400 font-mono">
               {formatRupiah(total)}
             </span>
           </div>
 
+          {/* Metode Pembayaran (Cash vs QRIS vs Transfer) */}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Metode Pembayaran:</label>
+            <div className="grid grid-cols-3 gap-2">
+              {paymentMethods.map(pm => {
+                const isActive = paymentMethod === pm.id;
+                return (
+                  <button
+                    key={pm.id}
+                    type="button"
+                    onClick={() => onPaymentMethodChange(pm.id)}
+                    className={`py-2.5 px-2 text-center rounded-xl transition-all border-2 ${
+                      isActive 
+                        ? `${pm.activeColor} font-bold shadow-sm` 
+                        : 'border-slate-200 dark:border-slate-800 skeuo-button text-slate-600 dark:text-slate-400 hover:text-text-main'
+                    }`}
+                  >
+                    <span className="text-lg block mb-0.5">{pm.emoji}</span>
+                    <p className="text-xs font-bold">{pm.label}</p>
+                    <p className="text-[9px] opacity-75 mt-0.5">{pm.desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Status Bayar Selector */}
           <div>
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">Pilih Skema Bayar:</label>
-            <div className="grid grid-cols-3 gap-2.5">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Skema Pembayaran:</label>
+            <div className="grid grid-cols-3 gap-2">
               {paymentTypes.map(st => {
                 const Icon = st.icon;
                 const isActive = paymentStatus === st.id;
@@ -104,15 +158,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       if (st.id === 'PAID') onPayAmountChange(total);
                       if (st.id === 'UNPAID') onPayAmountChange(0);
                     }}
-                    className={`py-3 px-2 text-center rounded-xl transition-all border-2 ${
+                    className={`py-2.5 px-2 text-center rounded-xl transition-all border-2 ${
                       isActive 
                         ? `${st.activeColor} font-bold shadow-sm` 
                         : 'border-slate-200 dark:border-slate-800 skeuo-button text-slate-600 dark:text-slate-400 hover:text-text-main'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 mx-auto mb-1.5 ${isActive ? st.iconColor : 'text-slate-400 dark:text-slate-500'}`} />
+                    <Icon className={`w-4 h-4 mx-auto mb-1 ${isActive ? st.iconColor : 'text-slate-400 dark:text-slate-500'}`} />
                     <p className="text-xs font-bold">{st.label}</p>
-                    <p className="text-[10px] opacity-75 mt-0.5">{st.desc}</p>
+                    <p className="text-[9px] opacity-75 mt-0.5">{st.desc}</p>
                   </button>
                 );
               })}

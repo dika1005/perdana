@@ -74,7 +74,7 @@ export const DashboardStatCards: React.FC<DashboardStatCardsProps> = ({ summary,
         value={formatRupiah(summary?.total_omset)} 
         icon={TrendingUp} 
         colorClass="text-blue-600 bg-blue-50 border-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900/50" 
-        subtitle={`${summary?.total_transactions || 0} transaksi`}
+        subtitle={summary?.total_cash_omset !== undefined ? `💵 Kas: ${formatRupiah(summary.total_cash_omset)}` : `${summary?.total_transactions || 0} transaksi`}
       />
       <StatCard 
         title="Total Pengeluaran" 

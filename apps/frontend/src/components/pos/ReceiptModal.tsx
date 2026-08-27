@@ -60,7 +60,15 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Status Bayar:</span>
-              <span className="font-bold uppercase">{invoiceData.payment_status}</span>
+              <span className="font-bold uppercase">
+                {invoiceData.payment_status === 'PAID' ? 'LUNAS' : invoiceData.payment_status === 'DP' ? 'UANG MUKA (DP)' : 'BELUM BAYAR'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Metode Bayar:</span>
+              <span className="font-bold uppercase text-slate-800">
+                {invoiceData.payment_method === 'QRIS' ? '📱 QRIS' : invoiceData.payment_method === 'TRANSFER' ? '🏦 Transfer' : '💵 Tunai (Cash)'}
+              </span>
             </div>
           </div>
 
@@ -107,10 +115,26 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <span>TOTAL</span>
               <span>{formatRupiah(invoiceData.total_amount)}</span>
             </div>
-            <div className="flex justify-between text-slate-800">
-              <span>BAYAR</span>
-              <span className="font-semibold">{formatRupiah(invoiceData.pay_amount)}</span>
-            </div>
+
+            {/* Split DP vs Settlement vs Regular Pay */}
+            {invoiceData.settlement_pay_amount ? (
+              <>
+                <div className="flex justify-between text-slate-800">
+                  <span>DP ({invoiceData.payment_method || 'CASH'})</span>
+                  <span className="font-semibold">{formatRupiah(Number(invoiceData.pay_amount) - Number(invoiceData.settlement_pay_amount))}</span>
+                </div>
+                <div className="flex justify-between text-slate-800">
+                  <span>Pelunasan ({invoiceData.settlement_payment_method || 'CASH'})</span>
+                  <span className="font-semibold">{formatRupiah(invoiceData.settlement_pay_amount)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between text-slate-800">
+                <span>BAYAR ({invoiceData.payment_method || 'CASH'})</span>
+                <span className="font-semibold">{formatRupiah(invoiceData.pay_amount)}</span>
+              </div>
+            )}
+
             {Number(invoiceData.remaining_amount) > 0 || (Number(invoiceData.total_amount) > Number(invoiceData.pay_amount)) ? (
               <div className="flex justify-between text-red-600 font-bold">
                 <span>SISA PIUTANG</span>

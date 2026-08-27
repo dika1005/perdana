@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { RefreshCw, Download } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
-import { OrderStatus, PaymentStatus } from '../../types/transaction';
+import { OrderStatus, PaymentMethod, PaymentStatus } from '../../types/transaction';
 
 // Modular Transaction Components
 import { TransactionFilterBar } from '../../components/transactions/TransactionFilterBar';
@@ -27,6 +27,7 @@ export default function TransactionsHistoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [filterPayment, setFilterPayment] = useState<PaymentStatus | ''>('');
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState<PaymentMethod | ''>('');
   const [filterOrder, setFilterOrder] = useState<OrderStatus | ''>('');
 
   // Modals & Drawers
@@ -34,6 +35,7 @@ export default function TransactionsHistoryPage() {
   const [invoicePrintData, setInvoicePrintData] = useState<any | null>(null);
   const [settleModal, setSettleModal] = useState<{ open: boolean; item?: any | null }>({ open: false });
   const [settlePayAmount, setSettlePayAmount] = useState<number>(0);
+  const [settlePaymentMethod, setSettlePaymentMethod] = useState<PaymentMethod>('CASH');
   const [submittingSettle, setSubmittingSettle] = useState(false);
 
   const fetchTransactions = async () => {
@@ -46,6 +48,7 @@ export default function TransactionsHistoryPage() {
         search: searchTerm || undefined,
         date: filterDate || undefined,
         payment_status: filterPayment ? (filterPayment as PaymentStatus) : undefined,
+        payment_method: filterPaymentMethod ? (filterPaymentMethod as PaymentMethod) : undefined,
         order_status: filterOrder ? (filterOrder as OrderStatus) : undefined,
       });
       setTransactions(res.data);
@@ -63,7 +66,7 @@ export default function TransactionsHistoryPage() {
 
   useEffect(() => {
     fetchTransactions();
-  }, [page, filterPayment, filterOrder]);
+  }, [page, filterPayment, filterPaymentMethod, filterOrder]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +78,7 @@ export default function TransactionsHistoryPage() {
     setSearchTerm('');
     setFilterDate('');
     setFilterPayment('');
+    setFilterPaymentMethod('');
     setFilterOrder('');
     setPage(1);
     fetchTransactions();
@@ -107,6 +111,7 @@ export default function TransactionsHistoryPage() {
     const remaining = Number(item.total_amount) - Number(item.pay_amount);
     setSettleModal({ open: true, item });
     setSettlePayAmount(remaining > 0 ? remaining : 0);
+    setSettlePaymentMethod('CASH');
   };
 
   const handleProcessSettle = async (e: React.FormEvent) => {
@@ -114,7 +119,12 @@ export default function TransactionsHistoryPage() {
     if (!settleModal.item) return;
     setSubmittingSettle(true);
     try {
-      const res = await transactionService.updatePayment(settleModal.item.id, settlePayAmount, 'PAID');
+      const res = await transactionService.updatePayment(
+        settleModal.item.id,
+        settlePayAmount,
+        'PAID',
+        settlePaymentMethod
+      );
       setSettleModal({ open: false });
       showToast('Pelunasan berhasil dicatat!', 'success');
       await fetchTransactions();
@@ -138,7 +148,7 @@ export default function TransactionsHistoryPage() {
 
   const handleExportCsv = () => {
     if (transactions.length === 0) return;
-    const headers = ['No. Nota', 'Tanggal', 'Pelanggan', 'No. Telepon', 'Total Belanja', 'Telah Dibayar', 'Sisa Piutang', 'Status Bayar', 'Status Pesanan'];
+    const headers = ['No. Nota', 'Tanggal', 'Pelanggan', 'No. Telepon', 'Total Belanja', 'Telah Dibayar', 'Sisa Piutang', 'Status Bayar', 'Metode Bayar', 'Status Pesanan'];
     const rows = transactions.map(t => [
       `"${t.invoice_number}"`,
       `"${new Date(t.created_at).toISOString().slice(0, 10)}"`,
@@ -148,6 +158,7 @@ export default function TransactionsHistoryPage() {
       t.pay_amount,
       t.remaining_amount || (Number(t.total_amount) - Number(t.pay_amount)),
       `"${t.payment_status}"`,
+      `"${t.settlement_payment_method ? `${t.payment_method || 'CASH'} + ${t.settlement_payment_method}` : (t.payment_method || 'CASH')}"`,
       `"${t.order_status}"`
     ]);
 
@@ -204,6 +215,8 @@ export default function TransactionsHistoryPage() {
         onFilterDateChange={setFilterDate}
         filterPayment={filterPayment}
         onFilterPaymentChange={setFilterPayment}
+        filterPaymentMethod={filterPaymentMethod}
+        onFilterPaymentMethodChange={setFilterPaymentMethod}
         filterOrder={filterOrder}
         onFilterOrderChange={setFilterOrder}
         onResetFilters={handleResetFilters}
@@ -234,6 +247,8 @@ export default function TransactionsHistoryPage() {
         item={settleModal.item}
         payAmount={settlePayAmount}
         onPayAmountChange={setSettlePayAmount}
+        paymentMethod={settlePaymentMethod}
+        onPaymentMethodChange={setSettlePaymentMethod}
         submitting={submittingSettle}
         onClose={() => setSettleModal({ open: false })}
         onSubmit={handleProcessSettle}

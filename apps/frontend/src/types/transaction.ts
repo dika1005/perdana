@@ -1,6 +1,7 @@
 import { PriceType } from './product';
 
 export type PaymentStatus = 'PAID' | 'DP' | 'UNPAID';
+export type PaymentMethod = 'CASH' | 'QRIS' | 'TRANSFER';
 export type OrderStatus = 'ANTRIAN' | 'PROSES' | 'SELESAI' | 'DIAMBIL';
 
 export interface CartItemAddon {
@@ -30,6 +31,7 @@ export interface CreateTransactionPayload {
   discount_amount?: number;
   pay_amount: number;
   payment_status?: PaymentStatus;
+  payment_method?: PaymentMethod;
   estimated_done_at?: string; // YYYY-MM-DD
   items: {
     product_id: number;

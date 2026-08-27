@@ -78,7 +78,7 @@ use entity::enums::*;
     ),
     components(
         schemas(
-            UserRole, MutationType, PriceType, RangePriceType, PaymentStatus, OrderStatus,
+            UserRole, MutationType, PriceType, RangePriceType, PaymentStatus, PaymentMethod, OrderStatus,
             ExpenseCategory, ExpensePaymentMethod,
             PaginationMeta, PaginationQuery, MessageData, HealthData,
             LoginRequest, RefreshRequest, PublicUser, LoginData, RefreshData,

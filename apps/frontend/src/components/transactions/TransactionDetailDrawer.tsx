@@ -48,18 +48,25 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
 
             <div className="flex items-center justify-between text-text-muted">
               <span>Status Bayar:</span>
-              <span className="font-bold">{transaction.payment_status}</span>
+              <span className="font-bold uppercase text-text-main">{transaction.payment_status}</span>
+            </div>
+
+            <div className="flex items-center justify-between text-text-muted">
+              <span>Metode Pembayaran:</span>
+              <span className="font-bold text-text-main">
+                {transaction.payment_method === 'QRIS' ? '📱 QRIS' : transaction.payment_method === 'TRANSFER' ? '🏦 Transfer Bank' : '💵 Tunai (Cash)'}
+              </span>
             </div>
 
             <div className="flex items-center justify-between text-text-muted">
               <span>Status Produksi:</span>
-              <span className="font-bold">{transaction.order_status}</span>
+              <span className="font-bold text-text-main">{transaction.order_status}</span>
             </div>
 
             {transaction.estimated_done_at && (
               <div className="flex items-center justify-between text-text-muted">
                 <span>Estimasi Selesai:</span>
-                <span className="font-semibold">{transaction.estimated_done_at}</span>
+                <span className="font-semibold text-text-main">{transaction.estimated_done_at}</span>
               </div>
             )}
           </div>
@@ -98,7 +105,7 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
           </div>
 
           {/* Financial Summary */}
-          <div className="mt-4 p-4 rounded-xl skeuo-inset bg-brand-50/40 text-xs space-y-2">
+          <div className="mt-4 p-4 rounded-xl skeuo-inset bg-brand-50/40 dark:bg-brand-950/40 text-xs space-y-2 border border-brand-200/50 dark:border-brand-800/50">
             <div className="flex justify-between text-text-muted">
               <span>Total Belanja:</span>
               <span className="font-bold text-text-main">
@@ -111,12 +118,28 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
                 <span>- {formatRupiah(transaction.discount_amount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-emerald-600 font-bold">
-              <span>Dibayar:</span>
-              <span>{formatRupiah(transaction.pay_amount)}</span>
-            </div>
+            
+            {/* Payment Method Details */}
+            {transaction.settlement_pay_amount ? (
+              <>
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <span>DP ({transaction.payment_method || 'CASH'}):</span>
+                  <span className="font-semibold text-text-main">{formatRupiah(Number(transaction.pay_amount) - Number(transaction.settlement_pay_amount))}</span>
+                </div>
+                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
+                  <span>Pelunasan ({transaction.settlement_payment_method || 'CASH'}):</span>
+                  <span>{formatRupiah(transaction.settlement_pay_amount)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between text-emerald-600 font-bold">
+                <span>Dibayar ({transaction.payment_method || 'CASH'}):</span>
+                <span>{formatRupiah(transaction.pay_amount)}</span>
+              </div>
+            )}
+
             {Number(transaction.total_amount) - Number(transaction.pay_amount) > 0 && (
-              <div className="flex justify-between text-red-500 font-bold text-sm pt-2 border-t border-black/5">
+              <div className="flex justify-between text-red-500 font-bold text-sm pt-2 border-t border-slate-200 dark:border-slate-800">
                 <span>Sisa Piutang:</span>
                 <span>
                   {formatRupiah(Number(transaction.total_amount) - Number(transaction.pay_amount))}

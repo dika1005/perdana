@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Search, Calendar, Wallet, ClipboardList, X } from 'lucide-react';
-import { OrderStatus, PaymentStatus } from '../../types/transaction';
+import { Search, Calendar, Wallet, ClipboardList, X, CreditCard } from 'lucide-react';
+import { OrderStatus, PaymentMethod, PaymentStatus } from '../../types/transaction';
 
 interface TransactionFilterBarProps {
   searchTerm: string;
@@ -12,6 +12,8 @@ interface TransactionFilterBarProps {
   onFilterDateChange: (val: string) => void;
   filterPayment: PaymentStatus | '';
   onFilterPaymentChange: (val: PaymentStatus | '') => void;
+  filterPaymentMethod?: PaymentMethod | '';
+  onFilterPaymentMethodChange?: (val: PaymentMethod | '') => void;
   filterOrder: OrderStatus | '';
   onFilterOrderChange: (val: OrderStatus | '') => void;
   onResetFilters: () => void;
@@ -25,11 +27,13 @@ export const TransactionFilterBar: React.FC<TransactionFilterBarProps> = ({
   onFilterDateChange,
   filterPayment,
   onFilterPaymentChange,
+  filterPaymentMethod = '',
+  onFilterPaymentMethodChange,
   filterOrder,
   onFilterOrderChange,
   onResetFilters,
 }) => {
-  const hasActiveFilter = Boolean(searchTerm || filterDate || filterPayment || filterOrder);
+  const hasActiveFilter = Boolean(searchTerm || filterDate || filterPayment || filterPaymentMethod || filterOrder);
 
   return (
     <div className="skeuo p-4 mb-6 flex flex-wrap gap-3 items-center justify-between">
@@ -69,12 +73,29 @@ export const TransactionFilterBar: React.FC<TransactionFilterBarProps> = ({
             onChange={e => onFilterPaymentChange(e.target.value as PaymentStatus | '')}
             className="bg-transparent border-none outline-none text-xs text-text-main font-medium cursor-pointer [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
           >
-            <option value="">Status Bayar: Semua</option>
+            <option value="">Status: Semua</option>
             <option value="PAID">Lunas</option>
             <option value="DP">DP (Uang Muka)</option>
             <option value="UNPAID">Belum Bayar</option>
           </select>
         </div>
+
+        {/* Filter Metode Bayar */}
+        {onFilterPaymentMethodChange && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <CreditCard className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+            <select
+              value={filterPaymentMethod}
+              onChange={e => onFilterPaymentMethodChange(e.target.value as PaymentMethod | '')}
+              className="bg-transparent border-none outline-none text-xs text-text-main font-medium cursor-pointer [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
+            >
+              <option value="">Metode: Semua</option>
+              <option value="CASH">💵 Tunai (Cash)</option>
+              <option value="QRIS">📱 QRIS</option>
+              <option value="TRANSFER">🏦 Transfer Bank</option>
+            </select>
+          </div>
+        )}
 
         {/* Filter Status Produksi */}
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
@@ -84,7 +105,7 @@ export const TransactionFilterBar: React.FC<TransactionFilterBarProps> = ({
             onChange={e => onFilterOrderChange(e.target.value as OrderStatus | '')}
             className="bg-transparent border-none outline-none text-xs text-text-main font-medium cursor-pointer [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
           >
-            <option value="">Status Produksi: Semua</option>
+            <option value="">Produksi: Semua</option>
             <option value="ANTRIAN">Antrian Cetak</option>
             <option value="PROSES">Sedang Diproses</option>
             <option value="SELESAI">Selesai</option>
@@ -98,7 +119,7 @@ export const TransactionFilterBar: React.FC<TransactionFilterBarProps> = ({
             className="p-2 skeuo-button text-rose-500 hover:text-rose-600 rounded-xl transition-colors"
             title="Reset semua filter"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         )}
       </div>

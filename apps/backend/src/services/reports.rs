@@ -34,6 +34,9 @@ pub async fn get_dashboard_summary(
     let all_trans = trans_query.all(db).await?;
 
     let mut total_omset = Decimal::ZERO;
+    let mut total_cash_omset = Decimal::ZERO;
+    let mut total_qris_omset = Decimal::ZERO;
+    let mut total_transfer_omset = Decimal::ZERO;
     let mut total_piutang = Decimal::ZERO;
     let mut paid_count = 0;
     let mut dp_count = 0;
@@ -43,6 +46,31 @@ pub async fn get_dashboard_summary(
 
     for t in &all_trans {
         total_omset += t.pay_amount;
+
+        // Breakdown omset by initial and settlement payment methods
+        if let Some(settle_amount) = t.settlement_pay_amount {
+            let initial_amount = (t.pay_amount - settle_amount).max(Decimal::ZERO);
+            match t.payment_method {
+                entity::enums::PaymentMethod::Cash => total_cash_omset += initial_amount,
+                entity::enums::PaymentMethod::Qris => total_qris_omset += initial_amount,
+                entity::enums::PaymentMethod::Transfer => total_transfer_omset += initial_amount,
+            }
+            if let Some(ref settle_method) = t.settlement_payment_method {
+                match settle_method {
+                    entity::enums::PaymentMethod::Cash => total_cash_omset += settle_amount,
+                    entity::enums::PaymentMethod::Qris => total_qris_omset += settle_amount,
+                    entity::enums::PaymentMethod::Transfer => total_transfer_omset += settle_amount,
+                }
+            } else {
+                total_cash_omset += settle_amount;
+            }
+        } else {
+            match t.payment_method {
+                entity::enums::PaymentMethod::Cash => total_cash_omset += t.pay_amount,
+                entity::enums::PaymentMethod::Qris => total_qris_omset += t.pay_amount,
+                entity::enums::PaymentMethod::Transfer => total_transfer_omset += t.pay_amount,
+            }
+        }
 
         if t.total_amount > t.pay_amount {
             total_piutang += t.total_amount - t.pay_amount;
@@ -91,6 +119,9 @@ pub async fn get_dashboard_summary(
 
     Ok(DashboardSummaryResponse {
         total_omset,
+        total_cash_omset,
+        total_qris_omset,
+        total_transfer_omset,
         total_expenses,
         net_profit,
         total_transactions: all_trans.len() as i64,

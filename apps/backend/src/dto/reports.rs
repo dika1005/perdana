@@ -15,6 +15,12 @@ pub struct ReportDateQuery {
 pub struct DashboardSummaryResponse {
     #[schema(value_type = f64, example = 15000000)]
     pub total_omset: Decimal,
+    #[schema(value_type = f64, example = 10000000)]
+    pub total_cash_omset: Decimal,
+    #[schema(value_type = f64, example = 4000000)]
+    pub total_qris_omset: Decimal,
+    #[schema(value_type = f64, example = 1000000)]
+    pub total_transfer_omset: Decimal,
     #[schema(value_type = f64, example = 3000000)]
     pub total_expenses: Decimal,
     #[schema(value_type = f64, example = 12000000)]

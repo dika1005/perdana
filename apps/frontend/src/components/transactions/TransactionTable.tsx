@@ -56,6 +56,46 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     }
   };
 
+  const getPaymentMethodBadge = (tx: any) => {
+    const initialMethod = tx.payment_method || 'CASH';
+    const settleMethod = tx.settlement_payment_method;
+
+    const renderBadge = (method: string) => {
+      switch (method) {
+        case 'QRIS':
+          return (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60">
+              📱 QRIS
+            </span>
+          );
+        case 'TRANSFER':
+          return (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/60">
+              🏦 Transfer
+            </span>
+          );
+        case 'CASH':
+        default:
+          return (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60">
+              💵 Cash
+            </span>
+          );
+      }
+    };
+
+    if (settleMethod && settleMethod !== initialMethod) {
+      return (
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1"><span className="text-[9px] text-slate-400">DP:</span> {renderBadge(initialMethod)}</div>
+          <div className="flex items-center gap-1"><span className="text-[9px] text-slate-400">Lunas:</span> {renderBadge(settleMethod)}</div>
+        </div>
+      );
+    }
+
+    return renderBadge(initialMethod);
+  };
+
   return (
     <div className="skeuo overflow-hidden">
       <div className="overflow-x-auto">
@@ -68,6 +108,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
               <th className="py-3 px-4">Total</th>
               <th className="py-3 px-4">Sisa Tagihan</th>
               <th className="py-3 px-4">Status Bayar</th>
+              <th className="py-3 px-4">Metode Bayar</th>
               <th className="py-3 px-4">Status Pesanan</th>
               <th className="py-3 px-4 text-center">Aksi</th>
             </tr>
@@ -75,14 +116,14 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {loading ? (
               <tr>
-                <td colSpan={8} className="p-12 text-center text-slate-400">
+                <td colSpan={9} className="p-12 text-center text-slate-400">
                   <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-500" />
                   <p className="text-xs font-medium">Memuat transaksi...</p>
                 </td>
               </tr>
             ) : transactions.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-12 text-center text-slate-400">
+                <td colSpan={9} className="p-12 text-center text-slate-400">
                   <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="text-xs font-semibold text-text-main">Tidak ada data transaksi</p>
                   <p className="text-[11px] mt-0.5 opacity-70">Gunakan filter lain atau buat transaksi baru di POS.</p>
@@ -125,6 +166,9 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                     </td>
                     <td className="py-3 px-4">
                       {getPaymentBadge(tx.payment_status)}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {getPaymentMethodBadge(tx)}
                     </td>
                     <td className="py-3 px-4">
                       {getOrderBadge(tx.order_status)}

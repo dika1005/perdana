@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use entity::enums::{MutationType, OrderStatus, PaymentStatus, PriceType, RangePriceType};
+use entity::enums::{MutationType, OrderStatus, PaymentMethod, PaymentStatus, PriceType, RangePriceType};
 use entity::prelude::*;
 use entity::{raw_material_mutations, raw_materials, transaction_item_addons, transaction_items, transactions, users};
 use rust_decimal::prelude::ToPrimitive;
@@ -60,6 +60,10 @@ pub fn map_transaction(
         pay_amount: m.pay_amount,
         change_amount: m.change_amount,
         payment_status: m.payment_status.clone(),
+        payment_method: m.payment_method.clone(),
+        settlement_payment_method: m.settlement_payment_method.clone(),
+        settlement_pay_amount: m.settlement_pay_amount,
+        settlement_at: m.settlement_at,
         order_status: m.order_status.clone(),
         estimated_done_at: m.estimated_done_at,
         created_by: m.created_by,
@@ -101,6 +105,14 @@ pub async fn list(
 
     if let Some(p_status) = query.payment_status {
         select = select.filter(transactions::Column::PaymentStatus.eq(p_status));
+    }
+
+    if let Some(pm) = query.payment_method {
+        select = select.filter(
+            transactions::Column::PaymentMethod
+                .eq(pm.clone())
+                .or(transactions::Column::SettlementPaymentMethod.eq(Some(pm))),
+        );
     }
 
     if let Some(o_status) = query.order_status {
@@ -410,6 +422,8 @@ pub async fn create(
         (PaymentStatus::Unpaid, Decimal::ZERO)
     };
 
+    let payment_method = payload.payment_method.unwrap_or(PaymentMethod::Cash);
+
     // 5. Insert Transaction
     let active_trans = transactions::ActiveModel {
         invoice_number: Set(invoice_number.clone()),
@@ -421,6 +435,10 @@ pub async fn create(
         pay_amount: Set(pay_amount),
         change_amount: Set(change_amount),
         payment_status: Set(payment_status),
+        payment_method: Set(payment_method),
+        settlement_payment_method: Set(None),
+        settlement_pay_amount: Set(None),
+        settlement_at: Set(None),
         order_status: Set(OrderStatus::Antrian),
         estimated_done_at: Set(payload.estimated_done_at),
         created_by: Set(Some(user_id)),
@@ -538,10 +556,15 @@ pub async fn update_payment(
         (payload.payment_status.unwrap_or(PaymentStatus::Dp), Decimal::ZERO)
     };
 
+    let settlement_method = payload.payment_method.unwrap_or(PaymentMethod::Cash);
+
     let mut active_trans: transactions::ActiveModel = transaction.into();
     active_trans.pay_amount = Set(new_pay_amount);
     active_trans.change_amount = Set(new_change);
     active_trans.payment_status = Set(new_status);
+    active_trans.settlement_payment_method = Set(Some(settlement_method));
+    active_trans.settlement_pay_amount = Set(Some(payload.additional_pay_amount));
+    active_trans.settlement_at = Set(Some(Utc::now()));
     let updated = active_trans.update(db).await?;
 
     get_by_id(db, updated.id).await
@@ -571,6 +594,9 @@ pub async fn get_invoice_data(
         cashier_name: trans.cashier_name.unwrap_or_else(|| "Kasir".to_string()),
         customer_name: trans.customer_name,
         payment_status: trans.payment_status,
+        payment_method: trans.payment_method,
+        settlement_payment_method: trans.settlement_payment_method,
+        settlement_pay_amount: trans.settlement_pay_amount,
         order_status: trans.order_status,
         estimated_done_at: trans.estimated_done_at,
         items: trans.items.unwrap_or_default(),

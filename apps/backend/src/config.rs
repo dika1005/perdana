@@ -146,9 +146,16 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     let _ = db.execute_unprepared("ALTER TABLE product_addons ADD COLUMN category_id INT NULL DEFAULT NULL;").await;
     let _ = db.execute_unprepared("ALTER TABLE product_addons ADD CONSTRAINT fk_product_addons_category FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL;").await;
 
+    // Migrasi Payment Method (CASH, QRIS, TRANSFER) & Split Settlement
+    let _ = db.execute_unprepared("ALTER TABLE transactions ADD COLUMN payment_method ENUM('CASH', 'QRIS', 'TRANSFER') NOT NULL DEFAULT 'CASH';").await;
+    let _ = db.execute_unprepared("ALTER TABLE transactions ADD COLUMN settlement_payment_method ENUM('CASH', 'QRIS', 'TRANSFER') NULL DEFAULT NULL;").await;
+    let _ = db.execute_unprepared("ALTER TABLE transactions ADD COLUMN settlement_pay_amount DECIMAL(12, 2) NULL DEFAULT NULL;").await;
+    let _ = db.execute_unprepared("ALTER TABLE transactions ADD COLUMN settlement_at TIMESTAMP NULL DEFAULT NULL;").await;
+
     // Performance Indexes
     let _ = db.execute_unprepared("CREATE INDEX idx_transactions_status_date ON transactions(order_status, payment_status, created_at);").await;
     let _ = db.execute_unprepared("CREATE INDEX idx_transactions_customer ON transactions(customer_id);").await;
+    let _ = db.execute_unprepared("CREATE INDEX idx_transactions_payment_method ON transactions(payment_method, settlement_payment_method);").await;
     let _ = db.execute_unprepared("CREATE INDEX idx_expenses_date_cat ON expenses(expense_date, category);").await;
     let _ = db.execute_unprepared("CREATE INDEX idx_products_cat ON products(category_id);").await;
     let _ = db.execute_unprepared("CREATE INDEX idx_product_addons_cat ON product_addons(category_id);").await;

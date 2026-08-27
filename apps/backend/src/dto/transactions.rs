@@ -1,5 +1,5 @@
 use chrono::{DateTime, NaiveDate, Utc};
-use entity::enums::{OrderStatus, PaymentStatus};
+use entity::enums::{OrderStatus, PaymentMethod, PaymentStatus};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -49,6 +49,7 @@ pub struct CreateTransactionRequest {
     #[schema(value_type = f64, example = 250000)]
     pub pay_amount: Decimal,
     pub payment_status: Option<PaymentStatus>,
+    pub payment_method: Option<PaymentMethod>,
     #[schema(value_type = Option<String>, example = "2026-08-30")]
     pub estimated_done_at: Option<NaiveDate>,
     #[validate(length(min = 1, message = "Transaksi harus memiliki minimal 1 item"))]
@@ -61,6 +62,7 @@ pub struct TransactionQuery {
     #[schema(value_type = Option<String>, example = "2026-08-18")]
     pub date: Option<NaiveDate>,
     pub payment_status: Option<PaymentStatus>,
+    pub payment_method: Option<PaymentMethod>,
     pub order_status: Option<OrderStatus>,
 }
 
@@ -76,6 +78,7 @@ pub struct UpdatePaymentRequest {
     #[schema(value_type = f64, example = 250000)]
     pub additional_pay_amount: Decimal,
     pub payment_status: Option<PaymentStatus>,
+    pub payment_method: Option<PaymentMethod>,
 }
 
 // ==========================================
@@ -125,6 +128,10 @@ pub struct TransactionResponse {
     #[schema(value_type = f64, example = 0)]
     pub change_amount: Decimal,
     pub payment_status: PaymentStatus,
+    pub payment_method: PaymentMethod,
+    pub settlement_payment_method: Option<PaymentMethod>,
+    pub settlement_pay_amount: Option<Decimal>,
+    pub settlement_at: Option<DateTime<Utc>>,
     pub order_status: OrderStatus,
     #[schema(value_type = Option<String>, example = "2026-08-30")]
     pub estimated_done_at: Option<NaiveDate>,
@@ -145,6 +152,9 @@ pub struct InvoicePrintData {
     pub cashier_name: String,
     pub customer_name: String,
     pub payment_status: PaymentStatus,
+    pub payment_method: PaymentMethod,
+    pub settlement_payment_method: Option<PaymentMethod>,
+    pub settlement_pay_amount: Option<Decimal>,
     pub order_status: OrderStatus,
     #[schema(value_type = Option<String>, example = "2026-08-30")]
     pub estimated_done_at: Option<NaiveDate>,

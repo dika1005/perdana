@@ -1,5 +1,8 @@
 export interface DashboardSummary {
   total_omset: number;
+  total_cash_omset: number;
+  total_qris_omset: number;
+  total_transfer_omset: number;
   total_expenses: number;
   net_profit: number;
   total_transactions: number;

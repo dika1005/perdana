@@ -1,7 +1,7 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::enums::{OrderStatus, PaymentStatus};
+use crate::enums::{OrderStatus, PaymentMethod, PaymentStatus};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "transactions")]
@@ -23,6 +23,11 @@ pub struct Model {
     #[sea_orm(column_type = "Decimal(Some((12, 2)))")]
     pub change_amount: Decimal,
     pub payment_status: PaymentStatus,
+    pub payment_method: PaymentMethod,
+    pub settlement_payment_method: Option<PaymentMethod>,
+    #[sea_orm(column_type = "Decimal(Some((12, 2)))", nullable)]
+    pub settlement_pay_amount: Option<Decimal>,
+    pub settlement_at: Option<DateTimeUtc>,
     pub order_status: OrderStatus,
     pub estimated_done_at: Option<Date>,
     pub created_by: Option<i32>,

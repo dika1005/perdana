@@ -9,7 +9,7 @@ import { Product, ProductAddon } from '../../types/product';
 import { Category } from '../../types/category';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
-import { PaymentStatus } from '../../types/transaction';
+import { PaymentMethod, PaymentStatus } from '../../types/transaction';
 import { useAlert } from '../../context/AlertContext';
 
 import dynamic from 'next/dynamic';
@@ -56,6 +56,7 @@ export default function POSPage() {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [payAmount, setPayAmount] = useState<number>(0);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PAID');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [estimatedDoneAt, setEstimatedDoneAt] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -266,6 +267,7 @@ export default function POSPage() {
         discount_amount: discountAmount > 0 ? discountAmount : undefined,
         pay_amount: payAmount,
         payment_status: paymentStatus,
+        payment_method: paymentMethod,
         estimated_done_at: estimatedDoneAt.trim() ? estimatedDoneAt : undefined,
         items: cart.map(item => ({
           product_id: item.product.id,
@@ -302,6 +304,7 @@ export default function POSPage() {
       setCustomCustomerName('');
       setDiscountAmount(0);
       setPayAmount(0);
+      setPaymentMethod('CASH');
       setEstimatedDoneAt('');
     } catch (err: any) {
       console.error('Transaction creation error:', err);
@@ -401,6 +404,8 @@ export default function POSPage() {
         customerName={selectedCustomer ? selectedCustomer.name : (customCustomerName.trim() || 'Pelanggan Umum')}
         paymentStatus={paymentStatus}
         onPaymentStatusChange={setPaymentStatus}
+        paymentMethod={paymentMethod}
+        onPaymentMethodChange={setPaymentMethod}
         payAmount={payAmount}
         onPayAmountChange={setPayAmount}
         estimatedDoneAt={estimatedDoneAt}

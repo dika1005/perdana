@@ -140,3 +140,18 @@ pub enum ExpensePaymentMethod {
     Transfer,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, ToSchema)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "payment_method")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PaymentMethod {
+    #[sea_orm(string_value = "CASH")]
+    #[serde(alias = "cash", alias = "Cash")]
+    Cash,
+    #[sea_orm(string_value = "QRIS")]
+    #[serde(alias = "qris", alias = "Qris")]
+    Qris,
+    #[sea_orm(string_value = "TRANSFER")]
+    #[serde(alias = "transfer", alias = "Transfer")]
+    Transfer,
+}
+
