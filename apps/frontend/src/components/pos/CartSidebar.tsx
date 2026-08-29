@@ -20,13 +20,16 @@ import {
 } from 'lucide-react';
 import { Customer } from '../../types/customer';
 import { ProductAddon } from '../../types/product';
+import { RawMaterial } from '../../types/rawMaterial';
 import { CartItem } from './types';
 import { formatRupiah } from '../../utils/format';
+import { Package, Layers } from 'lucide-react';
 
 interface CartSidebarProps {
   cart: CartItem[];
   customers: Customer[];
   availableAddons: ProductAddon[];
+  rawMaterials?: RawMaterial[];
   selectedCustomer: Customer | null;
   onSelectCustomer: (cust: Customer | null) => void;
   customCustomerName: string;
@@ -34,6 +37,7 @@ interface CartSidebarProps {
   onUpdateQty: (id: number, delta: number) => void;
   onUpdatePrice: (id: number, price: number) => void;
   onUpdateDimensions: (id: number, length: number, width: number) => void;
+  onUpdateRawMaterial?: (productId: number, rawMaterialId?: number, materialQty?: number) => void;
   onToggleAddon: (productId: number, addon: ProductAddon) => void;
   onRemoveFromCart: (id: number) => void;
   onClearCart: () => void;
@@ -44,10 +48,53 @@ interface CartSidebarProps {
   onOpenCheckout: () => void;
 }
 
+const getRecommendedMaterials = (item: CartItem, allMaterials: RawMaterial[]) => {
+  const prodName = item.product.name.toLowerCase();
+  const unitName = (item.product.unit_name || '').toLowerCase();
+  
+  const isBanner = prodName.includes('banner') || prodName.includes('spanduk') || prodName.includes('baliho') || prodName.includes('umbul') || prodName.includes('bendera') || unitName.includes('meter');
+  const isStiker = prodName.includes('stiker') || prodName.includes('label');
+  const isStempel = prodName.includes('stempel') || prodName.includes('id card') || prodName.includes('lanyard') || prodName.includes('pin') || prodName.includes('gantungan');
+  
+  if (isBanner) {
+    const list = allMaterials.filter(m => {
+      const name = m.name.toLowerCase();
+      return name.includes('banner') || name.includes('flexi') || name.includes('spanduk') || name.includes('kain tc') || name.includes('stand') || name.includes('roll') || name.includes('tinta');
+    });
+    return list.length > 0 ? list : allMaterials;
+  }
+  
+  if (isStiker) {
+    const list = allMaterials.filter(m => {
+      const name = m.name.toLowerCase();
+      return name.includes('stiker') || name.includes('cromo') || name.includes('vinyl') || name.includes('kunsruk') || name.includes('art paper');
+    });
+    return list.length > 0 ? list : allMaterials;
+  }
+  
+  if (isStempel) {
+    const list = allMaterials.filter(m => {
+      const name = m.name.toLowerCase();
+      return name.includes('stempel') || name.includes('karet') || name.includes('flash') || name.includes('lanyard') || name.includes('case');
+    });
+    return list.length > 0 ? list : allMaterials;
+  }
+  
+  // Default for Undangan, Brosur, Nota, Faktur, Buku, Yasin, Kalender, Map, dll.
+  // Hanya menampilkan kertas & amplop/plastik, tidak memunculkan banner roll/stand
+  const list = allMaterials.filter(m => {
+    const name = m.name.toLowerCase();
+    const isBannerSpecific = (name.includes('flexi') || name.includes('stand x') || name.includes('stand y') || name.includes('roll banner') || name.includes('spanduk kain'));
+    return !isBannerSpecific;
+  });
+  return list.length > 0 ? list : allMaterials;
+};
+
 export const CartSidebar: React.FC<CartSidebarProps> = ({
   cart,
   customers,
   availableAddons,
+  rawMaterials = [],
   selectedCustomer,
   onSelectCustomer,
   customCustomerName,
@@ -55,6 +102,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   onUpdateQty,
   onUpdatePrice,
   onUpdateDimensions,
+  onUpdateRawMaterial,
   onToggleAddon,
   onRemoveFromCart,
   onClearCart,
@@ -349,6 +397,72 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* Pemakaian Bahan Baku & Kertas (Rekomendasi Cerdas) */}
+                {(() => {
+                  const recommendedMaterials = getRecommendedMaterials(item, rawMaterials);
+                  const selectedMat = rawMaterials.find(m => m.id === item.raw_material_id);
+
+                  return (
+                    <div className="p-2.5 rounded-lg bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200/70 dark:border-indigo-900/40 text-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Package className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                          <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px]">
+                            Bahan Baku / Kertas yang Dipakai:
+                          </span>
+                        </div>
+                        {selectedMat && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                            selectedMat.stock <= selectedMat.min_stock_warning 
+                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' 
+                              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          }`}>
+                            Stok Gudang: {selectedMat.stock} {selectedMat.unit}
+                          </span>
+                        )}
+                      </div>
+
+                      <select
+                        value={item.raw_material_id || ''}
+                        onChange={e => {
+                          const matId = e.target.value ? Number(e.target.value) : undefined;
+                          const defaultQty = matId ? (item.material_qty || item.qty) : undefined;
+                          onUpdateRawMaterial?.(item.product.id, matId, defaultQty);
+                        }}
+                        className="w-full px-2.5 py-1.5 text-xs text-text-main outline-none bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 cursor-pointer font-medium focus:border-indigo-400 [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
+                      >
+                        <option value="">🚫 Tanpa Potong Bahan Baku</option>
+                        {recommendedMaterials.map(m => (
+                          <option key={m.id} value={m.id}>
+                            {m.name} {m.variant ? `• ${m.variant}` : ''} (Sisa: {m.stock} {m.unit})
+                          </option>
+                        ))}
+                      </select>
+
+                      {item.raw_material_id && (
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-indigo-100 dark:border-indigo-900/40">
+                          <label className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold">
+                            Jumlah Lembar / Pemakaian Fisik:
+                          </label>
+                          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-950 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-800">
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.material_qty !== undefined ? item.material_qty : item.qty}
+                              onChange={e => onUpdateRawMaterial?.(item.product.id, item.raw_material_id, Math.max(1, Number(e.target.value)))}
+                              className="w-16 text-center font-extrabold font-mono text-xs text-indigo-600 dark:text-indigo-400 bg-transparent outline-none"
+                              placeholder="Qty"
+                            />
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                              {selectedMat?.unit || 'lembar'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Finishing & Add-on Relevan */}
                 {relevantAddons.length > 0 && (

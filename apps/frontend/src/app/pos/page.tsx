@@ -5,9 +5,11 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { productService } from '../../services/productService';
 import { customerService } from '../../services/customerService';
 import { transactionService } from '../../services/transactionService';
+import { rawMaterialService } from '../../services/rawMaterialService';
 import { Product, ProductAddon } from '../../types/product';
 import { Category } from '../../types/category';
 import { Customer } from '../../types/customer';
+import { RawMaterial } from '../../types/rawMaterial';
 import { formatRupiah } from '../../utils/format';
 import { PaymentMethod, PaymentStatus } from '../../types/transaction';
 import { useAlert } from '../../context/AlertContext';
@@ -41,6 +43,7 @@ export default function POSPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
   const [activeCategoryId, setActiveCategoryId] = useState<number | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -70,7 +73,7 @@ export default function POSPage() {
   const fetchCatalog = async () => {
     setLoading(true);
     try {
-      const [prodRes, catRes, custRes, addonRes] = await Promise.all([
+      const [prodRes, catRes, custRes, addonRes, matRes] = await Promise.all([
         productService.getProducts({ 
           search: searchTerm || undefined, 
           category_id: activeCategoryId 
@@ -78,11 +81,13 @@ export default function POSPage() {
         productService.getCategories(),
         customerService.getCustomers(),
         productService.getAddons(),
+        rawMaterialService.getRawMaterials(),
       ]);
       setProducts(prodRes.data);
       setCategories(catRes);
       setCustomers(custRes.data);
       setAvailableAddons(addonRes);
+      setRawMaterials(matRes.data);
     } catch (err: any) {
       console.error('Failed to load POS catalog:', err);
     } finally {
@@ -111,6 +116,7 @@ export default function POSPage() {
       setCart(cart.map(item => item.product.id === product.id ? { 
         ...item, 
         qty: item.qty + 1,
+        material_qty: item.raw_material_id ? (item.material_qty !== undefined ? item.material_qty + 1 : item.qty + 1) : undefined,
         addons: (item.addons || []).map(a => ({ ...a, qty: item.qty + 1 }))
       } : item));
     } else {
@@ -120,9 +126,24 @@ export default function POSPage() {
         price: initialPrice,
         length: 1,
         width: 1,
-        addons: []
+        addons: [],
+        raw_material_id: product.raw_material_id || undefined,
+        material_qty: product.raw_material_id ? initialQty : undefined,
       }]);
     }
+  };
+
+  const updateRawMaterial = (productId: number, rawMaterialId?: number, materialQty?: number) => {
+    setCart(cart.map(item => {
+      if (item.product.id === productId) {
+        return {
+          ...item,
+          raw_material_id: rawMaterialId,
+          material_qty: materialQty !== undefined ? materialQty : (rawMaterialId ? item.qty : undefined),
+        };
+      }
+      return item;
+    }));
   };
 
   const handleToggleAddon = (productId: number, addon: ProductAddon) => {
@@ -147,14 +168,14 @@ export default function POSPage() {
   const updateQty = (id: number, delta: number) => {
     setCart(cart.map(item => {
       if (item.product.id === id) {
-        const minOrder = Number(item.product.min_order) || 1;
-        const newQty = item.qty + delta;
-        if (newQty < minOrder) {
-          showToast(`Kuantitas minimal produk "${item.product.name}" adalah ${minOrder} ${item.product.unit_name || 'pcs'}`, 'warning');
-          return item;
-        }
+        const newQty = Math.max(1, item.qty + delta);
         const updatedAddons = (item.addons || []).map(a => ({ ...a, qty: newQty }));
-        return { ...item, qty: newQty, addons: updatedAddons };
+        return { 
+          ...item, 
+          qty: newQty, 
+          material_qty: item.raw_material_id ? (item.material_qty !== undefined ? Math.max(1, item.material_qty + delta) : newQty) : undefined,
+          addons: updatedAddons 
+        };
       }
       return item;
     }));
@@ -218,35 +239,12 @@ export default function POSPage() {
       return;
     }
 
-    // Validasi harga range dan harga 0
+    // Validasi harga 0
     for (const item of cart) {
       if (item.price <= 0) {
         await showAlert({
           title: 'Harga Belum Diisi',
           message: `Harga untuk produk "${item.product.name}" belum diisi (masih Rp 0). Silakan masukkan nominal harga terlebih dahulu.`,
-          type: 'warning',
-        });
-        return;
-      }
-
-      if (item.product.price_type === 'RANGE') {
-        const minP = Number(item.product.min_price) || 0;
-        const maxP = Number(item.product.max_price) || 0;
-        if (item.price < minP || item.price > maxP) {
-          await showAlert({
-            title: 'Harga Di Luar Batas',
-            message: `Harga produk "${item.product.name}" harus di antara ${formatRupiah(minP)} dan ${formatRupiah(maxP)}.`,
-            type: 'warning',
-          });
-          return;
-        }
-      }
-
-      const minOrder = Number(item.product.min_order) || 1;
-      if (item.qty < minOrder) {
-        await showAlert({
-          title: 'Kuantitas Minimum Belum Terpenuhi',
-          message: `Kuantitas produk "${item.product.name}" minimal ${minOrder} ${item.product.unit_name || 'pcs'}.`,
           type: 'warning',
         });
         return;
@@ -273,6 +271,8 @@ export default function POSPage() {
           product_id: item.product.id,
           custom_price: item.price,
           qty: item.qty,
+          raw_material_id: item.raw_material_id || undefined,
+          material_qty: item.raw_material_id && item.material_qty ? item.material_qty : undefined,
           addons: (item.addons || []).map(a => ({
             addon_id: a.addon.id,
             addon_name: a.addon.name,
@@ -343,6 +343,8 @@ export default function POSPage() {
           length: newItem.length || updatedCart[existingIdx].length,
           width: newItem.width || updatedCart[existingIdx].width,
           price: newItem.price || updatedCart[existingIdx].price,
+          raw_material_id: newItem.raw_material_id || updatedCart[existingIdx].raw_material_id,
+          material_qty: newItem.material_qty || updatedCart[existingIdx].material_qty,
         };
       } else {
         updatedCart.push(newItem);
@@ -378,6 +380,7 @@ export default function POSPage() {
           cart={cart}
           customers={customers}
           availableAddons={availableAddons}
+          rawMaterials={rawMaterials}
           selectedCustomer={selectedCustomer}
           onSelectCustomer={setSelectedCustomer}
           customCustomerName={customCustomerName}
@@ -385,6 +388,7 @@ export default function POSPage() {
           onUpdateQty={updateQty}
           onUpdatePrice={updatePrice}
           onUpdateDimensions={updateDimensions}
+          onUpdateRawMaterial={updateRawMaterial}
           onToggleAddon={handleToggleAddon}
           onRemoveFromCart={removeFromCart}
           onClearCart={clearCart}

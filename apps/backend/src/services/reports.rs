@@ -11,7 +11,8 @@ use sea_orm::{
 
 use crate::dto::{
     DailySalesReportItem, DashboardSummaryResponse, InventoryMutationReportItem, LowStockItem,
-    ReceivableItem, ReportDateQuery, TopProductReportItem,
+    MonthlyReportQuery, MonthlySalesReportItem, ReceivableItem, ReportDateQuery,
+    TopProductReportItem,
 };
 use crate::error::AppError;
 
@@ -135,6 +136,124 @@ pub async fn get_dashboard_summary(
     })
 }
 
+pub async fn get_monthly_sales(
+    db: &DatabaseConnection,
+    query: MonthlyReportQuery,
+) -> Result<Vec<MonthlySalesReportItem>, AppError> {
+    use chrono::{Datelike, TimeZone, Utc};
+
+    let target_year = query.year.unwrap_or_else(|| {
+        chrono::Local::now().year()
+    });
+
+    let start_of_year = Utc.with_ymd_and_hms(target_year, 1, 1, 0, 0, 0).unwrap();
+    let end_of_year = Utc.with_ymd_and_hms(target_year, 12, 31, 23, 59, 59).unwrap();
+
+    let all_trans = Transaction::find()
+        .filter(
+            transactions::Column::CreatedAt
+                .gte(start_of_year)
+                .and(transactions::Column::CreatedAt.lte(end_of_year)),
+        )
+        .all(db)
+        .await?;
+
+    let all_expenses = Expense::find()
+        .filter(
+            entity::expenses::Column::ExpenseDate
+                .gte(start_of_year)
+                .and(entity::expenses::Column::ExpenseDate.lte(end_of_year)),
+        )
+        .all(db)
+        .await?;
+
+    let month_names = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    ];
+
+    struct MonthData {
+        total_sales: Decimal,
+        total_expenses: Decimal,
+        total_transactions: i64,
+        total_cash_omset: Decimal,
+        total_qris_omset: Decimal,
+        total_transfer_omset: Decimal,
+    }
+
+    let mut monthly_data: Vec<MonthData> = (0..12)
+        .map(|_| MonthData {
+            total_sales: Decimal::ZERO,
+            total_expenses: Decimal::ZERO,
+            total_transactions: 0,
+            total_cash_omset: Decimal::ZERO,
+            total_qris_omset: Decimal::ZERO,
+            total_transfer_omset: Decimal::ZERO,
+        })
+        .collect();
+
+    for t in all_trans {
+        let m_idx = (t.created_at.month() as usize).saturating_sub(1);
+        if m_idx < 12 {
+            monthly_data[m_idx].total_sales += t.pay_amount;
+            monthly_data[m_idx].total_transactions += 1;
+
+            if let Some(settle_amount) = t.settlement_pay_amount {
+                let initial_amount = (t.pay_amount - settle_amount).max(Decimal::ZERO);
+                match t.payment_method {
+                    entity::enums::PaymentMethod::Cash => monthly_data[m_idx].total_cash_omset += initial_amount,
+                    entity::enums::PaymentMethod::Qris => monthly_data[m_idx].total_qris_omset += initial_amount,
+                    entity::enums::PaymentMethod::Transfer => monthly_data[m_idx].total_transfer_omset += initial_amount,
+                }
+                if let Some(ref settle_method) = t.settlement_payment_method {
+                    match settle_method {
+                        entity::enums::PaymentMethod::Cash => monthly_data[m_idx].total_cash_omset += settle_amount,
+                        entity::enums::PaymentMethod::Qris => monthly_data[m_idx].total_qris_omset += settle_amount,
+                        entity::enums::PaymentMethod::Transfer => monthly_data[m_idx].total_transfer_omset += settle_amount,
+                    }
+                } else {
+                    monthly_data[m_idx].total_cash_omset += settle_amount;
+                }
+            } else {
+                match t.payment_method {
+                    entity::enums::PaymentMethod::Cash => monthly_data[m_idx].total_cash_omset += t.pay_amount,
+                    entity::enums::PaymentMethod::Qris => monthly_data[m_idx].total_qris_omset += t.pay_amount,
+                    entity::enums::PaymentMethod::Transfer => monthly_data[m_idx].total_transfer_omset += t.pay_amount,
+                }
+            }
+        }
+    }
+
+    for e in all_expenses {
+        let m_idx = (e.expense_date.month() as usize).saturating_sub(1);
+        if m_idx < 12 {
+            monthly_data[m_idx].total_expenses += e.amount;
+        }
+    }
+
+    let result = (0..12)
+        .map(|i| {
+            let m_num = i + 1;
+            let month_code = format!("{:04}-{:02}", target_year, m_num);
+            let d = &monthly_data[i];
+            let net_profit = d.total_sales - d.total_expenses;
+
+            MonthlySalesReportItem {
+                month: month_code,
+                month_name: month_names[i].to_string(),
+                total_sales: d.total_sales,
+                total_expenses: d.total_expenses,
+                net_profit,
+                total_transactions: d.total_transactions,
+                total_cash_omset: d.total_cash_omset,
+                total_qris_omset: d.total_qris_omset,
+                total_transfer_omset: d.total_transfer_omset,
+            }
+        })
+        .collect();
+
+    Ok(result)
+}
 
 pub async fn get_daily_sales(
     db: &DatabaseConnection,

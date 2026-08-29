@@ -6,7 +6,7 @@ import { RefreshCw } from 'lucide-react';
 
 import { reportService } from '../../services/reportService';
 import { authService, UserProfile } from '../../services/authService';
-import { DailySalesReport, DashboardSummary, TopProductReport } from '../../types/report';
+import { DashboardSummary, MonthlySalesReport, TopProductReport } from '../../types/report';
 
 // Modular Dashboard Components
 import { DashboardStatCards } from '../../components/dashboard/DashboardStatCards';
@@ -16,7 +16,7 @@ import { DashboardTopProducts } from '../../components/dashboard/DashboardTopPro
 export default function Dashboard() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [salesData, setSalesData] = useState<DailySalesReport[]>([]);
+  const [monthlySales, setMonthlySales] = useState<MonthlySalesReport[]>([]);
   const [topProducts, setTopProducts] = useState<TopProductReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,13 +25,14 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const [summaryRes, salesRes, topRes] = await Promise.all([
+      const currentYear = new Date().getFullYear();
+      const [summaryRes, monthlyRes, topRes] = await Promise.all([
         reportService.getSummary(),
-        reportService.getDailySales(),
+        reportService.getMonthlySales({ year: currentYear }),
         reportService.getTopProducts(),
       ]);
       setSummary(summaryRes);
-      setSalesData(salesRes);
+      setMonthlySales(monthlyRes);
       setTopProducts(topRes);
     } catch (err: any) {
       console.error('Failed to load dashboard data:', err);
@@ -48,12 +49,6 @@ export default function Dashboard() {
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
-  const formattedSalesData = salesData.map(item => ({
-    name: new Date(item.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }),
-    total: Number(item.total_sales),
-    transaksi: item.total_transactions,
-  }));
-
   return (
     <DashboardLayout>
       <div className="flex justify-between items-center mb-8">
@@ -63,7 +58,7 @@ export default function Dashboard() {
           </h1>
           <p className="text-text-muted">
             {isSuperAdmin 
-              ? 'Data performa keuangan & operasional percetakan.' 
+              ? 'Data performa keuangan & operasional percetakan tahunan.' 
               : 'Pantau antrian pesanan, siap diambil, dan status kasir hari ini.'}
           </p>
         </div>
@@ -91,7 +86,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {isSuperAdmin ? (
           <>
-            <DashboardSalesChart data={formattedSalesData} />
+            <DashboardSalesChart data={monthlySales} isSuperAdmin={isSuperAdmin} />
             <DashboardTopProducts topProducts={topProducts} />
           </>
         ) : (

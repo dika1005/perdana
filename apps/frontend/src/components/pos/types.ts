@@ -13,4 +13,6 @@ export interface CartItem {
   length?: number;
   width?: number;
   addons?: CartItemAddon[];
+  raw_material_id?: number;
+  material_qty?: number;
 }

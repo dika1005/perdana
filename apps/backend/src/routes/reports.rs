@@ -1,8 +1,9 @@
 use actix_web::{HttpResponse, web};
 
 use crate::dto::{
-    ApiResponse, DashboardSummaryResponse, DailySalesReportItem, InventoryMutationReportItem,
-    LowStockItem, ReceivableItem, ReportDateQuery, TopProductReportItem,
+    ApiResponse, DailySalesReportItem, DashboardSummaryResponse, InventoryMutationReportItem,
+    LowStockItem, MonthlyReportQuery, MonthlySalesReportItem, ReceivableItem, ReportDateQuery,
+    TopProductReportItem,
 };
 use crate::error::AppError;
 use crate::extractors::AuthUser;
@@ -33,6 +34,31 @@ pub async fn summary(
 ) -> Result<HttpResponse, AppError> {
     let data = report_service::get_dashboard_summary(&state.db, query.into_inner()).await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Ringkasan dashboard", data)))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/reports/monthly-sales",
+    params(
+        ("year" = Option<i32>, Query, description = "Tahun rekapitulasi laporan (contoh: 2026)")
+    ),
+    responses(
+        (status = 200, description = "Laporan & rekapitulasi penjualan bulanan (12 bulan)", body = ApiResponse<Vec<MonthlySalesReportItem>>),
+        (status = 401, description = "Unauthorized")
+    ),
+    security(
+        ("bearer_auth" = []),
+        ("cookie_auth" = [])
+    ),
+    tag = "Reports & Analytics"
+)]
+pub async fn monthly_sales(
+    state: web::Data<AppState>,
+    _user: AuthUser,
+    query: web::Query<MonthlyReportQuery>,
+) -> Result<HttpResponse, AppError> {
+    let data = report_service::get_monthly_sales(&state.db, query.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::ok("Laporan penjualan bulanan", data)))
 }
 
 #[utoipa::path(

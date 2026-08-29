@@ -7,7 +7,7 @@ import { reportService } from '../../services/reportService';
 import { transactionService } from '../../services/transactionService';
 import { 
   DashboardSummary, 
-  DailySalesReport, 
+  MonthlySalesReport, 
   TopProductReport, 
   InventoryMutationReport, 
   ReceivableItem, 
@@ -32,8 +32,9 @@ export default function ReportsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Data states
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [dailySales, setDailySales] = useState<DailySalesReport[]>([]);
+  const [monthlySales, setMonthlySales] = useState<MonthlySalesReport[]>([]);
   const [topProducts, setTopProducts] = useState<TopProductReport[]>([]);
   const [receivables, setReceivables] = useState<ReceivableItem[]>([]);
   const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
@@ -54,9 +55,9 @@ export default function ReportsPage() {
         end_date: endDate || undefined,
       };
 
-      const [sumRes, salesRes, topRes, recRes, lowRes, mutRes] = await Promise.all([
+      const [sumRes, monthlyRes, topRes, recRes, lowRes, mutRes] = await Promise.all([
         reportService.getSummary(params),
-        reportService.getDailySales(params),
+        reportService.getMonthlySales({ year: selectedYear }),
         reportService.getTopProducts(params),
         reportService.getReceivables(params),
         reportService.getLowStock(),
@@ -64,7 +65,7 @@ export default function ReportsPage() {
       ]);
 
       setSummary(sumRes);
-      setDailySales(salesRes);
+      setMonthlySales(monthlyRes);
       setTopProducts(topRes);
       setReceivables(recRes);
       setLowStock(lowRes);
@@ -79,7 +80,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchReportsData();
-  }, []);
+  }, [selectedYear]);
 
   const handleFilter = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,16 +131,16 @@ export default function ReportsPage() {
         csvContent += `"${m.raw_material_name}",${m.in_qty},${m.out_qty},${m.current_stock}\n`;
       });
     } else {
-      csvContent += 'Tanggal,Total Penjualan,Jumlah Transaksi\n';
-      dailySales.forEach(d => {
-        csvContent += `"${d.date}",${d.total_sales},${d.total_transactions}\n`;
+      csvContent += 'Kode Bulan,Bulan,Omset Penjualan,Pengeluaran,Laba Bersih,Kas Tunai,QRIS,Transfer Bank,Total Transaksi\n';
+      monthlySales.forEach(m => {
+        csvContent += `"${m.month}","${m.month_name}",${m.total_sales},${m.total_expenses},${m.net_profit},${m.total_cash_omset},${m.total_qris_omset},${m.total_transfer_omset},${m.total_transactions}\n`;
       });
     }
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `laporan_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `laporan_${activeTab}_${selectedYear}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -150,7 +151,7 @@ export default function ReportsPage() {
       <div className="flex justify-between items-end mb-6">
         <div>
           <h1 className="text-3xl font-bold text-text-main mb-1">Laporan & Rekapitulasi Bisnis</h1>
-          <p className="text-text-muted text-sm">Analisis pendapatan, piutang pesanan, kontrol bahan baku, dan mutasi.</p>
+          <p className="text-text-muted text-sm">Analisis pendapatan bulanan, piutang pesanan, kontrol bahan baku, dan mutasi.</p>
         </div>
         <div className="flex gap-2.5">
           <button 
@@ -176,32 +177,51 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Date Filter */}
+      {/* Date & Year Filter */}
       <div className="skeuo p-5 mb-6">
-        <form onSubmit={handleFilter} className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 skeuo-inset rounded-xl">
-            <Calendar className="w-4 h-4 text-text-muted" />
-            <span className="text-xs text-text-muted">Mulai:</span>
-            <input 
-              type="date" 
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="bg-transparent outline-none text-xs text-text-main"
-            />
+        <form onSubmit={handleFilter} className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Year Selector */}
+            <div className="flex items-center gap-2 px-3 py-2 skeuo-inset rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <Calendar className="w-4 h-4 text-blue-500" />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Tahun Laporan:</span>
+              <select
+                value={selectedYear}
+                onChange={e => setSelectedYear(Number(e.target.value))}
+                className="bg-transparent outline-none text-xs font-bold font-mono text-text-main cursor-pointer"
+              >
+                {[2024, 2025, 2026, 2027, 2028].map(y => (
+                  <option key={y} value={y} className="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+                    Tahun {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 px-3 py-2 skeuo-inset rounded-xl">
+              <Calendar className="w-4 h-4 text-text-muted" />
+              <span className="text-xs text-text-muted">Mulai:</span>
+              <input 
+                type="date" 
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="bg-transparent outline-none text-xs text-text-main"
+              />
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 skeuo-inset rounded-xl">
+              <Calendar className="w-4 h-4 text-text-muted" />
+              <span className="text-xs text-text-muted">Sampai:</span>
+              <input 
+                type="date" 
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className="bg-transparent outline-none text-xs text-text-main"
+              />
+            </div>
+            <button type="submit" className="px-5 py-2 font-bold skeuo-button text-text-main text-xs rounded-xl">
+              Terapkan Filter
+            </button>
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 skeuo-inset rounded-xl">
-            <Calendar className="w-4 h-4 text-text-muted" />
-            <span className="text-xs text-text-muted">Sampai:</span>
-            <input 
-              type="date" 
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              className="bg-transparent outline-none text-xs text-text-main"
-            />
-          </div>
-          <button type="submit" className="px-5 py-2 font-bold skeuo-button text-text-main text-xs rounded-xl">
-            Terapkan Periode
-          </button>
         </form>
       </div>
 
@@ -214,7 +234,7 @@ export default function ReportsPage() {
           }`}
         >
           <TrendingUp className="w-4 h-4" />
-          Ringkasan & Harian
+          Laporan Bulanan & Ringkasan
         </button>
         <button
           onClick={() => setActiveTab('receivables')}
@@ -249,8 +269,9 @@ export default function ReportsPage() {
       {activeTab === 'summary' && (
         <ReportSummaryTab
           summary={summary}
-          dailySales={dailySales}
+          monthlySales={monthlySales}
           topProducts={topProducts}
+          selectedYear={selectedYear}
         />
       )}
 

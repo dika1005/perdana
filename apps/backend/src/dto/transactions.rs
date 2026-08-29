@@ -36,6 +36,10 @@ pub struct TransactionItemInput {
     #[schema(example = 100)]
     pub qty: i32,
     pub addons: Option<Vec<TransactionAddonInput>>,
+    #[schema(example = 1)]
+    pub raw_material_id: Option<i32>,
+    #[schema(example = 150)]
+    pub material_qty: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

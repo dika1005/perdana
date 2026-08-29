@@ -37,6 +37,33 @@ pub struct DashboardSummaryResponse {
 }
 
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct MonthlyReportQuery {
+    #[schema(example = 2026)]
+    pub year: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct MonthlySalesReportItem {
+    #[schema(example = "2026-08")]
+    pub month: String,
+    #[schema(example = "Agustus")]
+    pub month_name: String,
+    #[schema(value_type = f64, example = 25000000)]
+    pub total_sales: Decimal,
+    #[schema(value_type = f64, example = 8000000)]
+    pub total_expenses: Decimal,
+    #[schema(value_type = f64, example = 17000000)]
+    pub net_profit: Decimal,
+    pub total_transactions: i64,
+    #[schema(value_type = f64, example = 15000000)]
+    pub total_cash_omset: Decimal,
+    #[schema(value_type = f64, example = 7000000)]
+    pub total_qris_omset: Decimal,
+    #[schema(value_type = f64, example = 3000000)]
+    pub total_transfer_omset: Decimal,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DailySalesReportItem {
     #[schema(example = "2026-08-18")]

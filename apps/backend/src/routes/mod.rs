@@ -133,6 +133,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(
             web::scope("/reports")
                 .route("/summary", web::get().to(reports::summary))
+                .route("/monthly-sales", web::get().to(reports::monthly_sales))
                 .route("/daily-sales", web::get().to(reports::daily_sales))
                 .route("/top-products", web::get().to(reports::top_products))
                 .route(

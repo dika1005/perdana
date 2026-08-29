@@ -232,6 +232,7 @@ pub async fn create(
         qty: i32,
         subtotal: Decimal,
         raw_material_id: Option<i32>,
+        material_qty: Option<i32>,
         material_amount: Decimal,
         addons: Vec<ProcessedAddon>,
     }
@@ -395,6 +396,9 @@ pub async fn create(
             }
         }
 
+        let final_raw_material_id = item_input.raw_material_id.or(linked_raw_material_id);
+        let final_material_qty = item_input.material_qty;
+
         processed_items.push(ProcessedItem {
             product_id: product.id,
             product_variant_id: item_input.product_variant_id,
@@ -403,7 +407,8 @@ pub async fn create(
             price: unit_price,
             qty: item_input.qty,
             subtotal: item_subtotal,
-            raw_material_id: linked_raw_material_id,
+            raw_material_id: final_raw_material_id,
+            material_qty: final_material_qty,
             material_amount: linked_material_amount,
             addons: processed_addons,
         });
@@ -447,7 +452,7 @@ pub async fn create(
 
     let trans = active_trans.insert(&txn).await?;
 
-    // 6. Insert Items & Addons + Auto-deduct Raw Material Stock (BOM)
+    // 6. Insert Items & Addons + Auto-deduct Raw Material Stock (BOM or Manual)
     let mut response_items = Vec::new();
     for p_item in processed_items {
         let active_item = transaction_items::ActiveModel {
@@ -464,15 +469,20 @@ pub async fn create(
 
         let item_model = active_item.insert(&txn).await?;
 
-        // Auto deduct raw material if linked
+        // Auto deduct raw material if linked or manually chosen
         if let Some(mat_id) = p_item.raw_material_id {
-            let deduct_qty = (Decimal::from(p_item.qty) * p_item.material_amount)
-                .to_f64()
-                .unwrap_or(p_item.qty as f64)
-                .ceil() as i32;
+            let deduct_qty = if let Some(manual_qty) = p_item.material_qty {
+                manual_qty
+            } else {
+                (Decimal::from(p_item.qty) * p_item.material_amount)
+                    .to_f64()
+                    .unwrap_or(p_item.qty as f64)
+                    .ceil() as i32
+            };
 
             if deduct_qty > 0 {
                 if let Some(raw_mat) = RawMaterial::find_by_id(mat_id).one(&txn).await? {
+                    let unit_name = raw_mat.unit.clone();
                     let new_stock = (raw_mat.stock - deduct_qty).max(0);
                     let mut active_mat: raw_materials::ActiveModel = raw_mat.into();
                     active_mat.stock = Set(new_stock);
@@ -482,7 +492,10 @@ pub async fn create(
                         raw_material_id: Set(mat_id),
                         mutation_type: Set(MutationType::Out),
                         qty: Set(deduct_qty),
-                        notes: Set(Some(format!("Otomatis dari Transaksi {}", invoice_number))),
+                        notes: Set(Some(format!(
+                            "Otomatis dari Transaksi {} ({} {})",
+                            invoice_number, deduct_qty, unit_name
+                        ))),
                         ..Default::default()
                     };
                     active_mutation.insert(&txn).await?;
