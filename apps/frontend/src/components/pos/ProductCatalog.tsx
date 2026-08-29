@@ -29,7 +29,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onSelectCategory,
   searchTerm,
   onSearchTermChange,
-  onSearchSubmit,
+  onSearchSubmit: _onSearchSubmit,
   loading,
   cart,
   onAddToCart,

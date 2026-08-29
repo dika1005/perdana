@@ -40,7 +40,7 @@ export function useCatalogFilter(catalog: PublicCatalog | null) {
     const map = new Map<number, string>();
     if (!catalog) return map;
     catalog.categories.forEach((c) => {
-      let cleanName = c.name.replace(/\s*\d{10,}.*$/, '').trim();
+      const cleanName = c.name.replace(/\s*\d{10,}.*$/, '').trim();
       map.set(c.id, cleanName || c.name);
     });
     return map;

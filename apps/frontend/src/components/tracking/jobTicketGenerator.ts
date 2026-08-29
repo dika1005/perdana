@@ -1,5 +1,3 @@
-import { formatRupiah } from '../../utils/format';
-
 /**
  * Pure generator function for Operator Job Ticket (SPK Produksi Cetak).
  * Menghasilkan HTML mandiri dengan layout double-border profesional untuk dicetak di A4/A5.

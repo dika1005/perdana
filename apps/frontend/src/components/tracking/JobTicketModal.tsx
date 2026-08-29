@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Customer } from '../../types/customer';
-import { Printer, X, FileText, CheckCircle2 } from 'lucide-react';
+import { Printer, X, FileText } from 'lucide-react';
 import { generateJobTicketHtml } from './jobTicketGenerator';
 
 interface JobTicketModalProps {

@@ -13,8 +13,6 @@ import {
   Tag, 
   X,
   Package,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import { ProductAddon } from '../../types/product';
 import { RawMaterial } from '../../types/rawMaterial';
@@ -27,10 +25,10 @@ interface CartItemCardProps {
   availableAddons: ProductAddon[];
   isPriceEdited: boolean;
   isEditOpen: boolean;
-  isMatOpen: boolean;
+  isMatOpen?: boolean;
   recommendedMaterials: RawMaterial[];
   onTogglePriceEdit: () => void;
-  onToggleMaterialSection: () => void;
+  onToggleMaterialSection?: () => void;
   onUpdateQty: (delta: number) => void;
   onSetQty: (qty: number) => void;
   onUpdatePrice: (price: number) => void;
@@ -47,10 +45,10 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
   availableAddons,
   isPriceEdited,
   isEditOpen,
-  isMatOpen,
+  isMatOpen: _isMatOpen,
   recommendedMaterials,
   onTogglePriceEdit,
-  onToggleMaterialSection,
+  onToggleMaterialSection: _onToggleMaterialSection,
   onUpdateQty,
   onSetQty,
   onUpdatePrice,

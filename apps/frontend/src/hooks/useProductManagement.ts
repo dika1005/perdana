@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Product, ProductVariant, ProductAddon, PriceType, RangePriceType } from '../types/product';
 import { Category } from '../types/category';
 import { RawMaterial } from '../types/rawMaterial';
@@ -98,22 +98,22 @@ export function useProductManagement() {
     fetchAllData();
   }, [searchTerm]);
 
-  useEffect(() => {
-    if (selectedProductId) {
-      fetchVariants(selectedProductId);
-    } else {
-      setVariants([]);
-    }
-  }, [selectedProductId]);
-
-  const fetchVariants = async (prodId: number) => {
+  const fetchVariants = useCallback(async (prodId: number) => {
     try {
       const data = await productService.getVariants(prodId);
       setVariants(data);
     } catch (err) {
       console.error('Error fetching variants:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (selectedProductId) {
+      fetchVariants(selectedProductId);
+    } else {
+      setVariants([]);
+    }
+  }, [selectedProductId, fetchVariants]);
 
   // Product Handlers
   const handleOpenProductModal = (prod?: Product) => {

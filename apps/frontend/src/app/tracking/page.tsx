@@ -1,19 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Clock, AlertCircle, CheckCircle2, PackageCheck, RefreshCw } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
 import { customerService } from '../../services/customerService';
 import { OrderStatus, PaymentMethod } from '../../types/transaction';
 import { Customer } from '../../types/customer';
-import { formatRupiah } from '../../utils/format';
 import { createWaLink } from '../../utils/whatsapp';
 import { useAlert } from '../../context/AlertContext';
 
 // Modular Tracking Components
-import { RawMaterial } from '../../types/rawMaterial';
-import { rawMaterialService } from '../../services/rawMaterialService';
 import { TrackingColumn } from '../../components/tracking/TrackingColumn';
 import { TrackingSettleModal } from '../../components/tracking/TrackingSettleModal';
 import { TrackingWhatsAppModal, generateWhatsAppMessage } from '../../components/tracking/TrackingWhatsAppModal';
@@ -25,7 +22,6 @@ export default function JobTrackingPage() {
   const { showAlert, showToast } = useAlert();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,29 +35,27 @@ export default function JobTrackingPage() {
   const [detailModal, setDetailModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
   const [receiptModal, setReceiptModal] = useState<{ open: boolean; invoiceData: any | null }>({ open: false, invoiceData: null });
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [res, custRes, matRes] = await Promise.all([
+      const [res, custRes] = await Promise.all([
         transactionService.getTransactions({ per_page: 100 }),
         customerService.getCustomers(),
-        rawMaterialService.getRawMaterials(),
       ]);
       setTransactions(res.data);
       setCustomers(custRes.data);
-      setRawMaterials(matRes.data);
     } catch (err: any) {
       console.error('Failed to load tracking data:', err);
       setError(err?.response?.data?.message || 'Gagal memuat data antrian produksi');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchJobs();
-  }, []);
+  }, [fetchJobs]);
 
   const handleAdvanceStatus = async (id: number, currentStatus: OrderStatus) => {
     const statusFlow: Record<OrderStatus, OrderStatus | null> = {
@@ -147,7 +141,7 @@ export default function JobTrackingPage() {
     try {
       const fullJob = await transactionService.getTransactionById(job.id);
       setSpkModal({ open: true, job: fullJob || job });
-    } catch (err) {
+    } catch {
       setSpkModal({ open: true, job });
     }
   };
@@ -156,7 +150,7 @@ export default function JobTrackingPage() {
     try {
       const fullJob = await transactionService.getTransactionById(job.id);
       setDetailModal({ open: true, job: fullJob || job });
-    } catch (err) {
+    } catch {
       setDetailModal({ open: true, job });
     }
   };
@@ -165,7 +159,7 @@ export default function JobTrackingPage() {
     try {
       const invoice = await transactionService.getInvoiceData(job.id);
       setReceiptModal({ open: true, invoiceData: invoice });
-    } catch (err) {
+    } catch {
       setReceiptModal({ open: true, invoiceData: job });
     }
   };

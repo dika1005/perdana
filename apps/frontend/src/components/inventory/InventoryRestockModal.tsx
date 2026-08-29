@@ -27,10 +27,8 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
   onClose,
   onSubmit,
 }) => {
-  if (!isOpen || !selectedItem) return null;
-
-  const unit = selectedItem.unit.toLowerCase();
-  const variant = (selectedItem.variant || '').toLowerCase();
+  const unit = selectedItem?.unit?.toLowerCase() || '';
+  const variant = (selectedItem?.variant || '').toLowerCase();
 
   // Tentukan apakah bahan ini lazimnya dibeli per Rim / per Roll / per Box
   const isPaper = unit === 'lembar' || variant.includes('rim');
@@ -44,14 +42,16 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
 
   // Multiplier konversi
   const multiplier = isPaper && variant.includes('rim') ? 500 : isBanner ? 50 : isBoxed ? 100 : 1;
-  const bulkUnitLabel = isPaper && variant.includes('rim') ? 'Rim' : isBanner ? 'Roll' : isBoxed ? 'Box' : selectedItem.unit;
+  const bulkUnitLabel = isPaper && variant.includes('rim') ? 'Rim' : isBanner ? 'Roll' : isBoxed ? 'Box' : (selectedItem?.unit || 'pcs');
 
   // Sinkronisasi bulk count ke mutationQty
   useEffect(() => {
-    if (inputMode === 'BULK') {
+    if (isOpen && selectedItem && inputMode === 'BULK') {
       onChangeQty(Math.max(1, bulkCount * multiplier));
     }
-  }, [bulkCount, inputMode, multiplier]);
+  }, [isOpen, selectedItem, bulkCount, inputMode, multiplier, onChangeQty]);
+
+  if (!isOpen || !selectedItem) return null;
 
   const handleBulkChange = (val: number) => {
     const safeVal = Math.max(1, val);

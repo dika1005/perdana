@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FileText, Printer, CreditCard, X, CheckCircle, Clock } from 'lucide-react';
+import { FileText, Printer, CreditCard, X } from 'lucide-react';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
 

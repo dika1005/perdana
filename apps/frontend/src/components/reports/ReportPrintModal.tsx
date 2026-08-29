@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { Printer, X, FileText, TrendingUp, Calendar } from 'lucide-react';
+import { Printer, X } from 'lucide-react';
 import { DashboardSummary, MonthlySalesReport, TopProductReport } from '../../types/report';
 import { formatRupiah } from '../../utils/format';
 

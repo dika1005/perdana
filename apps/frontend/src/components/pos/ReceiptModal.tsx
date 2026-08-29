@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { formatRupiah } from '../../utils/format';
-import { Printer, Check, X, CreditCard, Receipt } from 'lucide-react';
+import { Printer, X, Receipt } from 'lucide-react';
 
 interface ReceiptModalProps {
   invoiceData: any | null;
