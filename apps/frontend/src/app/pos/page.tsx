@@ -89,6 +89,13 @@ export default function POSPage() {
       setCustomers(custRes.data);
       setAvailableAddons(addonRes);
       setRawMaterials(matRes.data);
+      setCart(prevCart => prevCart.map(item => {
+        if (!item.materials || item.materials.length === 0) {
+          const autoMats = calculateAutoMaterials(item.product, item.qty, item.length || 1, item.width || 1, matRes.data);
+          return { ...item, materials: autoMats };
+        }
+        return item;
+      }));
     } catch (err: any) {
       console.error('Failed to load POS catalog:', err);
     } finally {
@@ -112,32 +119,34 @@ export default function POSPage() {
     }
     const initialQty = Number(product.min_order) > 0 ? Number(product.min_order) : 1;
 
-    const existing = cart.find(item => item.product.id === product.id);
-    if (existing) {
-      const newQty = existing.qty + 1;
-      const autoMats = calculateAutoMaterials(product, newQty, existing.length || 1, existing.width || 1, rawMaterials);
-      setCart(cart.map(item => item.product.id === product.id ? { 
-        ...item, 
-        qty: newQty,
-        materials: autoMats.length > 0 ? autoMats : item.materials,
-        addons: (item.addons || []).map(a => ({ ...a, qty: newQty }))
-      } : item));
-    } else {
-      const autoMats = calculateAutoMaterials(product, initialQty, 1, 1, rawMaterials);
-      setCart([...cart, { 
-        product, 
-        qty: initialQty, 
-        price: initialPrice,
-        length: 1,
-        width: 1,
-        addons: [],
-        materials: autoMats,
-      }]);
-    }
+    setCart(prevCart => {
+      const existing = prevCart.find(item => item.product.id === product.id);
+      if (existing) {
+        const newQty = existing.qty + 1;
+        const autoMats = calculateAutoMaterials(product, newQty, existing.length || 1, existing.width || 1, rawMaterials);
+        return prevCart.map(item => item.product.id === product.id ? { 
+          ...item, 
+          qty: newQty, 
+          materials: autoMats.length > 0 ? autoMats : item.materials,
+          addons: (item.addons || []).map(a => ({ ...a, qty: newQty }))
+        } : item);
+      } else {
+        const autoMats = calculateAutoMaterials(product, initialQty, 1, 1, rawMaterials);
+        return [...prevCart, { 
+          product, 
+          qty: initialQty, 
+          price: initialPrice,
+          length: 1,
+          width: 1,
+          addons: [],
+          materials: autoMats,
+        }];
+      }
+    });
   };
 
   const updateMaterials = (productId: number, materials: CartItemMaterial[]) => {
-    setCart(cart.map(item => {
+    setCart(prevCart => prevCart.map(item => {
       if (item.product.id === productId) {
         return { ...item, materials };
       }
@@ -146,7 +155,7 @@ export default function POSPage() {
   };
 
   const handleToggleAddon = (productId: number, addon: ProductAddon) => {
-    setCart(cart.map(item => {
+    setCart(prevCart => prevCart.map(item => {
       if (item.product.id !== productId) return item;
       const existingAddons = item.addons || [];
       const isExisting = existingAddons.some(a => a.addon.id === addon.id);
@@ -165,11 +174,10 @@ export default function POSPage() {
   };
 
   const updateQty = (id: number, delta: number) => {
-    setCart(cart.map(item => {
+    setCart(prevCart => prevCart.map(item => {
       if (item.product.id === id) {
         const newQty = Math.max(1, item.qty + delta);
         const updatedAddons = (item.addons || []).map(a => ({ ...a, qty: newQty }));
-        // Recalculate auto-BOM proportionally
         const autoMats = calculateAutoMaterials(item.product, newQty, item.length || 1, item.width || 1, rawMaterials);
         return { 
           ...item, 
