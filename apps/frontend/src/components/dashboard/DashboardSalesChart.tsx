@@ -45,20 +45,21 @@ export const DashboardSalesChart: React.FC<DashboardSalesChartProps> = ({ data, 
         </span>
       </div>
 
-      <div className="h-72 w-full p-4 rounded-xl flex items-center justify-center bg-slate-50/50 dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-800/80">
+      <div className="h-72 w-full p-4 rounded-xl flex items-center justify-center bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800">
         {chartData.length === 0 ? (
-          <div className="text-center text-slate-400 dark:text-slate-500 text-sm">
+          <div className="text-center text-slate-500 dark:text-slate-400 text-sm">
             <p className="font-semibold">Belum ada riwayat transaksi di database.</p>
             <p className="text-xs mt-1">Buat transaksi baru di menu POS untuk melihat grafik.</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.4} vertical={false} />
-              <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.6} vertical={false} />
+              <XAxis dataKey="name" stroke="#64748b" fontSize={11} fontWeight={600} tickLine={false} axisLine={false} />
               <YAxis 
-                stroke="#94a3b8" 
+                stroke="#64748b" 
                 fontSize={11} 
+                fontWeight={600}
                 tickLine={false} 
                 axisLine={false} 
                 tickFormatter={(value) => `${formatRupiah(value / 1000, true)}k`} 

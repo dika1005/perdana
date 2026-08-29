@@ -24,17 +24,17 @@
 }
 
 :root {
-  --background: #f8fafc;
+  --background: #f1f5f9;
   --foreground: #0f172a;
   --color-bg-skeuo: #ffffff;
-  --color-bg-inset: #f1f5f9;
+  --color-bg-inset: #f8fafc;
   --color-text-main: #0f172a;
-  --color-text-muted: #64748b;
+  --color-text-muted: #475569;
   
-  --shadow-skeuo: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-  --shadow-skeuo-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-skeuo-inset: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-skeuo-active: inset 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+  --shadow-skeuo: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+  --shadow-skeuo-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.06);
+  --shadow-skeuo-inset: inset 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-skeuo-active: inset 0 2px 4px 0 rgba(15, 23, 42, 0.08);
   --border-skeuo: #e2e8f0;
 }
 

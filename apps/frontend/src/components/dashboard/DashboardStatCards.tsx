@@ -15,18 +15,18 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, colorClass, subtitle }) => (
-  <div className="skeuo p-5 flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+  <div className="skeuo p-5 flex flex-col justify-between hover:border-slate-400 dark:hover:border-slate-600 transition-all">
     <div className="flex items-center justify-between">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${colorClass}`}>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs ${colorClass}`}>
         <Icon className="w-5 h-5" />
       </div>
-      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100/80 dark:bg-slate-800/60 px-2.5 py-0.5 rounded-full border border-slate-200/60 dark:border-slate-700/60">
+      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full border border-slate-300/80 dark:border-slate-700/80">
         {subtitle}
       </span>
     </div>
     <div className="mt-4">
-      <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{title}</h3>
-      <p className="text-lg sm:text-xl font-bold text-text-main font-mono tracking-tight">{value}</p>
+      <h3 className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">{title}</h3>
+      <p className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-50 font-mono tracking-tight">{value}</p>
     </div>
   </div>
 );
