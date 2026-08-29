@@ -223,6 +223,11 @@ pub async fn create(
         subtotal: Decimal,
     }
 
+    struct ProcessedMaterial {
+        raw_material_id: i32,
+        material_qty: i32,
+    }
+
     struct ProcessedItem {
         product_id: i32,
         product_variant_id: Option<i32>,
@@ -231,9 +236,7 @@ pub async fn create(
         price: Decimal,
         qty: i32,
         subtotal: Decimal,
-        raw_material_id: Option<i32>,
-        material_qty: Option<i32>,
-        material_amount: Decimal,
+        materials: Vec<ProcessedMaterial>,
         addons: Vec<ProcessedAddon>,
     }
 
@@ -396,8 +399,40 @@ pub async fn create(
             }
         }
 
-        let final_raw_material_id = item_input.raw_material_id.or(linked_raw_material_id);
-        let final_material_qty = item_input.material_qty;
+        // Build materials list: prefer new multi-material, fallback to legacy single, then BOM link
+        let mut final_materials: Vec<ProcessedMaterial> = Vec::new();
+        if let Some(mats) = item_input.materials {
+            if !mats.is_empty() {
+                for m in mats {
+                    if m.material_qty > 0 {
+                        final_materials.push(ProcessedMaterial {
+                            raw_material_id: m.raw_material_id,
+                            material_qty: m.material_qty,
+                        });
+                    }
+                }
+            }
+        }
+        // Legacy fallback: single raw_material_id
+        if final_materials.is_empty() {
+            let legacy_mat_id = item_input.raw_material_id.or(linked_raw_material_id);
+            if let Some(mat_id) = legacy_mat_id {
+                let deduct_qty = if let Some(manual_qty) = item_input.material_qty {
+                    manual_qty
+                } else {
+                    (Decimal::from(item_input.qty) * linked_material_amount)
+                        .to_f64()
+                        .unwrap_or(item_input.qty as f64)
+                        .ceil() as i32
+                };
+                if deduct_qty > 0 {
+                    final_materials.push(ProcessedMaterial {
+                        raw_material_id: mat_id,
+                        material_qty: deduct_qty,
+                    });
+                }
+            }
+        }
 
         processed_items.push(ProcessedItem {
             product_id: product.id,
@@ -407,9 +442,7 @@ pub async fn create(
             price: unit_price,
             qty: item_input.qty,
             subtotal: item_subtotal,
-            raw_material_id: final_raw_material_id,
-            material_qty: final_material_qty,
-            material_amount: linked_material_amount,
+            materials: final_materials,
             addons: processed_addons,
         });
     }
@@ -469,32 +502,23 @@ pub async fn create(
 
         let item_model = active_item.insert(&txn).await?;
 
-        // Auto deduct raw material if linked or manually chosen
-        if let Some(mat_id) = p_item.raw_material_id {
-            let deduct_qty = if let Some(manual_qty) = p_item.material_qty {
-                manual_qty
-            } else {
-                (Decimal::from(p_item.qty) * p_item.material_amount)
-                    .to_f64()
-                    .unwrap_or(p_item.qty as f64)
-                    .ceil() as i32
-            };
-
-            if deduct_qty > 0 {
-                if let Some(raw_mat) = RawMaterial::find_by_id(mat_id).one(&txn).await? {
+        // Auto deduct raw materials (multi-material support)
+        for p_mat in &p_item.materials {
+            if p_mat.material_qty > 0 {
+                if let Some(raw_mat) = RawMaterial::find_by_id(p_mat.raw_material_id).one(&txn).await? {
                     let unit_name = raw_mat.unit.clone();
-                    let new_stock = (raw_mat.stock - deduct_qty).max(0);
+                    let new_stock = (raw_mat.stock - p_mat.material_qty).max(0);
                     let mut active_mat: raw_materials::ActiveModel = raw_mat.into();
                     active_mat.stock = Set(new_stock);
                     active_mat.update(&txn).await?;
 
                     let active_mutation = raw_material_mutations::ActiveModel {
-                        raw_material_id: Set(mat_id),
+                        raw_material_id: Set(p_mat.raw_material_id),
                         mutation_type: Set(MutationType::Out),
-                        qty: Set(deduct_qty),
+                        qty: Set(p_mat.material_qty),
                         notes: Set(Some(format!(
                             "Otomatis dari Transaksi {} ({} {})",
-                            invoice_number, deduct_qty, unit_name
+                            invoice_number, p_mat.material_qty, unit_name
                         ))),
                         ..Default::default()
                     };

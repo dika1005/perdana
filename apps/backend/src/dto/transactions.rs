@@ -22,6 +22,14 @@ pub struct TransactionAddonInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+pub struct TransactionMaterialInput {
+    #[schema(example = 1)]
+    pub raw_material_id: i32,
+    #[schema(example = 150)]
+    pub material_qty: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
 pub struct TransactionItemInput {
     #[schema(example = 1)]
     pub product_id: i32,
@@ -36,10 +44,13 @@ pub struct TransactionItemInput {
     #[schema(example = 100)]
     pub qty: i32,
     pub addons: Option<Vec<TransactionAddonInput>>,
+    /// Legacy single material (backward compat)
     #[schema(example = 1)]
     pub raw_material_id: Option<i32>,
     #[schema(example = 150)]
     pub material_qty: Option<i32>,
+    /// Multiple materials consumed per item
+    pub materials: Option<Vec<TransactionMaterialInput>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]

@@ -19,7 +19,7 @@ import dynamic from 'next/dynamic';
 // Modular POS Components
 import { ProductCatalog } from '../../components/pos/ProductCatalog';
 import { CartSidebar } from '../../components/pos/CartSidebar';
-import { CartItem } from '../../components/pos/types';
+import { CartItem, CartItemMaterial } from '../../components/pos/types';
 
 const CheckoutModal = dynamic(
   () => import('../../components/pos/CheckoutModal').then(mod => mod.CheckoutModal),
@@ -116,7 +116,6 @@ export default function POSPage() {
       setCart(cart.map(item => item.product.id === product.id ? { 
         ...item, 
         qty: item.qty + 1,
-        material_qty: item.raw_material_id ? (item.material_qty !== undefined ? item.material_qty + 1 : item.qty + 1) : undefined,
         addons: (item.addons || []).map(a => ({ ...a, qty: item.qty + 1 }))
       } : item));
     } else {
@@ -127,20 +126,15 @@ export default function POSPage() {
         length: 1,
         width: 1,
         addons: [],
-        raw_material_id: product.raw_material_id || undefined,
-        material_qty: product.raw_material_id ? initialQty : undefined,
+        materials: [],
       }]);
     }
   };
 
-  const updateRawMaterial = (productId: number, rawMaterialId?: number, materialQty?: number) => {
+  const updateMaterials = (productId: number, materials: CartItemMaterial[]) => {
     setCart(cart.map(item => {
       if (item.product.id === productId) {
-        return {
-          ...item,
-          raw_material_id: rawMaterialId,
-          material_qty: materialQty !== undefined ? materialQty : (rawMaterialId ? item.qty : undefined),
-        };
+        return { ...item, materials };
       }
       return item;
     }));
@@ -271,8 +265,10 @@ export default function POSPage() {
           product_id: item.product.id,
           custom_price: item.price,
           qty: item.qty,
-          raw_material_id: item.raw_material_id || undefined,
-          material_qty: item.raw_material_id && item.material_qty ? item.material_qty : undefined,
+          materials: (item.materials || []).map(m => ({
+            raw_material_id: m.raw_material_id,
+            material_qty: m.material_qty,
+          })),
           addons: (item.addons || []).map(a => ({
             addon_id: a.addon.id,
             addon_name: a.addon.name,
@@ -388,7 +384,7 @@ export default function POSPage() {
           onUpdateQty={updateQty}
           onUpdatePrice={updatePrice}
           onUpdateDimensions={updateDimensions}
-          onUpdateRawMaterial={updateRawMaterial}
+          onUpdateMaterials={updateMaterials}
           onToggleAddon={handleToggleAddon}
           onRemoveFromCart={removeFromCart}
           onClearCart={clearCart}

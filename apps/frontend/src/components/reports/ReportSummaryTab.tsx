@@ -150,8 +150,9 @@ export const ReportSummaryTab: React.FC<ReportSummaryTabProps> = ({
                   return <span className="text-xs font-semibold text-text-main">Pengeluaran</span>;
                 }}
               />
-              <Bar dataKey="omset" fill="#2563eb" radius={[6, 6, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="profit" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="omset" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={36} />
+              <Bar dataKey="expenses" fill="#f43f5e" radius={[6, 6, 0, 0]} maxBarSize={36} />
+              <Bar dataKey="profit" fill="#22c55e" radius={[6, 6, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
         </div>
