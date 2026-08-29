@@ -97,6 +97,26 @@ export default function TransactionsHistoryPage() {
     }
   };
 
+  const handleCancelTransaction = async (tx: any) => {
+    if (!tx?.id) return;
+    const confirmed = window.confirm(
+      `Batalkan transaksi ${tx.invoice_number}?\nStok bahan baku akan dikembalikan secara otomatis. Tindakan ini tidak dapat diurungkan.`
+    );
+    if (!confirmed) return;
+    try {
+      await transactionService.cancelTransaction(tx.id);
+      showToast('Transaksi dibatalkan & stok dikembalikan', 'success');
+      setSelectedTransaction(null);
+      fetchTransactions();
+    } catch (err: any) {
+      await showAlert({
+        title: 'Gagal Membatalkan Transaksi',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat membatalkan transaksi.',
+        type: 'error',
+      });
+    }
+  };
+
   const handlePrintInvoice = async (id: number) => {
     try {
       const data = await transactionService.getInvoiceData(id);
@@ -239,6 +259,7 @@ export default function TransactionsHistoryPage() {
       <TransactionDetailDrawer
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
+        onCancel={handleCancelTransaction}
       />
 
       {/* Settle Modal */}

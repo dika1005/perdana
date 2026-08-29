@@ -34,7 +34,8 @@ pub async fn get_dashboard_summary(
 
     let all_trans = trans_query.all(db).await?;
 
-    let mut total_omset = Decimal::ZERO;
+    let mut total_omset = Decimal::ZERO;       // Total nilai pesanan (total_amount)
+    let mut total_cash_in = Decimal::ZERO;     // Uang benar-benar masuk (pay_amount)
     let mut total_cash_omset = Decimal::ZERO;
     let mut total_qris_omset = Decimal::ZERO;
     let mut total_transfer_omset = Decimal::ZERO;
@@ -46,7 +47,8 @@ pub async fn get_dashboard_summary(
     let mut ready_orders = 0;
 
     for t in &all_trans {
-        total_omset += t.pay_amount;
+        total_omset += t.total_amount;
+        total_cash_in += t.pay_amount;
 
         // Breakdown omset by initial and settlement payment methods
         if let Some(settle_amount) = t.settlement_pay_amount {
@@ -87,6 +89,7 @@ pub async fn get_dashboard_summary(
             OrderStatus::Antrian | OrderStatus::Proses => active_orders += 1,
             OrderStatus::Selesai => ready_orders += 1,
             OrderStatus::Diambil => {}
+            OrderStatus::Batal => {}
         }
     }
 
@@ -116,10 +119,11 @@ pub async fn get_dashboard_summary(
         total_expenses += e.amount;
     }
 
-    let net_profit = total_omset - total_expenses;
+    let net_profit = total_cash_in - total_expenses;
 
     Ok(DashboardSummaryResponse {
         total_omset,
+        total_cash_in,
         total_cash_omset,
         total_qris_omset,
         total_transfer_omset,
@@ -174,6 +178,7 @@ pub async fn get_monthly_sales(
 
     struct MonthData {
         total_sales: Decimal,
+        total_cash_in: Decimal,
         total_expenses: Decimal,
         total_transactions: i64,
         total_cash_omset: Decimal,
@@ -184,6 +189,7 @@ pub async fn get_monthly_sales(
     let mut monthly_data: Vec<MonthData> = (0..12)
         .map(|_| MonthData {
             total_sales: Decimal::ZERO,
+            total_cash_in: Decimal::ZERO,
             total_expenses: Decimal::ZERO,
             total_transactions: 0,
             total_cash_omset: Decimal::ZERO,
@@ -195,7 +201,8 @@ pub async fn get_monthly_sales(
     for t in all_trans {
         let m_idx = (t.created_at.month() as usize).saturating_sub(1);
         if m_idx < 12 {
-            monthly_data[m_idx].total_sales += t.pay_amount;
+            monthly_data[m_idx].total_sales += t.total_amount;
+            monthly_data[m_idx].total_cash_in += t.pay_amount;
             monthly_data[m_idx].total_transactions += 1;
 
             if let Some(settle_amount) = t.settlement_pay_amount {
@@ -236,12 +243,13 @@ pub async fn get_monthly_sales(
             let m_num = i + 1;
             let month_code = format!("{:04}-{:02}", target_year, m_num);
             let d = &monthly_data[i];
-            let net_profit = d.total_sales - d.total_expenses;
+            let net_profit = d.total_cash_in - d.total_expenses;
 
             MonthlySalesReportItem {
                 month: month_code,
                 month_name: month_names[i].to_string(),
                 total_sales: d.total_sales,
+                total_cash_in: d.total_cash_in,
                 total_expenses: d.total_expenses,
                 net_profit,
                 total_transactions: d.total_transactions,

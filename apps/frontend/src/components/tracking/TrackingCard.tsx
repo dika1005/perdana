@@ -22,6 +22,7 @@ const advanceLabels: Record<OrderStatus, string> = {
   'PROSES': 'Tandai Selesai',
   'SELESAI': 'Sudah Diambil',
   'DIAMBIL': '',
+  'BATAL': '',
 };
 
 export const TrackingCard: React.FC<TrackingCardProps> = ({

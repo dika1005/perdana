@@ -89,7 +89,9 @@ async fn test_reports_and_analytics() {
                 custom_price: None,
                 qty: 2,
                 addons: None,
+                ..Default::default()
             }],
+            ..Default::default()
         },
     )
     .await
@@ -200,7 +202,9 @@ async fn test_reports_and_analytics() {
                 custom_price: None,
                 qty: 1,
                 addons: None,
+                ..Default::default()
             }],
+            ..Default::default()
         },
     )
     .await

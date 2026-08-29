@@ -128,6 +128,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .route(
                     "/{id}/invoice",
                     web::get().to(transactions::get_invoice),
+                )
+                .route(
+                    "/{id}/cancel",
+                    web::post().to(transactions::cancel),
                 ),
         )
         .service(

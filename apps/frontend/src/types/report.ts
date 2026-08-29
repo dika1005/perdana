@@ -1,5 +1,6 @@
 export interface DashboardSummary {
   total_omset: number;
+  total_cash_in: number;
   total_cash_omset: number;
   total_qris_omset: number;
   total_transfer_omset: number;
@@ -20,6 +21,7 @@ export interface MonthlySalesReport {
   month: string;
   month_name: string;
   total_sales: number;
+  total_cash_in: number;
   total_expenses: number;
   net_profit: number;
   total_transactions: number;

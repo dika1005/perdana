@@ -151,6 +151,32 @@ pub async fn update_payment(
 }
 
 #[utoipa::path(
+    post,
+    path = "/api/v1/transactions/{id}/cancel",
+    params(
+        ("id" = i32, Path, description = "ID Transaksi")
+    ),
+    responses(
+        (status = 200, description = "Transaksi dibatalkan & stok bahan dikembalikan", body = ApiResponse<TransactionResponse>),
+        (status = 404, description = "Transaksi tidak ditemukan"),
+        (status = 409, description = "Tidak dapat membatalkan transaksi yang sudah diambil / sudah dibatalkan")
+    ),
+    security(
+        ("bearer_auth" = []),
+        ("cookie_auth" = [])
+    ),
+    tag = "POS Transactions"
+)]
+pub async fn cancel(
+    state: web::Data<AppState>,
+    _user: AuthUser,
+    path: web::Path<i32>,
+) -> Result<HttpResponse, AppError> {
+    let data = transaction_service::cancel(&state.db, path.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::ok("Transaksi berhasil dibatalkan", data)))
+}
+
+#[utoipa::path(
     get,
     path = "/api/v1/transactions/{id}/invoice",
     params(

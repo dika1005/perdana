@@ -13,8 +13,12 @@ pub struct ReportDateQuery {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DashboardSummaryResponse {
+    /// Total nilai seluruh pesanan (total_amount) dalam periode — "Omset Pesanan".
     #[schema(value_type = f64, example = 15000000)]
     pub total_omset: Decimal,
+    /// Uang yang benar-benar masuk kas (pay_amount) dalam periode — "Kas Masuk".
+    #[schema(value_type = f64, example = 11000000)]
+    pub total_cash_in: Decimal,
     #[schema(value_type = f64, example = 10000000)]
     pub total_cash_omset: Decimal,
     #[schema(value_type = f64, example = 4000000)]
@@ -23,7 +27,8 @@ pub struct DashboardSummaryResponse {
     pub total_transfer_omset: Decimal,
     #[schema(value_type = f64, example = 3000000)]
     pub total_expenses: Decimal,
-    #[schema(value_type = f64, example = 12000000)]
+    /// Laba kas = Kas Masuk dikurangi pengeluaran (bukan omset kotor dikurangi biaya).
+    #[schema(value_type = f64, example = 8000000)]
     pub net_profit: Decimal,
     pub total_transactions: i64,
     pub paid_transactions: i64,
@@ -49,8 +54,12 @@ pub struct MonthlySalesReportItem {
     pub month: String,
     #[schema(example = "Agustus")]
     pub month_name: String,
+    /// Total nilai pesanan (total_amount) bulan tersebut.
     #[schema(value_type = f64, example = 25000000)]
     pub total_sales: Decimal,
+    /// Uang benar-benar masuk kas (pay_amount) bulan tersebut.
+    #[schema(value_type = f64, example = 18000000)]
+    pub total_cash_in: Decimal,
     #[schema(value_type = f64, example = 8000000)]
     pub total_expenses: Decimal,
     #[schema(value_type = f64, example = 17000000)]

@@ -7,13 +7,19 @@ import { formatRupiah } from '../../utils/format';
 interface TransactionDetailDrawerProps {
   transaction: any | null;
   onClose: () => void;
+  onCancel?: (tx: any) => void;
 }
 
 export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = ({
   transaction,
   onClose,
+  onCancel,
 }) => {
   if (!transaction) return null;
+
+  const canCancel =
+    transaction.order_status !== 'DIAMBIL' &&
+    transaction.order_status !== 'BATAL';
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-end z-50">
@@ -150,6 +156,14 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
         </div>
 
         <div className="pt-4 mt-4 border-t border-black/10">
+          {canCancel && onCancel && (
+            <button
+              onClick={() => onCancel(transaction)}
+              className="w-full mb-2 py-2.5 font-bold rounded-xl border border-rose-300 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 text-xs hover:bg-rose-100 dark:hover:bg-rose-950/70 transition-colors"
+            >
+              Batalkan Transaksi (Kembalikan Stok)
+            </button>
+          )}
           <button
             onClick={onClose}
             className="w-full py-2.5 font-bold skeuo-button text-text-muted text-xs rounded-xl"

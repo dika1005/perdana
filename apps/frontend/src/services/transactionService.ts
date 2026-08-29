@@ -44,4 +44,9 @@ export const transactionService = {
     const res = await apiClient.get<ApiResponse<any>>(`/transactions/${id}/invoice`);
     return res.data.data;
   },
+
+  cancelTransaction: async (id: number) => {
+    const res = await apiClient.post<ApiResponse<any>>(`/transactions/${id}/cancel`);
+    return res.data.data;
+  },
 };

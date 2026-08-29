@@ -68,7 +68,8 @@ export default function JobTrackingPage() {
       'ANTRIAN': 'PROSES',
       'PROSES': 'SELESAI',
       'SELESAI': 'DIAMBIL',
-      'DIAMBIL': null
+      'DIAMBIL': null,
+      'BATAL': null
     };
     
     const nextStatus = statusFlow[currentStatus];

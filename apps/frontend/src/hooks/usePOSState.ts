@@ -267,29 +267,15 @@ export function usePOSState() {
       try {
         const officialInvoice = await transactionService.getInvoiceData(res.id);
         setInvoiceData(officialInvoice);
-      } catch {
-        setInvoiceData({
-          ...res,
-          cashier_name: res.cashier_name || 'Kasir',
-          store_name: 'PERCETAKAN PERDANA',
-          store_address: 'Depan Polsek Ciawigebang - Kuningan',
-          store_phone: '0812-3456-7890',
-          items: cart.map(c => ({
-            product_name: c.product.name,
-            qty: c.qty,
-            price: c.price,
-            subtotal: c.price * c.qty,
-            unit_name: c.product.unit_name,
-            length: c.length,
-            width: c.width,
-            addons: (c.addons || []).map(a => ({
-              addon_name: a.addon.name,
-              price: a.price,
-              qty: a.qty,
-              subtotal: a.price * a.qty,
-            })),
-          })),
+      } catch (err) {
+        console.error('Gagal mengambil data invoice resmi:', err);
+        await showAlert({
+          title: 'Gagal Mencetak Struk',
+          message: 'Data struk dari server tidak dapat diambil. Transaksi TERSIMPAN, tapi struk tidak dicetak untuk menghindari kesalahan. Silakan buka riwayat & cetak ulang nota.',
+          type: 'error',
         });
+        // CATATAN KEAMANAN: sengaja TIDAK membuat struk dari data client-side
+        // agar nilai di struk selalu sama dengan yang tersimpan di database.
       }
 
       setShowCheckoutModal(false);

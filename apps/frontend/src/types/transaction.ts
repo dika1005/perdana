@@ -2,7 +2,7 @@ import { PriceType } from './product';
 
 export type PaymentStatus = 'PAID' | 'DP' | 'UNPAID';
 export type PaymentMethod = 'CASH' | 'QRIS' | 'TRANSFER';
-export type OrderStatus = 'ANTRIAN' | 'PROSES' | 'SELESAI' | 'DIAMBIL';
+export type OrderStatus = 'ANTRIAN' | 'PROSES' | 'SELESAI' | 'DIAMBIL' | 'BATAL';
 
 export interface CartItemAddon {
   addon_id?: number;

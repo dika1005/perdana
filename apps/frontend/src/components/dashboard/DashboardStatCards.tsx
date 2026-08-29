@@ -74,7 +74,7 @@ export const DashboardStatCards: React.FC<DashboardStatCardsProps> = ({ summary,
         value={formatRupiah(summary?.total_omset)} 
         icon={TrendingUp} 
         colorClass="text-blue-600 bg-blue-50 border-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900/50" 
-        subtitle={summary?.total_cash_omset !== undefined ? `💵 Kas: ${formatRupiah(summary.total_cash_omset)}` : `${summary?.total_transactions || 0} transaksi`}
+        subtitle={summary?.total_cash_in !== undefined ? `💵 Kas Masuk: ${formatRupiah(summary.total_cash_in)}` : `${summary?.total_transactions || 0} transaksi`}
       />
       <StatCard 
         title="Total Pengeluaran" 
@@ -84,13 +84,13 @@ export const DashboardStatCards: React.FC<DashboardStatCardsProps> = ({ summary,
         subtitle="Biaya operasional"
       />
       <StatCard 
-        title="Laba Bersih" 
+        title="Laba Bersih (Kas)" 
         value={formatRupiah(summary?.net_profit)} 
         icon={TrendingUp} 
         colorClass={Number(summary?.net_profit || 0) >= 0 
           ? "text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900/50" 
           : "text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-900/50"} 
-        subtitle="Omset - Pengeluaran"
+        subtitle="Kas Masuk − Biaya"
       />
       <StatCard 
         title="Total Piutang" 

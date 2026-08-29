@@ -386,6 +386,7 @@ async fn test_pos_transaction_business_rule_errors() {
             payment_status: None,
             estimated_done_at: None,
             items: vec![], // Empty!
+            ..Default::default()
         },
     )
     .await;
@@ -408,7 +409,9 @@ async fn test_pos_transaction_business_rule_errors() {
                 custom_price: None,
                 qty: 50, // Less than min_order 100!
                 addons: None,
+                ..Default::default()
             }],
+            ..Default::default()
         },
     )
     .await;
@@ -431,7 +434,9 @@ async fn test_pos_transaction_business_rule_errors() {
                 custom_price: None, // Missing!
                 qty: 10,
                 addons: None,
+                ..Default::default()
             }],
+            ..Default::default()
         },
     )
     .await;
@@ -454,7 +459,9 @@ async fn test_pos_transaction_business_rule_errors() {
                 custom_price: Some(Decimal::from(300)), // Below min 500!
                 qty: 10,
                 addons: None,
+                ..Default::default()
             }],
+            ..Default::default()
         },
     )
     .await;
@@ -477,7 +484,9 @@ async fn test_pos_transaction_business_rule_errors() {
                 custom_price: Some(Decimal::from(3000)), // Above max 2000!
                 qty: 10,
                 addons: None,
+                ..Default::default()
             }],
+            ..Default::default()
         },
     )
     .await;
@@ -500,7 +509,9 @@ async fn test_pos_transaction_business_rule_errors() {
                 custom_price: None, // Missing!
                 qty: 1,
                 addons: None,
+                ..Default::default()
             }],
+            ..Default::default()
         },
     )
     .await;
@@ -523,7 +534,9 @@ async fn test_pos_transaction_business_rule_errors() {
                 custom_price: Some(Decimal::from(1000)),
                 qty: 10,
                 addons: None,
+                ..Default::default()
             }],
+            ..Default::default()
         },
     )
     .await;
@@ -536,6 +549,7 @@ async fn test_pos_transaction_business_rule_errors() {
         UpdatePaymentRequest {
             additional_pay_amount: Decimal::from(50000),
             payment_status: None,
+            ..Default::default()
         },
     )
     .await;

@@ -161,6 +161,14 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     let _ = db.execute_unprepared("CREATE INDEX idx_product_addons_cat ON product_addons(category_id);").await;
     let _ = db.execute_unprepared("CREATE INDEX idx_raw_materials_low_stock ON raw_materials(stock, min_stock_warning);").await;
 
+    // Pastikan nilai enum order_status memiliki 'BATAL' (untuk fitur batal transaksi).
+    let _ = db.execute_unprepared(
+        "ALTER TABLE transactions MODIFY COLUMN order_status ENUM('ANTRIAN','PROSES','SELESAI','DIAMBIL','BATAL') NOT NULL DEFAULT 'ANTRIAN';"
+    ).await;
+
+    // Tabel counter invoice agar nomor nota unik & tidak bentrok.
+    let _ = db.execute_unprepared(crate::services::invoice_counter::CREATE_SQL).await;
+
     Ok(db)
 }
 

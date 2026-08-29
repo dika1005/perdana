@@ -149,6 +149,7 @@ async fn test_pos_transaction_complete_lifecycle() {
                     custom_price: None,
                     qty: 2,
                     addons: None,
+                    ..Default::default()
                 },
                 TransactionItemInput {
                     product_id: prod_yasin.id,
@@ -161,8 +162,10 @@ async fn test_pos_transaction_complete_lifecycle() {
                         price: None,
                         qty: Some(50),
                     }]),
+                    ..Default::default()
                 },
             ],
+            ..Default::default()
         },
     )
     .await
@@ -198,6 +201,7 @@ async fn test_pos_transaction_complete_lifecycle() {
         UpdatePaymentRequest {
             additional_pay_amount: Decimal::from(1050000),
             payment_status: Some(PaymentStatus::Paid),
+            ..Default::default()
         },
     )
     .await
@@ -232,6 +236,7 @@ async fn test_pos_transaction_complete_lifecycle() {
             date: None,
             payment_status: Some(PaymentStatus::Paid),
             order_status: Some(OrderStatus::Diambil),
+            ..Default::default()
         },
     )
     .await

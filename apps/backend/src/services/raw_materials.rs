@@ -39,6 +39,26 @@ pub fn map_mutation(m: &raw_material_mutations::Model) -> MutationResponse {
     }
 }
 
+/// Validasi bahwa stok tersedia cukup untuk mutasi keluar.
+/// Mengembalikan `AppError::conflict` yang membawa informasi stok sisa
+/// dan kebutuhan, sehingga kasir tahu persis bahan apa yang kurang.
+pub fn ensure_sufficient_stock(
+    material: &raw_materials::Model,
+    required: i32,
+) -> Result<(), AppError> {
+    if material.stock < required {
+        return Err(AppError::conflict(format!(
+            "Stok bahan \"{}\" tidak mencukupi. Tersisa {} {}, tetapi pesanan butuh {} {}.",
+            material.name,
+            material.stock,
+            material.unit,
+            required,
+            material.unit,
+        )));
+    }
+    Ok(())
+}
+
 // ==========================================
 // RAW MATERIALS
 // ==========================================
@@ -197,12 +217,8 @@ pub async fn create_mutation(
     let new_stock = match payload.mutation_type {
         MutationType::In => material.stock + payload.qty,
         MutationType::Out => {
-            if material.stock < payload.qty {
-                return Err(AppError::conflict(format!(
-                    "Sisa stok tidak mencukupi untuk mutasi keluar (Stok saat ini: {}, Diminta: {})",
-                    material.stock, payload.qty
-                )));
-            }
+            // Cegah stok negatif: validasi ketersediaan dulu.
+            ensure_sufficient_stock(&material, payload.qty)?;
             material.stock - payload.qty
         }
     };

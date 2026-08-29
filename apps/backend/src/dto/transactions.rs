@@ -9,7 +9,7 @@ use validator::Validate;
 // INPUT DTOS
 // ==========================================
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate, ToSchema)]
 pub struct TransactionAddonInput {
     #[schema(example = 1)]
     pub addon_id: Option<i32>,
@@ -21,7 +21,7 @@ pub struct TransactionAddonInput {
     pub qty: Option<i32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate, ToSchema)]
 pub struct TransactionMaterialInput {
     #[schema(example = 1)]
     pub raw_material_id: i32,
@@ -29,7 +29,7 @@ pub struct TransactionMaterialInput {
     pub material_qty: i32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate, ToSchema)]
 pub struct TransactionItemInput {
     #[schema(example = 1)]
     pub product_id: i32,
@@ -53,7 +53,7 @@ pub struct TransactionItemInput {
     pub materials: Option<Vec<TransactionMaterialInput>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate, ToSchema)]
 pub struct CreateTransactionRequest {
     #[schema(example = 1)]
     pub customer_id: Option<i32>,
@@ -71,7 +71,7 @@ pub struct CreateTransactionRequest {
     pub items: Vec<TransactionItemInput>,
 }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Default, Deserialize, ToSchema)]
 pub struct TransactionQuery {
     pub search: Option<String>,
     #[schema(value_type = Option<String>, example = "2026-08-18")]
@@ -87,7 +87,7 @@ pub struct UpdateOrderStatusRequest {
     pub order_status: OrderStatus,
 }
 
-#[derive(Debug, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Clone, Default, Deserialize, Validate, ToSchema)]
 pub struct UpdatePaymentRequest {
     #[serde(alias = "pay_amount", alias = "amount")]
     #[schema(value_type = f64, example = 250000)]

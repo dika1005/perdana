@@ -233,11 +233,13 @@ pub async fn create(
             .unwrap_or_else(|| "Umum".to_string())
     };
 
-    // 2. Generate Invoice Number: INV-YYYYMMDD-XXXX
+    // 2. Generate Invoice Number unik: INV-YYYYMMDD-<sequence>
+    //    Sequence diambil dari counter tabel `invoice_counter` agar tidak
+    //    pernah bentrok walau dua transaksi dibuat dalam detik yang sama.
     let now: DateTime<Utc> = Utc::now();
     let date_str = now.format("%Y%m%d").to_string();
-    let rand_suffix = (now.timestamp_subsec_micros() % 9000) + 1000;
-    let invoice_number = format!("INV-{date_str}-{rand_suffix}");
+    let seq = crate::services::invoice_counter::next(&txn, &date_str).await?;
+    let invoice_number = format!("INV-{date_str}-{seq:04}");
 
     // 3. Process Items & Addons
     let mut total_subtotal = Decimal::ZERO;
@@ -535,7 +537,13 @@ pub async fn create(
                     let unit_name = raw_mat.unit.clone();
                     let mat_name = raw_mat.name.clone();
                     let old_stock = raw_mat.stock;
-                    let new_stock = (raw_mat.stock - p_mat.material_qty).max(0);
+
+                    // BUG FIX: jangan biarkan stok negatif. Validasi dulu;
+                    // kalau kurang, tolak seluruh transaksi (rollback otomatis
+                    // karena belum commit) dengan pesan jelas ke kasir.
+                    crate::services::raw_materials::ensure_sufficient_stock(&raw_mat, p_mat.material_qty)?;
+
+                    let new_stock = old_stock - p_mat.material_qty;
                     let mut active_mat: raw_materials::ActiveModel = raw_mat.into();
                     active_mat.stock = Set(new_stock);
                     active_mat.update(&txn).await?;
@@ -617,13 +625,21 @@ pub async fn update_payment(
         .await?
         .ok_or_else(|| AppError::not_found("Transaksi tidak ditemukan"))?;
 
+    // Keamanan: hitung ulang status dari perbandingan total vs total dibayar.
+    // Jangan percaya `payment_status` dari client — mencegah kasir menandai
+    // "LUNAS" padahal bayaran kurang (BUG C).
     let new_pay_amount = transaction.pay_amount + payload.additional_pay_amount;
     let total = transaction.total_amount;
 
     let (new_status, new_change) = if new_pay_amount >= total {
         (PaymentStatus::Paid, new_pay_amount - total)
     } else {
-        (payload.payment_status.unwrap_or(PaymentStatus::Dp), Decimal::ZERO)
+        // Sisa tagihan masih ada -> tetap DP (atau Unpaid bila belum ada bayaran sama sekali).
+        if new_pay_amount > Decimal::ZERO {
+            (PaymentStatus::Dp, Decimal::ZERO)
+        } else {
+            (PaymentStatus::Unpaid, Decimal::ZERO)
+        }
     };
 
     let settlement_method = payload.payment_method.unwrap_or(PaymentMethod::Cash);
@@ -636,6 +652,76 @@ pub async fn update_payment(
     active_trans.settlement_pay_amount = Set(Some(payload.additional_pay_amount));
     active_trans.settlement_at = Set(Some(Utc::now()));
     let updated = active_trans.update(db).await?;
+
+    get_by_id(db, updated.id).await
+}
+
+/// Membatalkan transaksi dan mengembalikan stok bahan baku yang sudah
+/// terpotong saat transaksi dibuat.
+///
+/// Aturan:
+/// - Transaksi yang sudah `DIAMBIL` tidak boleh dibatalkan (barang sudah
+///   diserahkan ke pelanggan).
+/// - Hanya boleh dibatalkan satu kali (idempoten): kalau status sudah `BATAL`,
+///   kembalikan error agar stok tidak dobel balik.
+/// - Pengembalian stok dicatat sebagai mutasi `IN` dengan catatan otomatis,
+///   sehingga laporan mutasi tetap konsisten.
+pub async fn cancel(
+    db: &DatabaseConnection,
+    id: i32,
+) -> Result<TransactionResponse, AppError> {
+    let transaction = Transaction::find_by_id(id)
+        .one(db)
+        .await?
+        .ok_or_else(|| AppError::not_found("Transaksi tidak ditemukan"))?;
+
+    if transaction.order_status == OrderStatus::Diambil {
+        return Err(AppError::conflict(
+            "Transaksi yang sudah diambil tidak dapat dibatalkan",
+        ));
+    }
+    if transaction.order_status == OrderStatus::Batal {
+        return Err(AppError::conflict(
+            "Transaksi ini sudah dibatalkan sebelumnya",
+        ));
+    }
+
+    let txn = db.begin().await?;
+
+    // Kembalikan stok berdasarkan mutasi OUT otomatis milik transaksi ini.
+    let note_like = format!("%{}%", transaction.invoice_number);
+    let mutations = RawMaterialMutation::find()
+        .filter(raw_material_mutations::Column::Notes.like(&note_like))
+        .filter(raw_material_mutations::Column::MutationType.eq(MutationType::Out))
+        .all(&txn)
+        .await?;
+
+    for m in mutations {
+        if let Some(mat) = RawMaterial::find_by_id(m.raw_material_id).one(&txn).await? {
+            let new_stock = mat.stock + m.qty;
+            let mut active_mat: raw_materials::ActiveModel = mat.into();
+            active_mat.stock = Set(new_stock);
+            active_mat.update(&txn).await?;
+
+            let restore = raw_material_mutations::ActiveModel {
+                raw_material_id: Set(m.raw_material_id),
+                mutation_type: Set(MutationType::In),
+                qty: Set(m.qty),
+                notes: Set(Some(format!(
+                    "Pengembalian dari pembatalan Transaksi {}",
+                    transaction.invoice_number
+                ))),
+                ..Default::default()
+            };
+            restore.insert(&txn).await?;
+        }
+    }
+
+    let mut active_trans: transactions::ActiveModel = transaction.into();
+    active_trans.order_status = Set(OrderStatus::Batal);
+    let updated = active_trans.update(&txn).await?;
+
+    txn.commit().await?;
 
     get_by_id(db, updated.id).await
 }

@@ -105,6 +105,9 @@ pub enum OrderStatus {
     #[sea_orm(string_value = "DIAMBIL")]
     #[serde(alias = "diambil", alias = "Diambil")]
     Diambil,
+    #[sea_orm(string_value = "BATAL")]
+    #[serde(alias = "batal", alias = "Batal", alias = "CANCELLED", alias = "Cancelled")]
+    Batal,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, ToSchema)]
