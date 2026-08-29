@@ -169,6 +169,19 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     // Tabel counter invoice agar nomor nota unik & tidak bentrok.
     let _ = db.execute_unprepared(crate::services::invoice_counter::CREATE_SQL).await;
 
+    // Migrasi: dukung bahan baku dengan satuan pecahan (meter, gram, dll).
+    // Ubah stok & batas peringatan jadi DECIMAL(12,4).
+    let _ = db.execute_unprepared("ALTER TABLE raw_materials MODIFY COLUMN stock DECIMAL(12,4) NOT NULL DEFAULT 0;").await;
+    let _ = db.execute_unprepared("ALTER TABLE raw_materials MODIFY COLUMN min_stock_warning DECIMAL(12,4) NOT NULL DEFAULT 0;").await;
+
+    // Migrasi mutasi bahan: qty jadi DECIMAL(12,4) + kolom transaction_id
+    // agar pembatalan transaksi bisa mengembalikan stok secara presisi.
+    let _ = db.execute_unprepared("ALTER TABLE raw_material_mutations MODIFY COLUMN qty DECIMAL(12,4) NOT NULL DEFAULT 0;").await;
+    let _ = db.execute_unprepared("ALTER TABLE raw_material_mutations ADD COLUMN transaction_id INT NULL DEFAULT NULL;").await;
+    let _ = db.execute_unprepared(
+        "ALTER TABLE raw_material_mutations ADD CONSTRAINT fk_mutation_transaction FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL;"
+    ).await;
+
     Ok(db)
 }
 

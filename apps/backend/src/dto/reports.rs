@@ -96,9 +96,12 @@ pub struct InventoryMutationReportItem {
     pub raw_material_id: i32,
     #[schema(example = "Kertas Art Paper 260gr")]
     pub raw_material_name: String,
-    pub in_qty: i64,
-    pub out_qty: i64,
-    pub current_stock: i32,
+    #[schema(value_type = f64)]
+    pub in_qty: Decimal,
+    #[schema(value_type = f64)]
+    pub out_qty: Decimal,
+    #[schema(value_type = f64)]
+    pub current_stock: Decimal,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -130,7 +133,9 @@ pub struct LowStockItem {
     pub variant: Option<String>,
     #[schema(example = "botol")]
     pub unit: String,
-    pub stock: i32,
-    pub min_stock_warning: i32,
+    #[schema(value_type = f64)]
+    pub stock: Decimal,
+    #[schema(value_type = f64)]
+    pub min_stock_warning: Decimal,
     pub category_name: Option<String>,
 }

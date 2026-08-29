@@ -164,8 +164,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             name: Set(name.to_string()),
             variant: Set(variant.map(|s| s.to_string())),
             unit: Set(unit.to_string()),
-            stock: Set(stock),
-            min_stock_warning: Set(min_w),
+            stock: Set(Decimal::from(stock)),
+            min_stock_warning: Set(Decimal::from(min_w)),
             ..Default::default()
         }.insert(&db).await?;
         map_mat_id.insert(name.to_string(), inserted.id);

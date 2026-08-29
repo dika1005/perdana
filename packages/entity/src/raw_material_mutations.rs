@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 use crate::enums::MutationType;
@@ -9,9 +10,15 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub raw_material_id: i32,
+    /// ID transaksi penjualan penyebab mutasi (jika berasal dari otomatis
+    /// pemotongan stok saat checkout). Dipakai agar pembatalan transaksi
+    /// bisa mengembalikan stok secara presisi tanpa mencocokkan teks catatan.
+    pub transaction_id: Option<i32>,
     #[sea_orm(column_name = "type")]
     pub mutation_type: MutationType,
-    pub qty: i32,
+    /// Jumlah mutasi. Desimal agar mendukung bahan ukuran pecahan
+    /// (meter, gram, lembar setengah, dll).
+    pub qty: Decimal,
     pub notes: Option<String>,
     pub created_at: DateTimeUtc,
 }

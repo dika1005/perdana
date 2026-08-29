@@ -273,7 +273,7 @@ async fn test_inventory_and_customer_errors() {
         CreateMutationRequest {
             raw_material_id: 9999999,
             mutation_type: MutationType::In,
-            qty: 10,
+            qty: Decimal::from(10),
             notes: None,
         },
     )
@@ -286,7 +286,7 @@ async fn test_inventory_and_customer_errors() {
         CreateMutationRequest {
             raw_material_id: 1,
             mutation_type: MutationType::In,
-            qty: 0,
+            qty: Decimal::from(0),
             notes: None,
         },
     )

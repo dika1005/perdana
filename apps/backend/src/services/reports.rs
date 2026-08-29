@@ -392,16 +392,16 @@ pub async fn get_inventory_mutations(
 
     let mutations = mut_query.all(db).await?;
 
-    let mut in_map: HashMap<i32, i64> = HashMap::new();
-    let mut out_map: HashMap<i32, i64> = HashMap::new();
+    let mut in_map: HashMap<i32, Decimal> = HashMap::new();
+    let mut out_map: HashMap<i32, Decimal> = HashMap::new();
 
     for m in mutations {
         match m.mutation_type {
             MutationType::In => {
-                *in_map.entry(m.raw_material_id).or_insert(0) += m.qty as i64;
+                *in_map.entry(m.raw_material_id).or_insert(Decimal::ZERO) += m.qty;
             }
             MutationType::Out => {
-                *out_map.entry(m.raw_material_id).or_insert(0) += m.qty as i64;
+                *out_map.entry(m.raw_material_id).or_insert(Decimal::ZERO) += m.qty;
             }
         }
     }
@@ -409,8 +409,8 @@ pub async fn get_inventory_mutations(
     let result = materials
         .into_iter()
         .map(|mat| {
-            let in_qty = in_map.get(&mat.id).copied().unwrap_or(0);
-            let out_qty = out_map.get(&mat.id).copied().unwrap_or(0);
+            let in_qty = in_map.get(&mat.id).copied().unwrap_or(Decimal::ZERO);
+            let out_qty = out_map.get(&mat.id).copied().unwrap_or(Decimal::ZERO);
             let full_name = if let Some(ref v) = mat.variant {
                 format!("{} ({})", mat.name, v)
             } else {

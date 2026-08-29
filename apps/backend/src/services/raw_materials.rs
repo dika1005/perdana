@@ -1,6 +1,7 @@
 use entity::enums::MutationType;
 use entity::prelude::*;
 use entity::{raw_material_mutations, raw_materials};
+use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
     TransactionTrait,
@@ -44,7 +45,7 @@ pub fn map_mutation(m: &raw_material_mutations::Model) -> MutationResponse {
 /// dan kebutuhan, sehingga kasir tahu persis bahan apa yang kurang.
 pub fn ensure_sufficient_stock(
     material: &raw_materials::Model,
-    required: i32,
+    required: Decimal,
 ) -> Result<(), AppError> {
     if material.stock < required {
         return Err(AppError::conflict(format!(
@@ -134,8 +135,8 @@ pub async fn create(
         name: Set(name),
         variant: Set(payload.variant.map(|v| v.trim().to_string())),
         unit: Set(payload.unit.unwrap_or_else(|| "pcs".to_string())),
-        stock: Set(payload.stock.unwrap_or(0)),
-        min_stock_warning: Set(payload.min_stock_warning.unwrap_or(10)),
+        stock: Set(payload.stock.unwrap_or(Decimal::ZERO)),
+        min_stock_warning: Set(payload.min_stock_warning.unwrap_or(Decimal::from(10))),
         ..Default::default()
     };
 

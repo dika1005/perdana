@@ -5,6 +5,7 @@ use backend::dto::{
 };
 use backend::services::{categories as category_service, raw_materials as raw_material_service};
 use entity::enums::MutationType;
+use rust_decimal::Decimal;
 
 #[tokio::test]
 async fn test_raw_materials_and_mutations_lifecycle() {
@@ -33,13 +34,13 @@ async fn test_raw_materials_and_mutations_lifecycle() {
             name: format!("Kertas Art Paper 260gr {}", unique_suffix),
             variant: Some("Plano".to_string()),
             unit: Some("lembar".to_string()),
-            stock: Some(50),
-            min_stock_warning: Some(20),
+            stock: Some(Decimal::from(50)),
+            min_stock_warning: Some(Decimal::from(20)),
         },
     )
     .await
     .expect("Create raw material");
-    assert_eq!(mat.stock, 50);
+    assert_eq!(mat.stock, Decimal::from(50));
     assert!(!mat.is_low_stock);
 
     // 3. Update raw material
@@ -51,12 +52,12 @@ async fn test_raw_materials_and_mutations_lifecycle() {
             name: format!("Kertas Art Paper 260gr Premium {}", unique_suffix),
             variant: Some("A3+".to_string()),
             unit: Some("lembar".to_string()),
-            min_stock_warning: Some(30),
+            min_stock_warning: Some(Decimal::from(30)),
         },
     )
     .await
     .expect("Update raw material");
-    assert_eq!(updated_mat.min_stock_warning, 30);
+    assert_eq!(updated_mat.min_stock_warning, Decimal::from(30));
 
     // 4. Record Mutation IN (+30)
     let mut_in = raw_material_service::create_mutation(
@@ -64,18 +65,18 @@ async fn test_raw_materials_and_mutations_lifecycle() {
         CreateMutationRequest {
             raw_material_id: mat.id,
             mutation_type: MutationType::In,
-            qty: 30,
+            qty: Decimal::from(30),
             notes: Some("Restock supplier".to_string()),
         },
     )
     .await
     .expect("Record mutation IN");
-    assert_eq!(mut_in.qty, 30);
+    assert_eq!(mut_in.qty, Decimal::from(30));
 
     let mat_after_in = raw_material_service::get_by_id(&db, mat.id)
         .await
         .expect("Get material after IN");
-    assert_eq!(mat_after_in.stock, 80); // 50 + 30
+    assert_eq!(mat_after_in.stock, Decimal::from(80)); // 50 + 30
 
     // 5. Record Mutation OUT (-65) -> Stock becomes 15 (which is <= min_stock_warning 30) -> is_low_stock = true
     let mut_out = raw_material_service::create_mutation(
@@ -83,18 +84,18 @@ async fn test_raw_materials_and_mutations_lifecycle() {
         CreateMutationRequest {
             raw_material_id: mat.id,
             mutation_type: MutationType::Out,
-            qty: 65,
+            qty: Decimal::from(65),
             notes: Some("Produksi cetak undangan".to_string()),
         },
     )
     .await
     .expect("Record mutation OUT");
-    assert_eq!(mut_out.qty, 65);
+    assert_eq!(mut_out.qty, Decimal::from(65));
 
     let mat_after_out = raw_material_service::get_by_id(&db, mat.id)
         .await
         .expect("Get material after OUT");
-    assert_eq!(mat_after_out.stock, 15);
+    assert_eq!(mat_after_out.stock, Decimal::from(15));
     assert!(mat_after_out.is_low_stock);
 
     // 6. Test Mutation OUT exceeds stock -> should fail with Conflict error
@@ -103,7 +104,7 @@ async fn test_raw_materials_and_mutations_lifecycle() {
         CreateMutationRequest {
             raw_material_id: mat.id,
             mutation_type: MutationType::Out,
-            qty: 100, // Stock is only 15
+            qty: Decimal::from(100), // Stock is only 15
             notes: Some("Over requested".to_string()),
         },
     )

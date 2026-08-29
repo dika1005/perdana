@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use entity::enums::MutationType;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
@@ -19,10 +20,10 @@ pub struct CreateRawMaterialRequest {
     pub variant: Option<String>,
     #[schema(example = "lembar")]
     pub unit: Option<String>,
-    #[schema(example = 100)]
-    pub stock: Option<i32>,
-    #[schema(example = 20)]
-    pub min_stock_warning: Option<i32>,
+    #[schema(value_type = Option<f64>, example = 100)]
+    pub stock: Option<Decimal>,
+    #[schema(value_type = Option<f64>, example = 20)]
+    pub min_stock_warning: Option<Decimal>,
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
@@ -36,8 +37,8 @@ pub struct UpdateRawMaterialRequest {
     pub variant: Option<String>,
     #[schema(example = "lembar")]
     pub unit: Option<String>,
-    #[schema(example = 25)]
-    pub min_stock_warning: Option<i32>,
+    #[schema(value_type = Option<f64>, example = 25)]
+    pub min_stock_warning: Option<Decimal>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -54,8 +55,10 @@ pub struct RawMaterialResponse {
     pub name: String,
     pub variant: Option<String>,
     pub unit: String,
-    pub stock: i32,
-    pub min_stock_warning: i32,
+    #[schema(value_type = f64)]
+    pub stock: Decimal,
+    #[schema(value_type = f64)]
+    pub min_stock_warning: Decimal,
     pub is_low_stock: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -71,11 +74,20 @@ pub struct CreateMutationRequest {
     pub raw_material_id: i32,
     #[serde(rename = "type", alias = "mutation_type")]
     pub mutation_type: MutationType,
-    #[validate(range(min = 1, message = "Kuantitas mutasi minimal 1"))]
-    #[schema(example = 50)]
-    pub qty: i32,
+    #[validate(custom(function = "validate_qty_positive"))]
+    #[schema(value_type = f64, example = 50)]
+    pub qty: Decimal,
     #[schema(example = "Kulakan dari distributor kertas")]
     pub notes: Option<String>,
+}
+
+fn validate_qty_positive(qty: &Decimal) -> Result<(), validator::ValidationError> {
+    if *qty <= Decimal::ZERO {
+        return Err(validator::ValidationError::new("qty").with_message(
+            std::borrow::Cow::Borrowed("Kuantitas mutasi harus lebih dari 0"),
+        ));
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -84,7 +96,8 @@ pub struct MutationResponse {
     pub raw_material_id: i32,
     #[serde(rename = "type")]
     pub mutation_type: MutationType,
-    pub qty: i32,
+    #[schema(value_type = f64)]
+    pub qty: Decimal,
     pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
 }

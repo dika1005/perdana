@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -10,8 +11,11 @@ pub struct Model {
     pub name: String,
     pub variant: Option<String>,
     pub unit: String,
-    pub stock: i32,
-    pub min_stock_warning: i32,
+    /// Stok tersedia. Desimal agar mendukung bahan ukuran pecahan
+    /// (meter, gram, lembar setengah, dll).
+    pub stock: Decimal,
+    /// Batas peringatan stok menipis.
+    pub min_stock_warning: Decimal,
     pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }

@@ -107,6 +107,20 @@ pub async fn delete(db: &DatabaseConnection, id: i32) -> Result<(), AppError> {
         .await?
         .ok_or_else(|| AppError::not_found("Pelanggan tidak ditemukan"))?;
 
+    // [B4] Cegah hapus pelanggan yang masih punya riwayat transaksi
+    // (termasuk piutang), agar data penjualan & piutang tidak terpisah
+    // dari pemiliknya. Gunakan soft-guard alih-alih hard delete buta.
+    let linked = transactions::Entity::find()
+        .filter(transactions::Column::CustomerId.eq(id))
+        .all(db)
+        .await?
+        .len();
+    if linked > 0 {
+        return Err(AppError::conflict(
+            "Pelanggan tidak dapat dihapus karena masih memiliki riwayat transaksi. Nonaktifkan saja agar data tetap tersimpan.",
+        ));
+    }
+
     let active_model: customers::ActiveModel = item.into();
     active_model.delete(db).await?;
     Ok(())

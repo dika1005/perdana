@@ -25,8 +25,8 @@ pub struct TransactionAddonInput {
 pub struct TransactionMaterialInput {
     #[schema(example = 1)]
     pub raw_material_id: i32,
-    #[schema(example = 150)]
-    pub material_qty: i32,
+    #[schema(value_type = Option<f64>, example = 150)]
+    pub material_qty: Option<Decimal>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Validate, ToSchema)]
@@ -47,8 +47,8 @@ pub struct TransactionItemInput {
     /// Legacy single material (backward compat)
     #[schema(example = 1)]
     pub raw_material_id: Option<i32>,
-    #[schema(example = 150)]
-    pub material_qty: Option<i32>,
+    #[schema(value_type = Option<f64>, example = 150)]
+    pub material_qty: Option<Decimal>,
     /// Multiple materials consumed per item
     pub materials: Option<Vec<TransactionMaterialInput>>,
 }

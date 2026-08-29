@@ -114,8 +114,8 @@ async fn test_reports_and_analytics() {
             name: format!("Bahan Flexi 280gr {}", unique_suffix),
             variant: None,
             unit: Some("meter".to_string()),
-            stock: Some(10),
-            min_stock_warning: Some(20), // Low stock
+            stock: Some(Decimal::from(10)),
+            min_stock_warning: Some(Decimal::from(20)), // Low stock
         },
     )
     .await
@@ -126,7 +126,7 @@ async fn test_reports_and_analytics() {
         CreateMutationRequest {
             raw_material_id: mat.id,
             mutation_type: MutationType::In,
-            qty: 50,
+            qty: Decimal::from(50),
             notes: Some("Restock report test".to_string()),
         },
     )
@@ -183,7 +183,7 @@ async fn test_reports_and_analytics() {
     )
     .await
     .expect("Get inventory mutations report");
-    assert!(inv_mutations.iter().any(|m| m.raw_material_id == mat.id && m.in_qty >= 50));
+    assert!(inv_mutations.iter().any(|m| m.raw_material_id == mat.id && m.in_qty >= Decimal::from(50)));
 
     // 8. Test Receivables Report
     let _dp_trans = transaction_service::create(
@@ -229,8 +229,8 @@ async fn test_reports_and_analytics() {
             name: format!("Tinta Menipis {}", unique_suffix),
             variant: None,
             unit: Some("botol".to_string()),
-            stock: Some(3),
-            min_stock_warning: Some(10),
+            stock: Some(Decimal::from(3)),
+            min_stock_warning: Some(Decimal::from(10)),
         },
     )
     .await

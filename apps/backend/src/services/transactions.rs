@@ -2,11 +2,10 @@ use chrono::{DateTime, Utc};
 use entity::enums::{MutationType, OrderStatus, PaymentMethod, PaymentStatus, PriceType, RangePriceType};
 use entity::prelude::*;
 use entity::{raw_material_mutations, raw_materials, transaction_item_addons, transaction_items, transactions, users};
-use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, LoaderTrait, ModelTrait,
-    QueryFilter, QueryOrder, Set, TransactionTrait,
+    QueryFilter, QueryOrder, QuerySelect, Set, TransactionTrait,
 };
 use validator::Validate;
 
@@ -253,7 +252,7 @@ pub async fn create(
 
     struct ProcessedMaterial {
         raw_material_id: i32,
-        material_qty: i32,
+        material_qty: Decimal,
     }
 
     struct ProcessedItem {
@@ -432,11 +431,13 @@ pub async fn create(
         if let Some(mats) = item_input.materials {
             if !mats.is_empty() {
                 for m in mats {
-                    if m.material_qty > 0 {
-                        final_materials.push(ProcessedMaterial {
-                            raw_material_id: m.raw_material_id,
-                            material_qty: m.material_qty,
-                        });
+                    if let Some(qty) = m.material_qty {
+                        if qty > Decimal::ZERO {
+                            final_materials.push(ProcessedMaterial {
+                                raw_material_id: m.raw_material_id,
+                                material_qty: qty,
+                            });
+                        }
                     }
                 }
             }
@@ -445,15 +446,15 @@ pub async fn create(
         if final_materials.is_empty() {
             let legacy_mat_id = item_input.raw_material_id.or(linked_raw_material_id);
             if let Some(mat_id) = legacy_mat_id {
+                // Jumlah bahan = qty produk × faktor pemakaian per item.
+                // Tidak dibulatkan ke atas agar stok desimal (meter/gram)
+                // tetap presisi sesuai kebutuhan sesungguhnya (B7).
                 let deduct_qty = if let Some(manual_qty) = item_input.material_qty {
-                    manual_qty
+                    Decimal::from(manual_qty)
                 } else {
-                    (Decimal::from(item_input.qty) * linked_material_amount)
-                        .to_f64()
-                        .unwrap_or(item_input.qty as f64)
-                        .ceil() as i32
+                    Decimal::from(item_input.qty) * linked_material_amount
                 };
-                if deduct_qty > 0 {
+                if deduct_qty > Decimal::ZERO {
                     final_materials.push(ProcessedMaterial {
                         raw_material_id: mat_id,
                         material_qty: deduct_qty,
@@ -532,15 +533,20 @@ pub async fn create(
 
         // Auto deduct raw materials (multi-material support)
         for p_mat in &p_item.materials {
-            if p_mat.material_qty > 0 {
-                if let Some(raw_mat) = RawMaterial::find_by_id(p_mat.raw_material_id).one(&txn).await? {
+            if p_mat.material_qty > Decimal::ZERO {
+                if let Some(raw_mat) = RawMaterial::find_by_id(p_mat.raw_material_id)
+                    .lock_exclusive()
+                    .one(&txn)
+                    .await?
+                {
                     let unit_name = raw_mat.unit.clone();
                     let mat_name = raw_mat.name.clone();
                     let old_stock = raw_mat.stock;
 
-                    // BUG FIX: jangan biarkan stok negatif. Validasi dulu;
-                    // kalau kurang, tolak seluruh transaksi (rollback otomatis
-                    // karena belum commit) dengan pesan jelas ke kasir.
+                    // BUG FIX (B1): kunci baris bahan (SELECT ... FOR UPDATE)
+                    // via `lock_exclusive()` di atas agar dua kasir yang melayani
+                    // bersamaan tidak saling over-sell (race condition stok).
+                    // Lalu validasi stok cukup sebelum memotong.
                     crate::services::raw_materials::ensure_sufficient_stock(&raw_mat, p_mat.material_qty)?;
 
                     let new_stock = old_stock - p_mat.material_qty;
@@ -555,6 +561,7 @@ pub async fn create(
 
                     let active_mutation = raw_material_mutations::ActiveModel {
                         raw_material_id: Set(p_mat.raw_material_id),
+                        transaction_id: Set(Some(trans.id)),
                         mutation_type: Set(MutationType::Out),
                         qty: Set(p_mat.material_qty),
                         notes: Set(Some(format!(
@@ -675,29 +682,39 @@ pub async fn cancel(
         .await?
         .ok_or_else(|| AppError::not_found("Transaksi tidak ditemukan"))?;
 
-    if transaction.order_status == OrderStatus::Diambil {
-        return Err(AppError::conflict(
-            "Transaksi yang sudah diambil tidak dapat dibatalkan",
-        ));
-    }
-    if transaction.order_status == OrderStatus::Batal {
-        return Err(AppError::conflict(
-            "Transaksi ini sudah dibatalkan sebelumnya",
-        ));
+    // [B3] Hanya boleh dibatalkan selama belum selesai diproduksi.
+    // Setelah status SELESAI/DIAMBIL barang sudah jadi/diserahkan, maka
+    // tidak boleh dibatalkan (cegah manipulasi stok & penjualan ganda).
+    match transaction.order_status {
+        OrderStatus::Selesai | OrderStatus::Diambil => {
+            return Err(AppError::conflict(
+                "Transaksi yang sudah selesai/diambil tidak dapat dibatalkan",
+            ));
+        }
+        OrderStatus::Batal => {
+            return Err(AppError::conflict(
+                "Transaksi ini sudah dibatalkan sebelumnya",
+            ));
+        }
+        _ => {}
     }
 
     let txn = db.begin().await?;
 
-    // Kembalikan stok berdasarkan mutasi OUT otomatis milik transaksi ini.
-    let note_like = format!("%{}%", transaction.invoice_number);
+    // [B2] Kembalikan stok berdasarkan mutasi OUT milik transaksi ini,
+    // dicari lewat kolom `transaction_id` (presisi, bukan cocok teks catatan).
     let mutations = RawMaterialMutation::find()
-        .filter(raw_material_mutations::Column::Notes.like(&note_like))
+        .filter(raw_material_mutations::Column::TransactionId.eq(Some(transaction.id)))
         .filter(raw_material_mutations::Column::MutationType.eq(MutationType::Out))
         .all(&txn)
         .await?;
 
     for m in mutations {
-        if let Some(mat) = RawMaterial::find_by_id(m.raw_material_id).one(&txn).await? {
+        if let Some(mat) = RawMaterial::find_by_id(m.raw_material_id)
+            .lock_exclusive()
+            .one(&txn)
+            .await?
+        {
             let new_stock = mat.stock + m.qty;
             let mut active_mat: raw_materials::ActiveModel = mat.into();
             active_mat.stock = Set(new_stock);
@@ -705,6 +722,7 @@ pub async fn cancel(
 
             let restore = raw_material_mutations::ActiveModel {
                 raw_material_id: Set(m.raw_material_id),
+                transaction_id: Set(Some(transaction.id)),
                 mutation_type: Set(MutationType::In),
                 qty: Set(m.qty),
                 notes: Set(Some(format!(
