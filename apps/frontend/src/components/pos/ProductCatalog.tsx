@@ -131,8 +131,9 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
             {products.map(product => {
               const inCartItem = cart.find(c => c.product.id === product.id);
-              const isMeteran = product.price_type === 'CUSTOM' || product.unit_name?.toLowerCase().includes('meter');
+              const isMeteran = product.unit_name?.toLowerCase().includes('meter') || false;
               const isRange = product.price_type === 'RANGE';
+              const isCustom = product.price_type === 'CUSTOM' && !isMeteran;
 
               const priceDisplay = isRange
                 ? `${formatRupiah(product.min_price)} - ${formatRupiah(product.max_price)}`
@@ -168,6 +169,11 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                       {isRange && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60">
                           Rentang
+                        </span>
+                      )}
+                      {isCustom && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-200/80 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800/60">
+                          Custom
                         </span>
                       )}
                     </div>
