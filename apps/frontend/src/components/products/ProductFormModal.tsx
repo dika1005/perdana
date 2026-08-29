@@ -44,180 +44,168 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <form onSubmit={onSubmit} className="skeuo p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-bold text-text-main">
-            {item ? 'Edit Produk' : 'Tambah Produk Baru'}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <form onSubmit={onSubmit} className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
+        <div className="flex justify-between items-start mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h2 className="text-base font-bold text-text-main">
+            {item ? 'Edit Data Produk' : 'Tambah Produk Baru'}
           </h2>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text-main">
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="space-y-4 text-sm">
+        <div className="space-y-3.5 text-xs">
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">Nama Produk *</label>
+            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Produk *</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={e => onChange('name', e.target.value)}
-              placeholder="Contoh: Banner Flexi 280gr"
-              className="w-full px-4 py-2.5 skeuo-inset outline-none text-text-main rounded-xl"
+              placeholder="Contoh: Undangan, Buku Yasin, Spanduk /meter"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none text-text-main text-xs font-medium focus:border-blue-500"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">Kategori Produk</label>
-            <select
-              value={formData.category_id || ''}
-              onChange={e => onChange('category_id', e.target.value ? Number(e.target.value) : undefined)}
-              className="w-full px-4 py-2.5 skeuo outline-none text-text-main rounded-xl bg-transparent font-medium"
-            >
-              <option value="">Tanpa Kategori</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* BOM: Hubungkan ke Bahan Baku Inventaris */}
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-brand-600">
-              <Layers className="w-4 h-4" />
-              <span>Resep Bahan Baku (Auto-Deduct Stok)</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-text-muted mb-1">Bahan Baku Terkait</label>
-                <select
-                  value={formData.raw_material_id || ''}
-                  onChange={e => onChange('raw_material_id', e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 skeuo outline-none text-xs text-text-main rounded-lg bg-transparent"
-                >
-                  <option value="">-- Tidak Terhubung --</option>
-                  {rawMaterials.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.unit}) - Stok: {m.stock}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-text-muted mb-1">Konsumsi per Unit / m²</label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0.01"
-                  value={formData.material_amount !== undefined ? formData.material_amount : 1}
-                  onChange={e => onChange('material_amount', Number(e.target.value))}
-                  placeholder="1.0"
-                  className="w-full px-3 py-2 skeuo-inset outline-none text-xs text-text-main rounded-lg font-bold"
-                />
-              </div>
-            </div>
-            <p className="text-[10px] text-slate-400">
-              Stok bahan di modul Inventaris otomatis berkurang saat pesanan produk ini dibuat.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">Tipe Harga</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Kategori</label>
               <select
-                value={formData.price_type}
-                onChange={e => onChange('price_type', e.target.value as PriceType)}
-                className="w-full px-4 py-2.5 skeuo outline-none text-text-main rounded-xl bg-transparent font-medium"
+                value={formData.category_id || ''}
+                onChange={e => onChange('category_id', e.target.value ? Number(e.target.value) : undefined)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none text-text-main text-xs font-medium focus:border-blue-500"
               >
-                <option value="FIXED">FIXED (Harga Tetap)</option>
-                <option value="RANGE">RANGE (Rentang)</option>
-                <option value="CUSTOM">CUSTOM (Fleksibel / Meteran)</option>
+                <option value="">-- Pilih Kategori --</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">Harga Default (Rp)</label>
-              <input
-                type="number"
-                value={formData.default_price}
-                onChange={e => onChange('default_price', Number(e.target.value))}
-                className="w-full px-4 py-2.5 skeuo-inset outline-none text-text-main rounded-xl font-bold"
-              />
-            </div>
-          </div>
 
-          {formData.price_type === 'RANGE' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">Harga Minimum (Rp)</label>
-                <input
-                  type="number"
-                  value={formData.min_price}
-                  onChange={e => onChange('min_price', Number(e.target.value))}
-                  className="w-full px-4 py-2.5 skeuo-inset outline-none text-text-main rounded-xl"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">Harga Maksimum (Rp)</label>
-                <input
-                  type="number"
-                  value={formData.max_price}
-                  onChange={e => onChange('max_price', Number(e.target.value))}
-                  className="w-full px-4 py-2.5 skeuo-inset outline-none text-text-main rounded-xl"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">Min. Order</label>
-              <input
-                type="number"
-                min="1"
-                value={formData.min_order}
-                onChange={e => onChange('min_order', Number(e.target.value))}
-                className="w-full px-4 py-2.5 skeuo-inset outline-none text-text-main rounded-xl"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">Satuan</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Satuan Produk</label>
               <input
                 type="text"
                 value={formData.unit_name}
                 onChange={e => onChange('unit_name', e.target.value)}
-                placeholder="pcs / meter / rim / lembar"
-                className="w-full px-4 py-2.5 skeuo-inset outline-none text-text-main rounded-xl"
+                placeholder="pcs / meter / lembar / rim / buku"
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none text-text-main text-xs font-medium focus:border-blue-500"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pt-2">
-            <input
-              type="checkbox"
-              id="has_variants"
-              checked={formData.has_variants}
-              onChange={e => onChange('has_variants', e.target.checked)}
-              className="w-4 h-4 rounded text-brand-600"
-            />
-            <label htmlFor="has_variants" className="text-xs font-semibold text-text-main cursor-pointer">
-              Produk memiliki varian ukuran/tipe berbeda
-            </label>
+          {/* Tipe Harga */}
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-2.5">
+            <label className="block font-bold text-slate-700 dark:text-slate-300">Skema Harga:</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => onChange('price_type', 'FIXED')}
+                className={`py-2 px-2 text-center rounded-lg border text-xs font-bold transition-all ${
+                  formData.price_type === 'FIXED'
+                    ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border-blue-500'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Harga Tetap
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange('price_type', 'RANGE')}
+                className={`py-2 px-2 text-center rounded-lg border text-xs font-bold transition-all ${
+                  formData.price_type === 'RANGE'
+                    ? 'bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 border-amber-500'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Rentang (Min-Max)
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange('price_type', 'CUSTOM')}
+                className={`py-2 px-2 text-center rounded-lg border text-xs font-bold transition-all ${
+                  formData.price_type === 'CUSTOM'
+                    ? 'bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 border-teal-500'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Nego / Kustom
+              </button>
+            </div>
+
+            {formData.price_type === 'RANGE' ? (
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div>
+                  <label className="block text-[11px] text-slate-500 mb-0.5">Harga Minimum (Rp)</label>
+                  <input
+                    type="number"
+                    value={formData.min_price || ''}
+                    onChange={e => onChange('min_price', Number(e.target.value))}
+                    className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono font-bold text-xs"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-500 mb-0.5">Harga Maksimum (Rp)</label>
+                  <input
+                    type="number"
+                    value={formData.max_price || ''}
+                    onChange={e => onChange('max_price', Number(e.target.value))}
+                    className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono font-bold text-xs"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-[11px] text-slate-500 mb-0.5">
+                  {formData.price_type === 'CUSTOM' ? 'Harga Patokan / Estimasi Awal (Rp)' : 'Nominal Harga (Rp)'}
+                </label>
+                <input
+                  type="number"
+                  value={formData.default_price || ''}
+                  onChange={e => onChange('default_price', Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono font-bold text-sm text-blue-600 dark:text-blue-400"
+                  placeholder="0"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Hubungkan Bahan Baku Utama (Opsional) */}
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+              <Layers className="w-3.5 h-3.5 text-blue-500" />
+              <span>Bahan Baku Utama (Opsional):</span>
+            </div>
+            <select
+              value={formData.raw_material_id || ''}
+              onChange={e => onChange('raw_material_id', e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-text-main"
+            >
+              <option value="">-- Tidak Dipatok (Kasir Pilih Manual di POS) --</option>
+              {rawMaterials.map(m => (
+                <option key={m.id} value={m.id}>
+                  {m.name} ({m.unit}) - Sisa Stok: {m.stock}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-2.5 mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 font-bold skeuo-button text-text-muted text-sm"
+            className="flex-1 py-2.5 font-bold text-slate-600 dark:text-slate-300 text-xs rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             Batal
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 py-2.5 font-bold skeuo-button text-brand-600 text-sm"
+            className="flex-1 py-2.5 font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs shadow-md shadow-blue-500/20 disabled:opacity-50 transition-all cursor-pointer"
           >
             {submitting ? 'Menyimpan...' : 'Simpan Produk'}
           </button>

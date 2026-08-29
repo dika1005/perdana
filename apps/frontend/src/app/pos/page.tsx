@@ -20,6 +20,7 @@ import dynamic from 'next/dynamic';
 import { ProductCatalog } from '../../components/pos/ProductCatalog';
 import { CartSidebar } from '../../components/pos/CartSidebar';
 import { CartItem, CartItemMaterial } from '../../components/pos/types';
+import { calculateAutoMaterials } from '../../components/pos/autoBomRules';
 
 const CheckoutModal = dynamic(
   () => import('../../components/pos/CheckoutModal').then(mod => mod.CheckoutModal),
@@ -113,12 +114,16 @@ export default function POSPage() {
 
     const existing = cart.find(item => item.product.id === product.id);
     if (existing) {
+      const newQty = existing.qty + 1;
+      const autoMats = calculateAutoMaterials(product, newQty, existing.length || 1, existing.width || 1, rawMaterials);
       setCart(cart.map(item => item.product.id === product.id ? { 
         ...item, 
-        qty: item.qty + 1,
-        addons: (item.addons || []).map(a => ({ ...a, qty: item.qty + 1 }))
+        qty: newQty,
+        materials: autoMats.length > 0 ? autoMats : item.materials,
+        addons: (item.addons || []).map(a => ({ ...a, qty: newQty }))
       } : item));
     } else {
+      const autoMats = calculateAutoMaterials(product, initialQty, 1, 1, rawMaterials);
       setCart([...cart, { 
         product, 
         qty: initialQty, 
@@ -126,7 +131,7 @@ export default function POSPage() {
         length: 1,
         width: 1,
         addons: [],
-        materials: [],
+        materials: autoMats,
       }]);
     }
   };
@@ -164,10 +169,12 @@ export default function POSPage() {
       if (item.product.id === id) {
         const newQty = Math.max(1, item.qty + delta);
         const updatedAddons = (item.addons || []).map(a => ({ ...a, qty: newQty }));
+        // Recalculate auto-BOM proportionally
+        const autoMats = calculateAutoMaterials(item.product, newQty, item.length || 1, item.width || 1, rawMaterials);
         return { 
           ...item, 
           qty: newQty, 
-          material_qty: item.raw_material_id ? (item.material_qty !== undefined ? Math.max(1, item.material_qty + delta) : newQty) : undefined,
+          materials: autoMats.length > 0 ? autoMats : item.materials,
           addons: updatedAddons 
         };
       }
@@ -191,7 +198,14 @@ export default function POSPage() {
         const safeWidth = width > 0 ? width : 1;
         const area = safeLength * safeWidth;
         const baseRate = Number(item.product.default_price) || item.price;
-        return { ...item, length: safeLength, width: safeWidth, price: Math.round(baseRate * area) };
+        const autoMats = calculateAutoMaterials(item.product, item.qty, safeLength, safeWidth, rawMaterials);
+        return { 
+          ...item, 
+          length: safeLength, 
+          width: safeWidth, 
+          price: Math.round(baseRate * area),
+          materials: autoMats.length > 0 ? autoMats : item.materials,
+        };
       }
       return item;
     }));

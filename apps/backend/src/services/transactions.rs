@@ -507,10 +507,17 @@ pub async fn create(
             if p_mat.material_qty > 0 {
                 if let Some(raw_mat) = RawMaterial::find_by_id(p_mat.raw_material_id).one(&txn).await? {
                     let unit_name = raw_mat.unit.clone();
+                    let mat_name = raw_mat.name.clone();
+                    let old_stock = raw_mat.stock;
                     let new_stock = (raw_mat.stock - p_mat.material_qty).max(0);
                     let mut active_mat: raw_materials::ActiveModel = raw_mat.into();
                     active_mat.stock = Set(new_stock);
                     active_mat.update(&txn).await?;
+
+                    log::info!(
+                        "📦 STOK BAHAN BAKU TERPOTONG: ID={}, Nama='{}', Qty={}, Stok Lama={}, Stok Baru={}",
+                        p_mat.raw_material_id, mat_name, p_mat.material_qty, old_stock, new_stock
+                    );
 
                     let active_mutation = raw_material_mutations::ActiveModel {
                         raw_material_id: Set(p_mat.raw_material_id),

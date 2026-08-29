@@ -94,10 +94,30 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                     {item.variant || '-'}
                   </td>
                   <td className="py-3 px-4">
-                    <span className="font-mono font-bold text-xs text-text-main">{item.stock}</span> <span className="text-slate-400 text-[11px] font-medium">{item.unit}</span>
+                    <div>
+                      <span className="font-mono font-bold text-xs text-text-main">
+                        {item.stock.toLocaleString()}
+                      </span>{' '}
+                      <span className="text-slate-400 text-[11px] font-medium">{item.unit}</span>
+                      {item.unit === 'lembar' && item.variant?.toLowerCase().includes('rim') && (
+                        <span className="block text-[10px] font-semibold text-blue-600 dark:text-blue-400 font-mono mt-0.5">
+                          ≈ {Math.floor(item.stock / 500)} Rim {item.stock % 500 > 0 ? `${item.stock % 500} lbr` : ''}
+                        </span>
+                      )}
+                      {item.unit === 'meter' && item.variant?.toLowerCase().includes('roll') && (
+                        <span className="block text-[10px] font-semibold text-purple-600 dark:text-purple-400 font-mono mt-0.5">
+                          ≈ {Math.floor(item.stock / 50)} Roll {item.stock % 50 > 0 ? `${item.stock % 50} m` : ''}
+                        </span>
+                      )}
+                      {item.unit === 'pcs' && item.variant?.toLowerCase().includes('box') && (
+                        <span className="block text-[10px] font-semibold text-amber-600 dark:text-amber-400 font-mono mt-0.5">
+                          ≈ {Math.floor(item.stock / 100)} Box
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono text-xs">
-                    {item.min_stock_warning} {item.unit}
+                    {item.min_stock_warning.toLocaleString()} {item.unit}
                   </td>
                   <td className="py-3 px-4">
                     {item.is_low_stock ? (

@@ -494,20 +494,32 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                               </select>
 
                               <div className="flex items-center justify-between gap-2 pt-0.5">
-                                <label className="text-[10px] text-slate-500 font-semibold">
-                                  Jumlah Pemakaian:
-                                </label>
+                                <div>
+                                  <label className="text-[10px] text-slate-500 font-semibold block">
+                                    Jumlah Pemakaian:
+                                  </label>
+                                  {selectedMat?.unit.toLowerCase() === 'rim' && mat.material_qty > 0 && (
+                                    <span className="text-[9px] text-indigo-600 dark:text-indigo-400 font-semibold">
+                                      ≈ {(mat.material_qty / 500).toFixed(2)} Rim
+                                    </span>
+                                  )}
+                                  {selectedMat?.unit.toLowerCase() === 'roll' && mat.material_qty > 0 && (
+                                    <span className="text-[9px] text-indigo-600 dark:text-indigo-400 font-semibold">
+                                      ≈ {(mat.material_qty / 50).toFixed(2)} Roll
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800">
                                   <input
                                     type="number"
                                     min="1"
                                     value={mat.material_qty}
-                                    onChange={e => handleUpdateMaterialQty(item, idx, Number(e.target.value))}
-                                    className="w-14 text-center font-extrabold font-mono text-xs text-indigo-600 dark:text-indigo-400 bg-transparent outline-none"
+                                    onChange={e => handleUpdateMaterialQty(item, idx, Math.max(1, Number(e.target.value)))}
+                                    className="w-16 text-center font-extrabold font-mono text-xs text-indigo-600 dark:text-indigo-400 bg-transparent outline-none"
                                     placeholder="Qty"
                                   />
                                   <span className="text-[10px] font-bold text-slate-400">
-                                    {selectedMat?.unit || mat.material_unit || 'lembar'}
+                                    {selectedMat?.unit.toLowerCase() === 'rim' ? 'lembar' : (selectedMat?.unit.toLowerCase() === 'roll' ? 'meter' : (selectedMat?.unit || 'pcs'))}
                                   </span>
                                 </div>
                               </div>
@@ -568,9 +580,16 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-9 text-center text-xs font-black font-mono text-text-main">
-                      {item.qty}
-                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.qty}
+                      onChange={e => {
+                        const val = Math.max(1, parseInt(e.target.value) || 1);
+                        onUpdateQty(item.product.id, val - item.qty);
+                      }}
+                      className="w-11 text-center text-xs font-black font-mono text-text-main bg-transparent outline-none"
+                    />
                     <button 
                       type="button"
                       onClick={() => onUpdateQty(item.product.id, 1)} 
