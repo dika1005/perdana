@@ -363,6 +363,14 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
                         </span>
                       </div>
                     </div>
+
+                    {/* Peringatan stok tidak cukup */}
+                    {selectedMat && mat.material_qty > Number(selectedMat.stock) && (
+                      <div className="mt-1 px-2 py-1 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                        <span>⚠️</span>
+                        <span>Stok tidak cukup! Butuh {mat.material_qty} {selectedMat.unit}, tersisa {selectedMat.stock} {selectedMat.unit}. Transaksi akan ditolak.</span>
+                      </div>
+                    )}
                   </div>
                 );
               })}

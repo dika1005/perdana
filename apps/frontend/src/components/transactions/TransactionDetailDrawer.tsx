@@ -18,6 +18,7 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
   if (!transaction) return null;
 
   const canCancel =
+    transaction.order_status !== 'SELESAI' &&
     transaction.order_status !== 'DIAMBIL' &&
     transaction.order_status !== 'BATAL';
 

@@ -121,9 +121,12 @@ export default function TransactionsHistoryPage() {
     try {
       const data = await transactionService.getInvoiceData(id);
       setInvoicePrintData(data);
-    } catch {
-      const tx = transactions.find(t => t.id === id);
-      setInvoicePrintData(tx);
+    } catch (err: any) {
+      await showAlert({
+        title: 'Gagal Memuat Data Struk',
+        message: err?.response?.data?.message || 'Tidak dapat mengambil data invoice dari server. Silakan coba lagi.',
+        type: 'error',
+      });
     }
   };
 

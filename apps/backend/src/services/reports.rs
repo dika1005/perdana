@@ -47,6 +47,18 @@ pub async fn get_dashboard_summary(
     let mut ready_orders = 0;
 
     for t in &all_trans {
+        // Transaksi yang dibatalkan TIDAK dihitung ke finansial (omset, kas, piutang).
+        // Hanya masuk hitungan status pesanan agar dashboard tahu ada berapa yg batal.
+        match t.order_status {
+            OrderStatus::Antrian | OrderStatus::Proses => active_orders += 1,
+            OrderStatus::Selesai => ready_orders += 1,
+            OrderStatus::Diambil => {}
+            OrderStatus::Batal => {
+                // Skip perhitungan finansial untuk transaksi batal
+                continue;
+            }
+        }
+
         total_omset += t.total_amount;
         total_cash_in += t.pay_amount;
 
@@ -83,13 +95,6 @@ pub async fn get_dashboard_summary(
             PaymentStatus::Paid => paid_count += 1,
             PaymentStatus::Dp => dp_count += 1,
             PaymentStatus::Unpaid => unpaid_count += 1,
-        }
-
-        match t.order_status {
-            OrderStatus::Antrian | OrderStatus::Proses => active_orders += 1,
-            OrderStatus::Selesai => ready_orders += 1,
-            OrderStatus::Diambil => {}
-            OrderStatus::Batal => {}
         }
     }
 
@@ -199,6 +204,10 @@ pub async fn get_monthly_sales(
         .collect();
 
     for t in all_trans {
+        // Transaksi batal tidak masuk hitungan laporan bulanan
+        if t.order_status == OrderStatus::Batal {
+            continue;
+        }
         let m_idx = (t.created_at.month() as usize).saturating_sub(1);
         if m_idx < 12 {
             monthly_data[m_idx].total_sales += t.total_amount;
