@@ -42,6 +42,7 @@ interface CartSidebarProps {
   onUpdateDimensions: (id: number, length: number, width: number) => void;
   onUpdateMaterials?: (productId: number, materials: CartItemMaterial[]) => void;
   onToggleAddon: (productId: number, addon: ProductAddon) => void;
+  onUpdateAddonQty?: (productId: number, addonId: number, qty: number) => void;
   onRemoveFromCart: (id: number) => void;
   onClearCart: () => void;
   discountAmount: number;
@@ -106,6 +107,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   onUpdateDimensions,
   onUpdateMaterials,
   onToggleAddon,
+  onUpdateAddonQty,
   onRemoveFromCart,
   onClearCart,
   discountAmount,
@@ -533,29 +535,77 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
 
                 {/* 5. Finishing & Add-on Pills */}
                 {relevantAddons.length > 0 && (
-                  <div className="pt-1 border-t border-slate-100 dark:border-slate-800/60">
-                    <span className="text-[10px] font-bold text-slate-500 block mb-1 flex items-center gap-1">
+                  <div className="pt-1 border-t border-slate-100 dark:border-slate-800/60 space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-blue-500" />
                       <span>Finishing Tambahan:</span>
                     </span>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {relevantAddons.map(addon => {
-                        const isSelected = item.addons?.some(a => a.addon.id === addon.id);
+                        const selectedAddon = item.addons?.find(a => a.addon.id === addon.id);
+                        const isSelected = !!selectedAddon;
+                        const addonQty = selectedAddon?.qty || 1;
+                        const addonSubtotal = (Number(addon.default_price) || 0) * addonQty;
+
                         return (
-                          <button
+                          <div
                             key={addon.id}
-                            type="button"
-                            onClick={() => onToggleAddon(item.product.id, addon)}
-                            className={`px-2 py-0.5 text-[10px] rounded-md font-medium flex items-center gap-1 transition-all ${
+                            className={`flex items-center rounded-lg border transition-all ${
                               isSelected
-                                ? 'bg-blue-600 text-white font-bold'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                                ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 dark:border-blue-700 text-blue-900 dark:text-blue-200 shadow-2xs'
+                                : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                             }`}
                           >
-                            {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
-                            <span>{addon.name}</span>
-                            <span className="opacity-80 font-mono">(+{formatRupiah(addon.default_price)})</span>
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => onToggleAddon(item.product.id, addon)}
+                              className="px-2 py-1 text-[11px] font-semibold flex items-center gap-1"
+                            >
+                              {isSelected && <Check className="w-3 h-3 text-blue-600 dark:text-blue-400" />}
+                              <span>{addon.name}</span>
+                              <span className="opacity-80 font-mono text-[10px]">
+                                {isSelected && addonQty > 1 ? `(${addonQty}x = ${formatRupiah(addonSubtotal)})` : `(+${formatRupiah(addon.default_price)})`}
+                              </span>
+                            </button>
+
+                            {isSelected && (
+                              <div className="flex items-center border-l border-blue-300 dark:border-blue-800 pl-1 pr-1.5 py-0.5 gap-1 bg-white/80 dark:bg-slate-900/80 rounded-r-lg">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onUpdateAddonQty?.(item.product.id, addon.id, Math.max(1, addonQty - 1));
+                                  }}
+                                  className="w-4 h-4 flex items-center justify-center rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 text-[11px] font-black leading-none cursor-pointer"
+                                  title="Kurangi jumlah finishing"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={addonQty}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    const val = Math.max(1, parseInt(e.target.value) || 1);
+                                    onUpdateAddonQty?.(item.product.id, addon.id, val);
+                                  }}
+                                  className="w-7 text-center font-mono font-black text-xs bg-transparent outline-none text-blue-700 dark:text-blue-300"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onUpdateAddonQty?.(item.product.id, addon.id, addonQty + 1);
+                                  }}
+                                  className="w-4 h-4 flex items-center justify-center rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 text-[11px] font-black leading-none cursor-pointer"
+                                  title="Tambah jumlah finishing"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>

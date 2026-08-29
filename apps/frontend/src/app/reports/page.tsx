@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { Calendar, RefreshCw, Download, TrendingUp, Package, AlertTriangle, CreditCard } from 'lucide-react';
+import { Calendar, RefreshCw, Download, TrendingUp, Package, AlertTriangle, CreditCard, Printer } from 'lucide-react';
 import { reportService } from '../../services/reportService';
 import { transactionService } from '../../services/transactionService';
 import { 
@@ -22,6 +22,7 @@ import { ReportReceivablesTab } from '../../components/reports/ReportReceivables
 import { ReportLowStockTab } from '../../components/reports/ReportLowStockTab';
 import { ReportMutationsTab } from '../../components/reports/ReportMutationsTab';
 import { ReportPayModal } from '../../components/reports/ReportPayModal';
+import { ReportPrintModal } from '../../components/reports/ReportPrintModal';
 
 export default function ReportsPage() {
   const { showAlert, showToast } = useAlert();
@@ -39,6 +40,9 @@ export default function ReportsPage() {
   const [receivables, setReceivables] = useState<ReceivableItem[]>([]);
   const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
   const [mutations, setMutations] = useState<InventoryMutationReport[]>([]);
+
+  // Modal Cetak Laporan
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   // Modal Pelunasan DP
   const [payModal, setPayModal] = useState<{ open: boolean; item?: ReceivableItem | null }>({ open: false });
@@ -153,20 +157,27 @@ export default function ReportsPage() {
           <h1 className="text-3xl font-bold text-text-main mb-1">Laporan & Rekapitulasi Bisnis</h1>
           <p className="text-text-muted text-sm">Analisis pendapatan bulanan, piutang pesanan, kontrol bahan baku, dan mutasi.</p>
         </div>
-        <div className="flex gap-2.5">
+        <div className="flex flex-wrap gap-2.5">
           <button 
             onClick={fetchReportsData} 
-            className="flex items-center gap-2 px-4 py-2.5 font-bold skeuo-button text-text-main text-sm rounded-xl"
+            className="flex items-center gap-1.5 px-3.5 py-2 font-bold skeuo-button text-slate-700 dark:text-slate-300 text-xs rounded-xl"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Segarkan
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Segarkan</span>
+          </button>
+          <button 
+            onClick={() => setShowPrintModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 font-bold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-md transition-colors"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Cetak Rekap Bulanan (PDF)</span>
           </button>
           <button 
             onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2.5 font-bold skeuo-button text-emerald-600 text-sm rounded-xl"
+            className="flex items-center gap-1.5 px-3.5 py-2 font-bold skeuo-button text-emerald-700 dark:text-emerald-400 text-xs rounded-xl"
           >
-            <Download className="w-4 h-4" />
-            Export CSV / Excel
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
@@ -308,6 +319,18 @@ export default function ReportsPage() {
         submitting={submittingPay}
         onClose={() => setPayModal({ open: false })}
         onSubmit={handleSubmitPayment}
+      />
+
+      {/* Modal Cetak Rekap Laporan Bulanan & Keuangan */}
+      <ReportPrintModal
+        isOpen={showPrintModal}
+        selectedYear={selectedYear}
+        summary={summary}
+        monthlySales={monthlySales}
+        topProducts={topProducts}
+        startDate={startDate}
+        endDate={endDate}
+        onClose={() => setShowPrintModal(false)}
       />
     </DashboardLayout>
   );

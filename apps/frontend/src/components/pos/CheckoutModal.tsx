@@ -181,14 +181,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </button>
               </div>
 
-              <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus-within:border-blue-500">
+              <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus-within:border-blue-500 flex items-center gap-2">
+                <span className="font-bold text-slate-400 text-sm">Rp</span>
                 <input 
-                  type="number" 
-                  min="0"
-                  value={payAmount || ''}
-                  onChange={e => onPayAmountChange(Number(e.target.value))}
+                  type="text" 
+                  value={payAmount > 0 ? payAmount.toLocaleString('id-ID') : ''}
+                  onChange={e => {
+                    const clean = e.target.value.replace(/\D/g, '');
+                    onPayAmountChange(clean ? parseInt(clean, 10) : 0);
+                  }}
                   placeholder="0"
-                  className="bg-transparent border-none outline-none w-full text-text-main font-black text-xl font-mono"
+                  className="bg-transparent border-none outline-none w-full text-slate-900 dark:text-slate-100 font-black text-xl font-mono"
                 />
               </div>
 

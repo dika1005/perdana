@@ -255,11 +255,12 @@ export default function TransactionsHistoryPage() {
       />
 
       {/* Shared Receipt Thermal Slip Modal */}
-      <ReceiptModal
-        invoiceData={invoicePrintData}
-        onClose={() => setInvoicePrintData(null)}
-        onPrint={() => window.print()}
-      />
+      {invoicePrintData && (
+        <ReceiptModal
+          invoiceData={invoicePrintData}
+          onClose={() => setInvoicePrintData(null)}
+        />
+      )}
     </DashboardLayout>
   );
 }

@@ -111,14 +111,25 @@ export const TrackingSettleModal: React.FC<TrackingSettleModalProps> = ({
 
           <div>
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nominal Pelunasan Diterima (Rp) *</label>
-            <input
-              type="number"
-              required
-              min="0"
-              value={payAmount || ''}
-              onChange={e => onPayAmountChange(Number(e.target.value))}
-              className="w-full px-4 py-2.5 skeuo-inset outline-none text-text-main rounded-xl font-bold text-base bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800"
-            />
+            <div className="px-4 py-2.5 skeuo-inset rounded-xl bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 focus-within:border-emerald-500 flex items-center gap-2">
+              <span className="font-bold text-slate-400 text-sm">Rp</span>
+              <input
+                type="text"
+                required
+                value={payAmount > 0 ? payAmount.toLocaleString('id-ID') : ''}
+                onChange={e => {
+                  const clean = e.target.value.replace(/\D/g, '');
+                  onPayAmountChange(clean ? parseInt(clean, 10) : 0);
+                }}
+                placeholder="0"
+                className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-slate-100 font-bold text-base font-mono"
+              />
+            </div>
+            {payAmount > 0 && (
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+                Terbilang: {formatRupiah(payAmount)}
+              </p>
+            )}
           </div>
         </div>
 

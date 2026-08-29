@@ -12,15 +12,20 @@ import { createWaLink } from '../../utils/whatsapp';
 import { useAlert } from '../../context/AlertContext';
 
 // Modular Tracking Components
+import { RawMaterial } from '../../types/rawMaterial';
+import { rawMaterialService } from '../../services/rawMaterialService';
 import { TrackingColumn } from '../../components/tracking/TrackingColumn';
 import { TrackingSettleModal } from '../../components/tracking/TrackingSettleModal';
-import { TrackingWhatsAppModal } from '../../components/tracking/TrackingWhatsAppModal';
+import { TrackingWhatsAppModal, generateWhatsAppMessage } from '../../components/tracking/TrackingWhatsAppModal';
+import { TrackingDetailModal } from '../../components/tracking/TrackingDetailModal';
+import { JobTicketModal } from '../../components/tracking/JobTicketModal';
 import { ReceiptModal } from '../../components/pos/ReceiptModal';
 
 export default function JobTrackingPage() {
   const { showAlert, showToast } = useAlert();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,14 +35,22 @@ export default function JobTrackingPage() {
   const [settlePaymentMethod, setSettlePaymentMethod] = useState<PaymentMethod>('CASH');
   const [submittingSettle, setSubmittingSettle] = useState(false);
   const [waModal, setWaModal] = useState<{ open: boolean; job: any | null; phone: string }>({ open: false, job: null, phone: '' });
-  const [printModal, setPrintModal] = useState<{ open: boolean; invoiceData: any | null }>({ open: false, invoiceData: null });
+  const [spkModal, setSpkModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
+  const [detailModal, setDetailModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
+  const [receiptModal, setReceiptModal] = useState<{ open: boolean; invoiceData: any | null }>({ open: false, invoiceData: null });
 
   const fetchJobs = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await transactionService.getTransactions({ per_page: 100 });
+      const [res, custRes, matRes] = await Promise.all([
+        transactionService.getTransactions({ per_page: 100 }),
+        customerService.getCustomers(),
+        rawMaterialService.getRawMaterials(),
+      ]);
       setTransactions(res.data);
+      setCustomers(custRes.data);
+      setRawMaterials(matRes.data);
     } catch (err: any) {
       console.error('Failed to load tracking data:', err);
       setError(err?.response?.data?.message || 'Gagal memuat data antrian produksi');
@@ -48,7 +61,6 @@ export default function JobTrackingPage() {
 
   useEffect(() => {
     fetchJobs();
-    customerService.getCustomers().then(res => setCustomers(res.data)).catch(() => {});
   }, []);
 
   const handleAdvanceStatus = async (id: number, currentStatus: OrderStatus) => {
@@ -106,17 +118,25 @@ export default function JobTrackingPage() {
     }
   };
 
-  const handleSendWhatsApp = (job: any) => {
+  const handleSendWhatsApp = async (job: any) => {
     const cust = customers.find(c => c.id === job.customer_id);
-    const phone = cust?.phone || '';
-    setWaModal({ open: true, job, phone });
+    const phone = cust?.phone || job.customer_phone || '';
+    let fullJob = job;
+    if (!job.items || job.items.length === 0) {
+      try {
+        const fetched = await transactionService.getTransactionById(job.id);
+        if (fetched) fullJob = fetched;
+      } catch (e) {
+        console.error('Failed to load transaction items for WA:', e);
+      }
+    }
+    setWaModal({ open: true, job: fullJob, phone });
   };
 
   const handleSendWhatsAppSubmit = () => {
     if (!waModal.job) return;
 
-    const message = `Halo Kak ${waModal.job.customer_name || 'Pelanggan'},\n\nPesanan percetakan Anda dengan nomor nota *${waModal.job.invoice_number}* sudah *SELESAI DIKERJAKAN* dan siap diambil di toko Perdana Percetakan.\n\nTotal: ${formatRupiah(waModal.job.total_amount)}\nStatus: ${waModal.job.payment_status === 'PAID' ? 'LUNAS' : `Sisa Tagihan ${formatRupiah(Number(waModal.job.total_amount) - Number(waModal.job.pay_amount))}`}\n\nTerima kasih!`;
-
+    const message = generateWhatsAppMessage(waModal.job);
     const url = createWaLink(waModal.phone, message);
     window.open(url, '_blank');
     setWaModal({ open: false, job: null, phone: '' });
@@ -124,42 +144,66 @@ export default function JobTrackingPage() {
 
   const handlePrintSpk = async (job: any) => {
     try {
+      const fullJob = await transactionService.getTransactionById(job.id);
+      setSpkModal({ open: true, job: fullJob || job });
+    } catch (err) {
+      setSpkModal({ open: true, job });
+    }
+  };
+
+  const handleOpenDetail = async (job: any) => {
+    try {
+      const fullJob = await transactionService.getTransactionById(job.id);
+      setDetailModal({ open: true, job: fullJob || job });
+    } catch (err) {
+      setDetailModal({ open: true, job });
+    }
+  };
+
+  const handlePrintReceipt = async (job: any) => {
+    try {
       const invoice = await transactionService.getInvoiceData(job.id);
-      setPrintModal({ open: true, invoiceData: invoice });
-    } catch (err: any) {
-      console.error('Failed to load invoice for SPK:', err);
-      showToast('Gagal memuat data struk/SPK', 'error');
+      setReceiptModal({ open: true, invoiceData: invoice });
+    } catch (err) {
+      setReceiptModal({ open: true, invoiceData: job });
     }
   };
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-main mb-1">Kanban Antrian Produksi & Tracking</h1>
-          <p className="text-text-muted text-xs sm:text-sm">Pantau proses cetak, cetak tiket SPK kerja, notifikasi WhatsApp, dan serah terima pesanan.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <span>Antrian & Pelacakan Produksi</span>
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Pantau status pengerjaan pesanan cetak dan cetak SPK untuk operator produksi.
+          </p>
         </div>
         <button 
           onClick={fetchJobs} 
-          className="flex items-center gap-2 px-4 py-2 font-bold skeuo-button text-text-main text-xs sm:text-sm rounded-xl cursor-pointer"
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold skeuo-button text-blue-600 dark:text-blue-400 hover:text-blue-700 rounded-xl self-start sm:self-auto"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Segarkan Antrian</span>
         </button>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50 text-red-600 text-sm">
-          {error}
+        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50/50 border border-red-200 text-red-600 text-xs flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={fetchJobs} className="underline font-bold">Coba Lagi</button>
         </div>
       )}
 
-      {/* Kanban Columns */}
+      {/* Kanban Board 4 Kolom */}
       <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
         <TrackingColumn
           title="Antrian Cetak"
           status="ANTRIAN"
-          icon={Clock}
+          icon={AlertCircle}
           colorClass="text-amber-700 dark:text-amber-300"
           bgClass="bg-amber-50/70 dark:bg-amber-950/40 border-b border-amber-100 dark:border-amber-900/50"
           transactions={transactions}
@@ -168,11 +212,13 @@ export default function JobTrackingPage() {
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
           onPrintSpk={handlePrintSpk}
+          onOpenDetail={handleOpenDetail}
         />
+        
         <TrackingColumn
-          title="Sedang Diproses"
+          title="Sedang Dikerjakan"
           status="PROSES"
-          icon={AlertCircle}
+          icon={Clock}
           colorClass="text-blue-700 dark:text-blue-300"
           bgClass="bg-blue-50/70 dark:bg-blue-950/40 border-b border-blue-100 dark:border-blue-900/50"
           transactions={transactions}
@@ -181,9 +227,11 @@ export default function JobTrackingPage() {
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
           onPrintSpk={handlePrintSpk}
+          onOpenDetail={handleOpenDetail}
         />
+
         <TrackingColumn
-          title="Selesai — Siap Ambil"
+          title="Siap Diambil"
           status="SELESAI"
           icon={CheckCircle2}
           colorClass="text-purple-700 dark:text-purple-300"
@@ -194,7 +242,9 @@ export default function JobTrackingPage() {
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
           onPrintSpk={handlePrintSpk}
+          onOpenDetail={handleOpenDetail}
         />
+
         <TrackingColumn
           title="Sudah Diambil"
           status="DIAMBIL"
@@ -207,6 +257,7 @@ export default function JobTrackingPage() {
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
           onPrintSpk={handlePrintSpk}
+          onOpenDetail={handleOpenDetail}
         />
       </div>
 
@@ -233,12 +284,30 @@ export default function JobTrackingPage() {
         onSubmit={handleSendWhatsAppSubmit}
       />
 
-      {/* SPK / Receipt Print Modal */}
-      {printModal.open && printModal.invoiceData && (
+      {/* SPK / Tiket Kerja Operator Modal */}
+      <JobTicketModal
+        isOpen={spkModal.open}
+        job={spkModal.job}
+        customers={customers}
+        onClose={() => setSpkModal({ open: false, job: null })}
+      />
+
+      {/* Detail Pesanan & Cek Nota Modal */}
+      <TrackingDetailModal
+        isOpen={detailModal.open}
+        job={detailModal.job}
+        customers={customers}
+        onClose={() => setDetailModal({ open: false, job: null })}
+        onPrintSpk={handlePrintSpk}
+        onPrintReceipt={handlePrintReceipt}
+        onOpenSettle={handleOpenSettle}
+      />
+
+      {/* Struk / Nota Kasir Modal */}
+      {receiptModal.open && receiptModal.invoiceData && (
         <ReceiptModal
-          invoiceData={printModal.invoiceData}
-          onClose={() => setPrintModal({ open: false, invoiceData: null })}
-          onPrint={() => window.print()}
+          invoiceData={receiptModal.invoiceData}
+          onClose={() => setReceiptModal({ open: false, invoiceData: null })}
         />
       )}
     </DashboardLayout>

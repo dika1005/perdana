@@ -166,9 +166,22 @@ export default function POSPage() {
         updatedAddons = [...existingAddons, {
           addon,
           price: Number(addon.default_price) || 0,
-          qty: item.qty,
+          qty: 1, // Default 1x finishing, bisa ditambah stepper 2x, 3x, 4x
         }];
       }
+      return { ...item, addons: updatedAddons };
+    }));
+  };
+
+  const handleUpdateAddonQty = (productId: number, addonId: number, qty: number) => {
+    setCart(prevCart => prevCart.map(item => {
+      if (item.product.id !== productId) return item;
+      const updatedAddons = (item.addons || []).map(a => {
+        if (a.addon.id === addonId) {
+          return { ...a, qty: Math.max(1, qty) };
+        }
+        return a;
+      });
       return { ...item, addons: updatedAddons };
     }));
   };
@@ -301,18 +314,36 @@ export default function POSPage() {
       };
 
       const res = await transactionService.createTransaction(payload as any);
-      setInvoiceData({
-        ...res,
-        items: cart.map(c => ({
-          product_name: c.product.name,
-          qty: c.qty,
-          custom_price: c.price,
-          unit_name: c.product.unit_name,
-          length: c.length,
-          width: c.width,
-        })),
-        store_name: 'PERDANA PERCETAKAN',
-      });
+      
+      // Ambil data invoice resmi dari backend agar 100% identik dengan struk di antrian pesanan
+      try {
+        const officialInvoice = await transactionService.getInvoiceData(res.id);
+        setInvoiceData(officialInvoice);
+      } catch {
+        setInvoiceData({
+          ...res,
+          cashier_name: res.cashier_name || 'Kasir',
+          store_name: 'PERCETAKAN PERDANA',
+          store_address: 'Depan Polsek Ciawigebang - Kuningan',
+          store_phone: '0812-3456-7890',
+          items: cart.map(c => ({
+            product_name: c.product.name,
+            qty: c.qty,
+            price: c.price,
+            subtotal: c.price * c.qty,
+            unit_name: c.product.unit_name,
+            length: c.length,
+            width: c.width,
+            addons: (c.addons || []).map(a => ({
+              addon_name: a.addon.name,
+              price: a.price,
+              qty: a.qty,
+              subtotal: a.price * a.qty,
+            })),
+          })),
+        });
+      }
+
       setShowCheckoutModal(false);
       showToast('Transaksi berhasil diproses!', 'success');
 
@@ -408,6 +439,7 @@ export default function POSPage() {
           onUpdateDimensions={updateDimensions}
           onUpdateMaterials={updateMaterials}
           onToggleAddon={handleToggleAddon}
+          onUpdateAddonQty={handleUpdateAddonQty}
           onRemoveFromCart={removeFromCart}
           onClearCart={clearCart}
           discountAmount={discountAmount}

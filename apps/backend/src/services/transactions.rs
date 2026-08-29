@@ -132,16 +132,42 @@ pub async fn list(
         vec![]
     };
 
+    // Load items for each transaction
+    let tx_items_list = items.load_many(TransactionItem::find(), db).await?;
+    let all_item_ids: Vec<i32> = tx_items_list.iter().flat_map(|its| its.iter().map(|it| it.id)).collect();
+    let all_addons = if !all_item_ids.is_empty() {
+        TransactionItemAddon::find()
+            .filter(transaction_item_addons::Column::TransactionItemId.is_in(all_item_ids))
+            .all(db)
+            .await?
+    } else {
+        vec![]
+    };
+
     let result = items
         .into_iter()
-        .map(|t| {
+        .zip(tx_items_list.into_iter())
+        .map(|(t, t_items)| {
             let c_name = t.created_by.and_then(|id| {
                 cashiers
                     .iter()
                     .find(|u| u.id == id)
                     .map(|u| u.name.clone())
             });
-            map_transaction(&t, c_name, None)
+
+            let mapped_items: Vec<TransactionItemResponse> = t_items
+                .into_iter()
+                .map(|it| {
+                    let it_addons = all_addons
+                        .iter()
+                        .filter(|ad| ad.transaction_item_id == it.id)
+                        .map(map_item_addon)
+                        .collect();
+                    map_item(&it, it_addons)
+                })
+                .collect();
+
+            map_transaction(&t, c_name, Some(mapped_items))
         })
         .collect();
 

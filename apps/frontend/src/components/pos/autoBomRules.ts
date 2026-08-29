@@ -4,7 +4,8 @@ import { CartItemMaterial } from './types';
 
 /**
  * Smart Auto-BOM Engine (Bill of Materials Lengkap Percetakan Perdana):
- * Menghitung resep bahan baku otomatis untuk seluruh produk toko secara presisi dan multi-bahan.
+ * Menghasilkan rekomendasi resep bahan baku lengkap & riil untuk seluruh produk cetak:
+ * (Bahan Utama/Kertas + Tinta Cetak CMYK + Perekat/Lem + Plastik Packing/Stand).
  */
 export function calculateAutoMaterials(
   product: Product,
@@ -24,11 +25,13 @@ export function calculateAutoMaterials(
   const safeWidth = width > 0 ? width : 1;
   const areaMeter = Math.max(1, Math.ceil(safeLength * safeWidth * safeQty));
 
-  // Helper pencari bahan dengan multi-keyword toleran
+  // Helper pencari bahan dengan multi-keyword toleran (mencari di nama & varian)
   const findMat = (...patterns: string[]): RawMaterial | undefined => {
     for (const pattern of patterns) {
       const p = pattern.toLowerCase();
-      const found = allMaterials.find(m => m.name.toLowerCase().includes(p));
+      const found = allMaterials.find(m => 
+        m.name.toLowerCase().includes(p) || (m.variant && m.variant.toLowerCase().includes(p))
+      );
       if (found) return found;
     }
     return undefined;
@@ -57,19 +60,24 @@ export function calculateAutoMaterials(
   // =========================================================================
   if (pName.includes('spanduk kain') || pName.includes('bendera') || pName.includes('umbul')) {
     addMat(findMat('kain tc', 'spanduk kain', 'kain'), areaMeter);
-    addMat(findMat('tinta cetak black', 'tinta'), 1);
+    addMat(findMat('tinta cetak black', 'tinta black'), 1);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
     return results;
   }
 
   if (pName.includes('x banner') || pName.includes('x-banner')) {
-    addMat(findMat('flexi banner', 'flexi', 'banner'), safeQty);
+    addMat(findMat('flexi banner', 'flexi', 'banner'), safeQty * 2); // ~2 meter per banner
     addMat(findMat('stand x banner', 'stand x', 'stand'), safeQty);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak magenta', 'tinta magenta'), 1);
     return results;
   }
 
   if (pName.includes('roll banner')) {
-    addMat(findMat('flexi banner', 'flexi', 'banner'), safeQty);
+    addMat(findMat('flexi banner', 'flexi', 'banner'), safeQty * 2);
     addMat(findMat('rangka roll banner', 'roll banner', 'rangka'), safeQty);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak magenta', 'tinta magenta'), 1);
     return results;
   }
 
@@ -80,7 +88,8 @@ export function calculateAutoMaterials(
 
   if (pName.includes('spanduk') || (pName.includes('banner') && !pName.includes('stand'))) {
     addMat(findMat('flexi banner', 'flexi', 'banner'), areaMeter);
-    addMat(findMat('tinta cetak cyan', 'tinta'), 1);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak magenta', 'tinta magenta'), 1);
     return results;
   }
 
@@ -89,11 +98,15 @@ export function calculateAutoMaterials(
   // =========================================================================
   if (pName.includes('sticker (meter)') || pName.includes('sticker cutting') || pName.includes('stiker vinyl') || pName.includes('meter')) {
     addMat(findMat('stiker vinyl', 'vinyl roll', 'vinyl'), areaMeter);
+    addMat(findMat('tinta cetak black', 'tinta black'), 1);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
     return results;
   }
 
   if (pName.includes('sticker') || pName.includes('stiker')) {
     addMat(findMat('stiker cromo', 'cromo', 'stiker'), safeQty);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak magenta', 'tinta magenta'), 1);
     return results;
   }
 
@@ -102,13 +115,14 @@ export function calculateAutoMaterials(
   // =========================================================================
   if (pName.includes('stempel flash')) {
     addMat(findMat('karet stempel', 'karet', 'stempel'), safeQty);
-    addMat(findMat('tinta cetak cyan', 'tinta cyan', 'tinta'), 1);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak black', 'tinta black'), 1);
     return results;
   }
 
   if (pName.includes('stempel')) {
     addMat(findMat('karet stempel', 'karet', 'stempel'), safeQty);
-    addMat(findMat('tinta cetak black', 'tinta black', 'tinta'), 1);
+    addMat(findMat('tinta cetak black', 'tinta black'), 1);
     return results;
   }
 
@@ -116,19 +130,21 @@ export function calculateAutoMaterials(
   // 4. UNDANGAN & AMPLOP
   // =========================================================================
   if (pName.includes('undangan digital')) {
-    return []; // Produk digital
+    return []; // Produk jasa digital tanpa bahan fisik
   }
 
   if (pName.includes('undangan blangko')) {
-    addMat(findMat('bc tik', 'bw 21', 'kunsruk'), Math.max(1, Math.ceil(safeQty * 0.5)));
-    addMat(findMat('plastik und. ukuran 11', 'plastik und', 'plastik'), safeQty);
+    addMat(findMat('kertas bc tik', 'bc tik', 'bw 21'), Math.max(1, Math.ceil(safeQty * 0.5)));
+    addMat(findMat('tinta cetak black', 'tinta black'), 1);
+    addMat(findMat('plastik und. ukuran 11', 'plastik und. ukuran 12', 'plastik und'), safeQty);
     return results;
   }
 
   if (pName.includes('undangan')) {
-    // 1 Plano BW 23 = 2 Undangan fisik (0.5 lembar per undangan)
-    addMat(findMat('bw 23', 'kunsruk', 'bw 21'), Math.max(1, Math.ceil(safeQty * 0.5)));
-    addMat(findMat('plastik und. ukuran 11', 'plastik und', 'plastik'), safeQty);
+    addMat(findMat('kertas bw 23', 'bw 23', 'kunsruk', 'bw 21'), Math.max(1, Math.ceil(safeQty * 0.5)));
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak magenta', 'tinta magenta'), 1);
+    addMat(findMat('plastik und. ukuran 11', 'plastik und. ukuran 12', 'plastik und'), safeQty);
     return results;
   }
 
@@ -138,11 +154,15 @@ export function calculateAutoMaterials(
     } else {
       addMat(findMat('amplop sedang', 'amplop'), safeQty * 100);
     }
+    if (pName.includes('custom') || pName.includes('cetak')) {
+      addMat(findMat('tinta cetak black', 'tinta black'), 1);
+      addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    }
     return results;
   }
 
   // =========================================================================
-  // 5. NOTA, FAKTUR & KOP SURAT (Satuan Rim = 500 Lembar)
+  // 5. NOTA, FAKTUR & KOP SURAT
   // =========================================================================
   if (pName.includes('nota') || pName.includes('faktur') || pName.includes('kwitansi')) {
     const sheetsPerRim = 500 * safeQty;
@@ -156,22 +176,28 @@ export function calculateAutoMaterials(
     } else {
       addMat(findMat('hvs f4 putih', 'hvs'), sheetsPerRim);
     }
+    // Tinta Cetak Nota
+    addMat(findMat('tinta cetak black', 'tinta black'), 1);
+    // Lem Jilid Nota
+    addMat(findMat('lem fox', 'lem'), 1);
     return results;
   }
 
   if (pName.includes('kop surat')) {
     addMat(findMat('hvs f4 putih', 'hvs'), 500 * safeQty);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak black', 'tinta black'), 1);
     return results;
   }
 
   // =========================================================================
-  // 6. BUKU YASIN, MAJMU & QUR'AN (Multi Bahan: Isi + Cover + Lem + Plastik)
+  // 6. BUKU YASIN, MAJMU & QUR'AN (Multi Bahan Lengkap: Isi + Cover + Lem + Plastik)
   // =========================================================================
   if (pName.includes('yasin') || pName.includes('majmu') || pName.includes("qur'an") || pName.includes('quran')) {
     const isAP = pName.includes('ap') || pName.includes('art paper');
     const isHardCover = pName.includes('hard');
     
-    // Tentukan lembar isi per buku
+    // Hitung lembar isi per buku
     let sheetsPerBook = 16; // default 128 hal HVS
     if (pName.includes('176')) sheetsPerBook = 22;
     else if (pName.includes('208')) sheetsPerBook = 26;
@@ -184,22 +210,22 @@ export function calculateAutoMaterials(
 
     const totalSheets = sheetsPerBook * safeQty;
 
-    // 1. Bahan Isi Buku
+    // 1. Kertas Isi Buku
     if (isAP) {
-      addMat(findMat('kunsruk', 'art paper', 'kertas kunsruk'), totalSheets);
+      addMat(findMat('kertas kunsruk', 'kunsruk', 'art paper'), totalSheets);
     } else if (pName.includes('majmu')) {
-      addMat(findMat('ciwi putih', 'ciwi', 'hvs f4 putih'), totalSheets);
+      addMat(findMat('ciwi putih', 'kertas ciwi', 'hvs f4 putih'), totalSheets);
     } else {
-      addMat(findMat('hvs f4 putih', 'hvs', 'kertas hvs'), totalSheets);
+      addMat(findMat('hvs f4 putih', 'kertas hvs', 'hvs'), totalSheets);
     }
 
-    // 2. Bahan Cover Buku
+    // 2. Kertas Cover Buku
     if (isHardCover) {
-      addMat(findMat('kunsruk', 'bw 23', 'art paper'), safeQty);
+      addMat(findMat('kertas kunsruk', 'kunsruk', 'bw 23'), safeQty);
       // 3. Perekat Lem Fox
       addMat(findMat('lem fox', 'lem'), Math.max(1, Math.ceil(safeQty * 0.02)));
     } else {
-      addMat(findMat('bw 23', 'bw 21', 'kunsruk'), safeQty);
+      addMat(findMat('kertas bw 23', 'bw 23', 'bw 21', 'kunsruk'), safeQty);
     }
 
     // 4. Plastik Pembungkus Souvenir Yasin
@@ -212,37 +238,55 @@ export function calculateAutoMaterials(
   // 7. BROSUR, MAP, KALENDER & SERTIFIKAT
   // =========================================================================
   if (pName.includes('brosur')) {
+    const isFullColour = pName.includes('full') || pName.includes('colour') || pName.includes('color');
+    const isHvs = pName.includes('hvs');
     const sheetsPerRim = 500 * safeQty;
-    if (pName.includes('hvs')) {
-      addMat(findMat('hvs f4 putih', 'hvs'), sheetsPerRim);
-      addMat(findMat('tinta cetak black', 'tinta'), 1);
+
+    // 1. Kertas Bahan Brosur
+    if (isHvs) {
+      addMat(findMat('kertas hvs f4 putih', 'hvs f4 putih', 'hvs'), sheetsPerRim);
     } else {
-      addMat(findMat('kunsruk', 'art paper'), sheetsPerRim);
-      addMat(findMat('tinta cetak cyan', 'tinta'), 1);
+      addMat(findMat('kertas kunsruk', 'kunsruk', 'art paper'), sheetsPerRim);
     }
+
+    // 2. Tinta Cetak
+    if (isFullColour) {
+      addMat(findMat('tinta cetak cyan', 'cyan'), 1);
+      addMat(findMat('tinta cetak magenta', 'magenta'), 1);
+      addMat(findMat('tinta cetak yellow', 'yellow'), 1);
+      addMat(findMat('tinta cetak black', 'black'), 1);
+    } else {
+      addMat(findMat('tinta cetak black', 'tinta black'), 1);
+    }
+
+    // 3. Plastik Packing Brosur
+    addMat(findMat('plastik und. ukuran 15', 'plastik und. ukuran 14', 'plastik und'), safeQty);
+
     return results;
   }
 
   if (pName.includes('map') || pName.includes('raport') || pName.includes('sampul')) {
-    addMat(findMat('bc tik', 'ciwi putih', 'bw 21'), safeQty);
+    addMat(findMat('kertas bc tik', 'bc tik', 'bw 21'), safeQty);
     if (pName.includes('cetak') || pName.includes('emboss') || pName.includes('raport')) {
-      addMat(findMat('ciwi putih', 'ciwi', 'bw 23'), safeQty * 5);
+      addMat(findMat('ciwi putih', 'kertas ciwi', 'bw 23'), safeQty * 5);
+      addMat(findMat('lem fox', 'lem'), 1);
     }
     return results;
   }
 
   if (pName.includes('kalender')) {
-    addMat(findMat('kunsruk', 'art paper'), safeQty * 6);
-    addMat(findMat('bw 23', 'kunsruk'), safeQty);
+    addMat(findMat('kertas kunsruk', 'kunsruk', 'art paper'), safeQty * 6);
+    addMat(findMat('kertas bw 23', 'bw 23'), safeQty);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak magenta', 'tinta magenta'), 1);
     return results;
   }
 
   if (pName.includes('sertifikat') || pName.includes('piagam')) {
-    if (unit.includes('rim') || pName.includes('/rim')) {
-      addMat(findMat('bw 23', 'bc tik'), 500 * safeQty);
-    } else {
-      addMat(findMat('bw 23', 'bc tik'), safeQty);
-    }
+    const amount = (unit.includes('rim') || pName.includes('/rim')) ? 500 * safeQty : safeQty;
+    addMat(findMat('kertas bw 23', 'bw 23', 'kertas bc tik', 'bc tik'), amount);
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak black', 'tinta black'), 1);
     return results;
   }
 
@@ -250,40 +294,48 @@ export function calculateAutoMaterials(
   // 8. SOUVENIR, ID CARD, KEMASAN & BUKU
   // =========================================================================
   if (pName.includes('id card') || pName.includes('lanyard')) {
-    addMat(findMat('lanyard', 'case id', 'tali'), safeQty);
-    addMat(findMat('stiker cromo', 'cromo'), Math.max(1, Math.ceil(safeQty / 10)));
+    addMat(findMat('tali lanyard & case id', 'lanyard', 'case id'), safeQty);
+    addMat(findMat('kertas stiker cromo', 'stiker cromo', 'cromo'), Math.max(1, Math.ceil(safeQty / 10)));
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
     return results;
   }
 
   if (pName.includes('gantungan kunci') || pName.includes('name tag')) {
-    addMat(findMat('gantungan kunci', 'ganci', 'akrilik'), safeQty);
+    addMat(findMat('gantungan kunci polos', 'gantungan kunci', 'akrilik'), safeQty);
+    addMat(findMat('kertas stiker cromo', 'stiker cromo'), Math.max(1, Math.ceil(safeQty / 20)));
     return results;
   }
 
   if (pName.includes('box makanan') || pName.includes('paper bag')) {
-    addMat(findMat('kunsruk', 'bw 23', 'bc tik'), safeQty);
+    addMat(findMat('kertas kunsruk', 'kunsruk', 'kertas bw 23', 'bc tik'), safeQty);
     addMat(findMat('lem fox', 'lem'), Math.max(1, Math.ceil(safeQty * 0.01)));
+    addMat(findMat('tinta cetak black', 'tinta black'), 1);
     return results;
   }
 
   if (pName.includes('note book') || pName.includes('notebook')) {
-    addMat(findMat('hvs f4 putih', 'hvs'), safeQty * 25);
-    addMat(findMat('bw 21', 'bw 23'), safeQty);
+    addMat(findMat('hvs f4 putih', 'kertas hvs', 'hvs'), safeQty * 25);
+    addMat(findMat('kertas bw 21', 'bw 21', 'bw 23'), safeQty);
+    addMat(findMat('lem fox', 'lem'), 1);
     return results;
   }
 
   if (pName.includes('year book') || pName.includes('yearbook')) {
-    addMat(findMat('kunsruk', 'art paper'), safeQty * 40);
+    addMat(findMat('kertas kunsruk', 'kunsruk', 'art paper'), safeQty * 40);
+    addMat(findMat('kertas bw 23', 'bw 23'), safeQty);
     addMat(findMat('lem fox', 'lem'), Math.max(1, Math.ceil(safeQty * 0.05)));
+    addMat(findMat('tinta cetak cyan', 'tinta cyan'), 1);
+    addMat(findMat('tinta cetak magenta', 'tinta magenta'), 1);
     return results;
   }
 
   if (pName.includes('jasa') || pName.includes('setting') || pName.includes('dll')) {
-    addMat(findMat('hvs f4 putih', 'hvs'), safeQty);
+    addMat(findMat('hvs f4 putih', 'kertas hvs', 'hvs'), safeQty);
     return results;
   }
 
-  // Default fallback: Kertas HVS
-  addMat(findMat('hvs f4 putih', 'hvs', 'kunsruk', 'bw 23'), safeQty);
+  // Default fallback: Kertas HVS + Tinta
+  addMat(findMat('hvs f4 putih', 'kertas hvs', 'kunsruk', 'bw 23'), safeQty);
+  addMat(findMat('tinta cetak black', 'tinta black'), 1);
   return results;
 }
