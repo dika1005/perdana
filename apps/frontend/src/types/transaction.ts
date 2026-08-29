@@ -38,6 +38,12 @@ export interface CreateTransactionPayload {
     product_variant_id?: number;
     custom_price?: number;
     qty: number;
+    length?: number;
+    width?: number;
+    materials?: {
+      raw_material_id: number;
+      material_qty: number;
+    }[];
     addons?: {
       addon_id?: number;
       addon_name?: string;

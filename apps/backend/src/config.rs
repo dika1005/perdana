@@ -182,6 +182,11 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
         "ALTER TABLE raw_material_mutations ADD CONSTRAINT fk_mutation_transaction FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL;"
     ).await;
 
+    // Migrasi: simpan dimensi cetak (panjang & lebar, meter) di item transaksi
+    // agar kebutuhan bahan baku dihitung berdasarkan luas nyata, bukan tebakan.
+    let _ = db.execute_unprepared("ALTER TABLE transaction_items ADD COLUMN length DECIMAL(10,2) NULL DEFAULT NULL;").await;
+    let _ = db.execute_unprepared("ALTER TABLE transaction_items ADD COLUMN width DECIMAL(10,2) NULL DEFAULT NULL;").await;
+
     Ok(db)
 }
 

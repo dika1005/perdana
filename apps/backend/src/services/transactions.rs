@@ -263,6 +263,8 @@ pub async fn create(
         price: Decimal,
         qty: i32,
         subtotal: Decimal,
+        length: Option<Decimal>,
+        width: Option<Decimal>,
         materials: Vec<ProcessedMaterial>,
         addons: Vec<ProcessedAddon>,
     }
@@ -371,6 +373,19 @@ pub async fn create(
         let item_subtotal = unit_price * Decimal::from(item_input.qty);
         total_subtotal += item_subtotal;
 
+        // [BOM] Hitung luas cetak (m²) bila kasir mengisi dimensi.
+        // Digunakan sebagai pengali kebutuhan bahan: bahan = qty × luas × material_amount.
+        // Bila tidak diisi, pengali = 1 (bahan dihitung per pcs seperti semula).
+        let bom_area = match (item_input.length, item_input.width) {
+            (Some(l), Some(w)) if l > Decimal::ZERO && w > Decimal::ZERO => l * w,
+            _ => Decimal::ONE,
+        };
+        let dimension_multiplier = if bom_area <= Decimal::ONE {
+            Decimal::ONE
+        } else {
+            bom_area
+        };
+
         let mut processed_addons = Vec::new();
         if let Some(addons_input) = item_input.addons {
             for addon_in in addons_input {
@@ -452,7 +467,8 @@ pub async fn create(
                 let deduct_qty = if let Some(manual_qty) = item_input.material_qty {
                     Decimal::from(manual_qty)
                 } else {
-                    Decimal::from(item_input.qty) * linked_material_amount
+                    // BOM masuk akal: bahan = qty × luas(m², bila ada) × material_amount.
+                    Decimal::from(item_input.qty) * dimension_multiplier * linked_material_amount
                 };
                 if deduct_qty > Decimal::ZERO {
                     final_materials.push(ProcessedMaterial {
@@ -471,6 +487,8 @@ pub async fn create(
             price: unit_price,
             qty: item_input.qty,
             subtotal: item_subtotal,
+            length: item_input.length,
+            width: item_input.width,
             materials: final_materials,
             addons: processed_addons,
         });
@@ -526,6 +544,8 @@ pub async fn create(
             price: Set(p_item.price),
             qty: Set(p_item.qty),
             subtotal: Set(p_item.subtotal),
+            length: Set(p_item.length),
+            width: Set(p_item.width),
             ..Default::default()
         };
 

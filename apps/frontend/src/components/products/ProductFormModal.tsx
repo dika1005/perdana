@@ -191,6 +191,23 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </option>
               ))}
             </select>
+            <div className="mt-2">
+              <label className="block text-[11px] text-slate-500 mb-0.5">
+                Pemakaian Bahan per 1 m² (atau per 1 pcs bila tanpa ukuran)
+              </label>
+              <input
+                type="number"
+                step="0.0001"
+                min="0"
+                value={formData.material_amount ?? 1}
+                onChange={e => onChange('material_amount', Number(e.target.value))}
+                className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-blue-600 dark:text-blue-400"
+                placeholder="1"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">
+                Contoh: Banner 1 m² butuh 1 m² flexi → isi 1. Bila kosong, kasir bisa pilih bahan manual di POS.
+              </p>
+            </div>
           </div>
         </div>
 

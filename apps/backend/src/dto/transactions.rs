@@ -51,6 +51,12 @@ pub struct TransactionItemInput {
     pub material_qty: Option<Decimal>,
     /// Multiple materials consumed per item
     pub materials: Option<Vec<TransactionMaterialInput>>,
+    /// Dimensi cetak (meter) untuk produk berukuran (banner, spanduk, stiker).
+    /// Bila diisi, kebutuhan bahan dihitung berdasarkan luas (m²) × material_amount.
+    #[schema(value_type = Option<f64>, example = 3)]
+    pub length: Option<Decimal>,
+    #[schema(value_type = Option<f64>, example = 1)]
+    pub width: Option<Decimal>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Validate, ToSchema)]

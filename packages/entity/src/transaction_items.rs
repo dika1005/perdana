@@ -16,6 +16,12 @@ pub struct Model {
     pub qty: i32,
     #[sea_orm(column_type = "Decimal(Some((12, 2)))")]
     pub subtotal: Decimal,
+    /// Dimensi cetak (meter) untuk produk berukuran (banner, spanduk, stiker, dll).
+    /// Digunakan menghitung kebutuhan bahan secara presisi (luas m²).
+    #[sea_orm(column_type = "Decimal(Some((10, 2)))", nullable)]
+    pub length: Option<Decimal>,
+    #[sea_orm(column_type = "Decimal(Some((10, 2)))", nullable)]
+    pub width: Option<Decimal>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

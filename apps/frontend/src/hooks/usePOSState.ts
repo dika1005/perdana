@@ -249,6 +249,8 @@ export function usePOSState() {
           product_id: item.product.id,
           custom_price: item.price,
           qty: item.qty,
+          length: item.length && item.length > 0 ? item.length : undefined,
+          width: item.width && item.width > 0 ? item.width : undefined,
           materials: (item.materials || []).map(m => ({
             raw_material_id: m.raw_material_id,
             material_qty: m.material_qty,
