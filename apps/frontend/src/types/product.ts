@@ -27,6 +27,7 @@ export interface Product {
   unit_name: string;
   has_variants: boolean;
   is_active: boolean;
+  uses_material: boolean;
   raw_material_id?: number | null;
   material_amount?: number | string | null;
   created_at: string;
@@ -44,27 +45,4 @@ export interface ProductAddon {
   max_price: number;
   is_active: boolean;
   created_at: string;
-}
-
-export type ConsumptionBasis = 'PER_UNIT' | 'PER_AREA' | 'PER_LENGTH' | 'FIXED';
-
-export interface BomLineInput {
-  raw_material_id: number;
-  component_type?: 'MATERIAL' | 'FINISHING' | 'PACKAGING';
-  consumption_basis: ConsumptionBasis;
-  qty_per_output: number;
-  waste_pct?: number;
-  width_requirement_m?: number;
-  allow_offcut?: boolean;
-  is_required?: boolean;
-}
-
-export interface ProductBom {
-  id: number;
-  product_id: number;
-  product_variant_id?: number | null;
-  version: number;
-  output_qty: number;
-  notes?: string | null;
-  lines: BomLineInput[];
 }

@@ -1,6 +1,8 @@
 //! Transaction, payment, reservation, and production state machine.
 //!
 //! Inventory policy:
+//! - Material requirement is the operator's manual estimate at checkout
+//!   (`items[].materials[]`); there is no server-side BOM formula.
 //! - UNPAID / DRAFT-like order: no reservation and no physical deduction.
 //! - DP / PAID in ANTRIAN: material is reserved atomically.
 //! - PROSES: active reservation becomes physical consumption.
@@ -24,12 +26,12 @@ use crate::config::StoreConfig;
 use crate::dto::{
     CancelTransactionRequest, CreateTransactionRequest, InvoicePrintData, Pagination,
     PaginationMeta, PaymentResponse, ProductionEventResponse, RecordReworkRequest,
-    RecordWasteRequest, RefundPaymentRequest, TransactionItemAddonResponse,
-    TransactionItemMaterialResponse, TransactionItemResponse, TransactionQuery,
-    TransactionResponse, UpdatePaymentRequest,
+    RecordWasteRequest, RefundPaymentRequest, SettleTransactionRequest,
+    TransactionItemAddonResponse, TransactionItemMaterialResponse, TransactionItemResponse,
+    TransactionQuery, TransactionResponse, UpdatePaymentRequest,
 };
 use crate::error::AppError;
-use crate::services::{audit, bom, inventory};
+use crate::services::{audit, inventory};
 
 #[derive(Debug, Clone)]
 struct ProcessedMaterial {
@@ -372,90 +374,71 @@ pub async fn get_by_id(db: &DatabaseConnection, id: i32) -> Result<TransactionRe
 // ==========================================
 
 async fn resolve_product_materials(
-    txn: &sea_orm::DatabaseTransaction,
     product: &entity::products::Model,
-    variant: Option<&entity::product_variants::Model>,
     item: &crate::dto::TransactionItemInput,
 ) -> Result<Vec<ProcessedMaterial>, AppError> {
-    if let Some((active_bom, lines)) = bom::active_product_bom(txn, product.id, variant.map(|value| value.id)).await? {
-        let mut result = Vec::with_capacity(lines.len());
-        for line in lines {
-            let required = bom::calculate_required_qty(
-                &line.consumption_basis,
-                line.qty_per_output,
-                line.waste_pct,
-                item.qty,
-                item.length,
-                item.width,
-                active_bom.output_qty,
-            )?;
-            result.push(ProcessedMaterial {
-                raw_material_id: line.raw_material_id,
-                required_qty: required,
-                source_type: "PRODUCT_BOM".to_string(),
-                consumption_basis: line.consumption_basis,
-                required_width_m: line.width_requirement_m,
-                allow_offcut: line.allow_offcut,
-                bom_id: Some(active_bom.id),
-                bom_line_id: Some(line.id),
-                bom_version: Some(active_bom.version),
-                addon_id: None,
-            });
-        }
-        return Ok(result);
+    // Kebutuhan bahan murni estimasi operator (pengganti buku catatan):
+    // tidak ada BOM/rumus server. Field legacy single-material tidak lagi
+    // didukung agar klien lama tidak mengirim data yang diabaikan diam-diam.
+    if item.raw_material_id.is_some() || item.material_qty.is_some() {
+        return Err(AppError::field(
+            "materials",
+            "Field bahan legacy tidak didukung. Gunakan array materials[].",
+        ));
     }
 
-    // Controlled legacy path. Browser input is never trusted to choose a
-    // material or quantity: it may only be derived from an old master link
-    // until the owner migrates the product to a versioned multi-line BOM.
-    // Products with no material/BOM remain valid service-only products.
-    let mut result = Vec::new();
-    let linked_material_id = variant
-        .and_then(|value| value.raw_material_id)
-        .or(product.raw_material_id);
-    let factor = variant
-        .and_then(|value| value.material_amount)
-        .unwrap_or_else(|| product.material_amount.unwrap_or(Decimal::ONE));
-    if let Some(raw_material_id) = linked_material_id {
-        let required = if let (Some(length), Some(width)) = (item.length, item.width) {
-            Decimal::from(item.qty) * length * width * factor
-        } else {
-            Decimal::from(item.qty) * factor
-        };
-        if required <= Decimal::ZERO {
-            return Err(AppError::field("material_qty", "Kuantitas bahan harus lebih dari 0"));
+    let inputs = item.materials.clone().unwrap_or_default();
+    if inputs.is_empty() {
+        if product.uses_material {
+            return Err(AppError::field(
+                "materials",
+                &format!(
+                    "Produk \"{}\" memakai bahan stok. Isi bahan yang digunakan untuk produksi.",
+                    product.name
+                ),
+            ));
+        }
+        return Ok(Vec::new());
+    }
+
+    let mut seen = std::collections::HashSet::new();
+    let mut result = Vec::with_capacity(inputs.len());
+    for input in inputs {
+        let qty = input.material_qty.unwrap_or_default();
+        if qty <= Decimal::ZERO {
+            return Err(AppError::field(
+                "materials.material_qty",
+                "Kuantitas bahan harus lebih dari 0",
+            ));
+        }
+        if !seen.insert(input.raw_material_id) {
+            return Err(AppError::field(
+                "materials",
+                "Bahan duplikat dalam satu item; gabungkan jumlahnya",
+            ));
         }
         result.push(ProcessedMaterial {
-            raw_material_id,
-            required_qty: required,
-            source_type: "LEGACY_LINKED".to_string(),
-            consumption_basis: "LEGACY".to_string(),
+            raw_material_id: input.raw_material_id,
+            required_qty: qty,
+            source_type: "MANUAL_POS".to_string(),
+            consumption_basis: "MANUAL".to_string(),
             required_width_m: None,
-            allow_offcut: true,
+            allow_offcut: false,
             bom_id: None,
             bom_line_id: None,
             bom_version: None,
             addon_id: None,
         });
-    } else if item.raw_material_id.is_some()
-        || item.material_qty.is_some()
-        || item.materials.as_ref().is_some_and(|materials| !materials.is_empty())
-    {
-        return Err(AppError::field(
-            "materials",
-            "Bahan tidak boleh dipilih dari POS. Konfigurasikan BOM produk/add-on oleh Super Admin.",
-        ));
     }
     Ok(result)
 }
 
-async fn resolve_addons_and_materials(
+async fn resolve_addons(
     txn: &sea_orm::DatabaseTransaction,
     product: &entity::products::Model,
     item: &crate::dto::TransactionItemInput,
-) -> Result<(Vec<ProcessedAddon>, Vec<ProcessedMaterial>), AppError> {
+) -> Result<Vec<ProcessedAddon>, AppError> {
     let mut addons = Vec::new();
-    let mut materials = Vec::new();
     for addon_input in item.addons.clone().unwrap_or_default() {
         let addon_qty = addon_input.qty.unwrap_or(1);
         if addon_qty < 1 {
@@ -488,29 +471,6 @@ async fn resolve_addons_and_materials(
                     price
                 }
             };
-            for line in bom::addon_bom_lines(txn, addon.id).await? {
-                let required = bom::calculate_required_qty(
-                    &line.consumption_basis,
-                    line.qty_per_addon,
-                    line.waste_pct,
-                    addon_qty,
-                    item.length,
-                    item.width,
-                    Decimal::ONE,
-                )?;
-                materials.push(ProcessedMaterial {
-                    raw_material_id: line.raw_material_id,
-                    required_qty: required,
-                    source_type: "ADDON_BOM".to_string(),
-                    consumption_basis: line.consumption_basis,
-                    required_width_m: None,
-                    allow_offcut: true,
-                    bom_id: None,
-                    bom_line_id: None,
-                    bom_version: None,
-                    addon_id: Some(addon.id),
-                });
-            }
             addons.push(ProcessedAddon {
                 addon_id: Some(addon.id),
                 addon_name: addon.name,
@@ -537,7 +497,7 @@ async fn resolve_addons_and_materials(
             });
         }
     }
-    Ok((addons, materials))
+    Ok(addons)
 }
 
 async fn insert_payment<C: sea_orm::ConnectionTrait>(
@@ -758,7 +718,16 @@ pub async fn create(
 
         let (price, variant_name) = if let Some(variant) = &variant {
             let price = match variant.price_type {
-                RangePriceType::Fixed => variant.price,
+                RangePriceType::Fixed => {
+                    if let Some(custom) = item_input.custom_price {
+                        if custom <= Decimal::ZERO {
+                            return Err(AppError::field("custom_price", "Harga harus lebih dari 0"));
+                        }
+                        custom
+                    } else {
+                        variant.price
+                    }
+                }
                 RangePriceType::Range => {
                     let custom = item_input.custom_price.ok_or_else(|| {
                         AppError::field("custom_price", format!("Harga varian '{}' wajib diisi", variant.variant_name))
@@ -772,7 +741,16 @@ pub async fn create(
             (price, Some(variant.variant_name.clone()))
         } else {
             let price = match product.price_type {
-                PriceType::Fixed => product.default_price,
+                PriceType::Fixed => {
+                    if let Some(custom) = item_input.custom_price {
+                        if custom <= Decimal::ZERO {
+                            return Err(AppError::field("custom_price", "Harga harus lebih dari 0"));
+                        }
+                        custom
+                    } else {
+                        product.default_price
+                    }
+                }
                 PriceType::Range => {
                     let custom = item_input.custom_price.ok_or_else(|| {
                         AppError::field("custom_price", format!("Harga produk '{}' wajib diisi", product.name))
@@ -795,9 +773,8 @@ pub async fn create(
             (price, None)
         };
         let item_subtotal = price * Decimal::from(item_input.qty);
-        let (addons, mut addon_materials) = resolve_addons_and_materials(&txn, &product, item_input).await?;
-        let mut materials = resolve_product_materials(&txn, &product, variant.as_ref(), item_input).await?;
-        materials.append(&mut addon_materials);
+        let addons = resolve_addons(&txn, &product, item_input).await?;
+        let materials = resolve_product_materials(&product, item_input).await?;
         subtotal += item_subtotal + addons.iter().map(|addon| addon.subtotal).sum::<Decimal>();
         processed_items.push(ProcessedItem {
             product_id: product.id,
@@ -1079,6 +1056,104 @@ pub async fn update_payment_as(
         Some("Pembayaran ditambahkan melalui ledger".to_string()),
     )
     .await?;
+    txn.commit().await?;
+    get_by_id(db, updated.id).await
+}
+
+/// Pelunasan atomik: mencatat pembayaran + memajukan status ke DIAMBIL
+/// dalam satu DB transaction. Menghindari inkonsistensi bila salah satu
+/// langkah gagal (misal payment tercatat tapi status tidak berubah).
+pub async fn settle_as(
+    db: &DatabaseConnection,
+    actor_id: Option<i32>,
+    id: i32,
+    payload: SettleTransactionRequest,
+) -> Result<TransactionResponse, AppError> {
+    payload.validate()?;
+    if payload.pay_amount <= Decimal::ZERO {
+        return Err(AppError::field("pay_amount", "Nominal pelunasan harus lebih dari 0"));
+    }
+    let txn = db.begin().await?;
+    let transaction = Transaction::find_by_id(id)
+        .lock_exclusive()
+        .one(&txn)
+        .await?
+        .ok_or_else(|| AppError::not_found("Transaksi tidak ditemukan"))?;
+
+    // Validasi state: hanya order SELESAI yang bisa dilunasi+diambil
+    if transaction.order_status == OrderStatus::Batal {
+        return Err(AppError::conflict("Transaksi yang dibatalkan tidak dapat dilunasi"));
+    }
+    if transaction.order_status != OrderStatus::Selesai {
+        return Err(AppError::conflict(format!(
+            "Pelunasan hanya untuk order SELESAI. Status saat ini: {:?}",
+            transaction.order_status
+        )));
+    }
+
+    let previous_paid = net_paid(&transaction);
+    let outstanding = (transaction.total_amount - previous_paid).max(Decimal::ZERO);
+    if outstanding == Decimal::ZERO {
+        return Err(AppError::conflict("Transaksi ini sudah lunas"));
+    }
+
+    let tender = payload.pay_amount;
+    let applied = tender.min(outstanding);
+    let change = tender - applied;
+    let paid_after = previous_paid + applied;
+    let payment_method = payload.payment_method.unwrap_or(PaymentMethod::Cash);
+
+    let before = audit::snapshot(&transaction);
+    let mut active: transactions::ActiveModel = transaction.clone().into();
+    active.pay_amount = Set(transaction.pay_amount + tender);
+    active.change_amount = Set(transaction.change_amount + change);
+    active.payment_status = Set(payment_status_for(paid_after, transaction.total_amount));
+    active.settlement_payment_method = Set(Some(payment_method.clone()));
+    active.settlement_pay_amount = Set(Some(tender));
+    active.settlement_at = Set(Some(Utc::now()));
+    // Atomically advance to DIAMBIL
+    active.order_status = Set(OrderStatus::Diambil);
+    let updated = active.update(&txn).await?;
+
+    insert_payment(
+        &txn,
+        updated.id,
+        "PAYMENT",
+        applied,
+        payment_method,
+        payload.reference_no.map(|v| v.trim().to_string()),
+        payload.notes.map(|v| v.trim().to_string()).or_else(|| {
+            Some(if change > Decimal::ZERO {
+                format!("Pelunasan. Tender {} dengan kembalian {}", tender, change)
+            } else {
+                "Pelunasan".to_string()
+            })
+        }),
+        actor_id,
+    )
+    .await?;
+
+    add_production_event(
+        &txn,
+        updated.id,
+        "ORDER_COMPLETED",
+        Some("Pesanan dilunasi dan diserahkan ke pelanggan".to_string()),
+        actor_id,
+    )
+    .await?;
+
+    audit::log(
+        &txn,
+        actor_id,
+        "SETTLE",
+        "TRANSACTION",
+        updated.id.to_string(),
+        before,
+        audit::snapshot(&updated),
+        Some("Pelunasan atomik: pembayaran + status DIAMBIL".to_string()),
+    )
+    .await?;
+
     txn.commit().await?;
     get_by_id(db, updated.id).await
 }

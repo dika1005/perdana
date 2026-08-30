@@ -4,12 +4,24 @@ import { Category } from '../types/category';
 import { Customer } from '../types/customer';
 import { RawMaterial } from '../types/rawMaterial';
 import { PaymentStatus, PaymentMethod } from '../types/transaction';
-import { CartItem } from '../components/pos/types';
+import { CartItem, CartItemMaterial } from '../components/pos/types';
 import { productService } from '../services/productService';
 import { customerService } from '../services/customerService';
 import { rawMaterialService } from '../services/rawMaterialService';
 import { transactionService } from '../services/transactionService';
 import { useAlert } from '../context/AlertContext';
+
+export function isMeteranProduct(product: Product): boolean {
+  const unit = (product.unit_name || '').toLowerCase();
+  const name = (product.name || '').toLowerCase();
+  return unit.includes('meter') || name.includes('/meter');
+}
+
+export function meteranRefPrice(product: Product, length?: number, width?: number): number {
+  const rate = Number(product.default_price) || 0;
+  if (!isMeteranProduct(product)) return rate;
+  return Math.round((length || 1) * (width || 1) * rate);
+}
 
 export function usePOSState() {
   const { showAlert, showToast } = useAlert();
@@ -69,9 +81,22 @@ export function usePOSState() {
     }
   };
 
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     fetchCatalog();
   }, [activeCategoryId]);
+
+  // Debounced search: fetch setelah user berhenti mengetik 300ms
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      fetchCatalog();
+    }, 300);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchTerm]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,13 +119,15 @@ export function usePOSState() {
           qty: newQty, 
         } : item);
       } else {
+        const isMeter = isMeteranProduct(product);
         return [...prevCart, { 
           product, 
           qty: initialQty, 
           price: initialPrice,
-          length: 1,
-          width: 1,
+          length: isMeter ? 1 : undefined,
+          width: isMeter ? 1 : undefined,
           addons: [],
+          materials: [],
         }];
       }
     });
@@ -140,6 +167,28 @@ export function usePOSState() {
     }));
   };
 
+  const handleAddMaterial = (productId: number) => {
+    setCart(prevCart => prevCart.map(item => {
+      if (item.product.id !== productId) return item;
+      return { ...item, materials: [...(item.materials || []), { raw_material_id: 0, material_qty: 0 }] };
+    }));
+  };
+
+  const handleUpdateMaterial = (productId: number, index: number, patch: Partial<CartItemMaterial>) => {
+    setCart(prevCart => prevCart.map(item => {
+      if (item.product.id !== productId) return item;
+      const materials = (item.materials || []).map((m, i) => (i === index ? { ...m, ...patch } : m));
+      return { ...item, materials };
+    }));
+  };
+
+  const handleRemoveMaterial = (productId: number, index: number) => {
+    setCart(prevCart => prevCart.map(item => {
+      if (item.product.id !== productId) return item;
+      return { ...item, materials: (item.materials || []).filter((_m, i) => i !== index) };
+    }));
+  };
+
   const updateQty = (id: number, delta: number) => {
     setCart(prevCart => prevCart.map(item => {
       if (item.product.id === id) {
@@ -161,14 +210,13 @@ export function usePOSState() {
 
   const updateDimensions = (id: number, length: number, width: number) => {
     setCart(prevCart => prevCart.map(item => {
-      if (item.product.id === id) {
-        return { 
-          ...item, 
-          length, 
-          width,
-        };
-      }
-      return item;
+      if (item.product.id !== id) return item;
+      const oldRef = meteranRefPrice(item.product, item.length, item.width);
+      const newRef = meteranRefPrice(item.product, length, width);
+      // Harga yang masih mengikuti hitungan luas diperbarui otomatis;
+      // harga hasil nego manual tidak ditimpa.
+      const price = item.price === oldRef ? newRef : item.price;
+      return { ...item, length, width, price };
     }));
   };
 
@@ -209,6 +257,27 @@ export function usePOSState() {
       }
     }
 
+    for (const item of cart) {
+      const rows = item.materials || [];
+      const incomplete = rows.some(m => m.raw_material_id <= 0 || !(m.material_qty > 0));
+      if (incomplete) {
+        await showAlert({
+          title: 'Bahan Belum Lengkap',
+          message: `Lengkapi pilihan bahan dan jumlahnya (lebih dari 0) pada item "${item.product.name}", atau hapus baris yang kosong.`,
+          type: 'warning',
+        });
+        return;
+      }
+      if (item.product.uses_material && rows.length === 0) {
+        await showAlert({
+          title: 'Bahan Belum Diisi',
+          message: `Produk "${item.product.name}" memakai bahan stok. Isi bahan yang digunakan untuk produksi pada item tersebut.`,
+          type: 'warning',
+        });
+        return;
+      }
+    }
+
     setPayAmount(total);
     checkoutKeyRef.current = crypto.randomUUID();
     setShowCheckoutModal(true);
@@ -238,10 +307,13 @@ export function usePOSState() {
             price: a.price,
             qty: a.qty,
           })),
+          materials: (item.materials || [])
+            .filter(m => m.raw_material_id > 0 && m.material_qty > 0)
+            .map(m => ({ raw_material_id: m.raw_material_id, material_qty: m.material_qty })),
         })),
       };
 
-      const res = await transactionService.createTransaction(payload as any);
+      const res = await transactionService.createTransaction(payload);
       
       try {
         const officialInvoice = await transactionService.getInvoiceData(res.id);
@@ -355,6 +427,9 @@ export function usePOSState() {
     addToCart,
     handleToggleAddon,
     handleUpdateAddonQty,
+    handleAddMaterial,
+    handleUpdateMaterial,
+    handleRemoveMaterial,
     updateQty,
     updatePrice,
     updateDimensions,

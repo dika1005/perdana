@@ -67,6 +67,9 @@ export default function POSPage() {
     addToCart,
     handleToggleAddon,
     handleUpdateAddonQty,
+    handleAddMaterial,
+    handleUpdateMaterial,
+    handleRemoveMaterial,
     updateQty,
     updatePrice,
     updateDimensions,
@@ -113,6 +116,9 @@ export default function POSPage() {
           onUpdateDimensions={updateDimensions}
           onToggleAddon={handleToggleAddon}
           onUpdateAddonQty={handleUpdateAddonQty}
+          onAddMaterial={handleAddMaterial}
+          onUpdateMaterial={handleUpdateMaterial}
+          onRemoveMaterial={handleRemoveMaterial}
           onRemoveFromCart={removeFromCart}
           onClearCart={clearCart}
           discountAmount={discountAmount}

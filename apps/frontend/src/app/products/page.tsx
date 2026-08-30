@@ -14,10 +14,8 @@ import { ProductFormModal } from '../../components/products/ProductFormModal';
 import { VariantFormModal } from '../../components/products/VariantFormModal';
 import { AddonFormModal } from '../../components/products/AddonFormModal';
 import { CategoryFormModal } from '../../components/products/CategoryFormModal';
-import { BomEditorModal } from '../../components/products/BomEditorModal';
 
 export default function ProductsPage() {
-  const [bomTarget, setBomTarget] = React.useState<{ kind: 'product' | 'addon'; id: number; name: string } | null>(null);
   const {
     activeTab,
     setActiveTab,
@@ -156,7 +154,6 @@ export default function ProductsPage() {
           onOpenAddModal={() => handleOpenProductModal()}
           onOpenEditModal={handleOpenProductModal}
           onDeleteProduct={handleDeleteProduct}
-          onConfigureBom={(product) => setBomTarget({ kind: 'product', id: product.id, name: product.name })}
         />
       )}
 
@@ -180,7 +177,6 @@ export default function ProductsPage() {
           onOpenAddModal={() => handleOpenAddonModal()}
           onOpenEditModal={handleOpenAddonModal}
           onDeleteAddon={handleDeleteAddon}
-          onConfigureBom={(addon) => setBomTarget({ kind: 'addon', id: addon.id, name: addon.name })}
         />
       )}
 
@@ -200,7 +196,6 @@ export default function ProductsPage() {
         item={productModal.item || null}
         formData={pForm}
         categories={categories}
-        rawMaterials={rawMaterials}
         submitting={submitting}
         onChange={handlePFormChange}
         onClose={() => setProductModal({ open: false })}
@@ -237,12 +232,6 @@ export default function ProductsPage() {
         submitting={submitting}
         onClose={() => setCategoryModal({ open: false })}
         onSubmit={handleCategorySubmit}
-      />
-
-      <BomEditorModal
-        target={bomTarget}
-        rawMaterials={rawMaterials}
-        onClose={() => setBomTarget(null)}
       />
     </DashboardLayout>
   );

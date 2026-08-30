@@ -114,6 +114,17 @@ pub struct UpdatePaymentRequest {
     pub notes: Option<String>,
 }
 
+#[derive(Debug, Clone, Default, Deserialize, Validate, ToSchema)]
+pub struct SettleTransactionRequest {
+    #[schema(value_type = f64, example = 500000)]
+    pub pay_amount: Decimal,
+    pub payment_method: Option<PaymentMethod>,
+    #[validate(length(max = 100, message = "Referensi pembayaran maksimal 100 karakter"))]
+    pub reference_no: Option<String>,
+    #[validate(length(max = 500, message = "Catatan pembayaran maksimal 500 karakter"))]
+    pub notes: Option<String>,
+}
+
 // ==========================================
 // RESPONSE DTOS
 // ==========================================

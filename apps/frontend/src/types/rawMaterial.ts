@@ -6,6 +6,8 @@ export interface RawMaterial {
   name: string;
   variant?: string | null;
   unit: string;
+  package_unit?: string | null;
+  package_size?: number | null;
   stock: number;
   reserved_stock: number;
   available_stock: number;
@@ -23,6 +25,8 @@ export interface CreateRawMaterialPayload {
   name: string;
   variant?: string;
   unit?: string;
+  package_unit?: string;
+  package_size?: number;
   stock?: number;
   min_stock_warning?: number;
   standard_cost?: number;

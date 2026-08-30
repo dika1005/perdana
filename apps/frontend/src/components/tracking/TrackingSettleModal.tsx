@@ -125,10 +125,22 @@ export const TrackingSettleModal: React.FC<TrackingSettleModalProps> = ({
                 className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-slate-100 font-bold text-base font-mono"
               />
             </div>
-            {payAmount > 0 && (
+            {payAmount > 0 && payAmount >= remaining && (
               <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
                 Terbilang: {formatRupiah(payAmount)}
               </p>
+            )}
+            {payAmount > remaining && (
+              <div className="mt-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs flex justify-between items-center">
+                <span>💵 Kembalian:</span>
+                <span className="font-mono text-sm font-black">{formatRupiah(payAmount - remaining)}</span>
+              </div>
+            )}
+            {payAmount > 0 && payAmount < remaining && (
+              <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold text-xs flex justify-between items-center">
+                <span>⚠️ Kurang:</span>
+                <span className="font-mono text-sm font-black">{formatRupiah(remaining - payAmount)}</span>
+              </div>
             )}
           </div>
         </div>

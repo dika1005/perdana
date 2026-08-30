@@ -31,6 +31,9 @@ pub struct CreateProductRequest {
     pub unit_name: Option<String>,
     #[schema(example = false)]
     pub has_variants: Option<bool>,
+    /// Produk memakai bahan stok: checkout wajib mengisi bahan manual.
+    #[schema(example = true)]
+    pub uses_material: Option<bool>,
     pub raw_material_id: Option<i32>,
     #[schema(value_type = Option<f64>, example = 1.0)]
     pub material_amount: Option<Decimal>,
@@ -58,6 +61,9 @@ pub struct UpdateProductRequest {
     pub unit_name: Option<String>,
     #[schema(example = false)]
     pub has_variants: Option<bool>,
+    /// Produk memakai bahan stok: checkout wajib mengisi bahan manual.
+    #[schema(example = true)]
+    pub uses_material: Option<bool>,
     pub raw_material_id: Option<i32>,
     #[schema(value_type = Option<f64>, example = 1.0)]
     pub material_amount: Option<Decimal>,
@@ -85,6 +91,7 @@ pub struct ProductResponse {
     pub unit_name: String,
     pub has_variants: bool,
     pub is_active: bool,
+    pub uses_material: bool,
     pub raw_material_id: Option<i32>,
     #[schema(value_type = Option<f64>, example = 1.0)]
     pub material_amount: Option<Decimal>,

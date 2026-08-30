@@ -204,11 +204,14 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
                         </div>
                         <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                           <span>{item.qty} {item.unit_name || 'pcs'} @ {formatRupiah(unitPrice)}</span>
-                          {item.length && item.width && (
-                            <span className="text-purple-600 dark:text-purple-400 font-mono font-semibold">
-                              {item.length}m × {item.width}m ({((item.length || 1) * (item.width || 1)).toFixed(2)} m²)
-                            </span>
-                          )}
+                          {(() => {
+                            const isMeterItem = ((item.unit_name || '') + ' ' + (item.product_name || item.name || '')).toLowerCase().includes('meter');
+                            return isMeterItem && item.length && item.width ? (
+                              <span className="text-purple-600 dark:text-purple-400 font-mono font-semibold">
+                                {item.length}m × {item.width}m ({((item.length || 1) * (item.width || 1)).toFixed(2)} m²)
+                              </span>
+                            ) : null;
+                          })()}
                         </div>
                         {item.addons && item.addons.length > 0 && (
                           <div className="mt-1.5 pt-1 border-t border-slate-200/60 dark:border-slate-800/60 text-[10px] text-slate-500 dark:text-slate-400">

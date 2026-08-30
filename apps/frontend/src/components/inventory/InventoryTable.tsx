@@ -19,6 +19,10 @@ interface InventoryTableProps {
   onOpenUom?: (item: RawMaterial) => void;
 }
 
+// Decimal dari API dapat tiba sebagai string ("6000.0000"); normalisasi dulu.
+const fmtQty = (v: number | string) =>
+  Number(v).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+
 export const InventoryTable: React.FC<InventoryTableProps> = ({
   materials,
   categories,
@@ -90,6 +94,11 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
             ) : (
               materials.map(item => {
                 const isRollOrArea = (item.unit || '').toLowerCase().includes('meter') || (item.unit || '').toLowerCase().includes('m2') || (item.unit || '').toLowerCase().includes('sqm') || Number(item.roll_width || 0) > 0;
+                const stockQty = Number(item.stock) || 0;
+                const pkgSize = Number(item.package_size || 0);
+                const packageNote = item.package_unit && pkgSize > 0
+                  ? `${Math.floor(stockQty / pkgSize)} ${item.package_unit}${stockQty % pkgSize > 0 ? ` + ${fmtQty(stockQty % pkgSize)} ${item.unit}` : ''}`
+                  : null;
 
                 return (
                   <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
@@ -110,20 +119,23 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                       {item.variant || '-'}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
-                      {item.stock.toLocaleString()} <span className="text-[11px] font-normal text-slate-400">{item.unit}</span>
+                      {fmtQty(item.stock)} <span className="text-[11px] font-normal text-slate-400">{item.unit}</span>
+                      {packageNote && (
+                        <span className="block text-[10px] font-normal text-slate-400">≈ {packageNote}</span>
+                      )}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-xs text-amber-600 dark:text-amber-400">
                       {item.reserved_stock > 0 ? (
-                        <span>{item.reserved_stock.toLocaleString()} <span className="text-[11px] font-normal text-slate-400">{item.unit}</span></span>
+                        <span>{fmtQty(item.reserved_stock)} <span className="text-[11px] font-normal text-slate-400">{item.unit}</span></span>
                       ) : (
                         <span className="text-slate-300 dark:text-slate-600">0</span>
                       )}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
-                      {item.available_stock.toLocaleString()} <span className="text-[11px] font-normal text-slate-400">{item.unit}</span>
+                      {fmtQty(item.available_stock)} <span className="text-[11px] font-normal text-slate-400">{item.unit}</span>
                     </td>
                     <td className="py-3 px-4 text-slate-400 font-mono text-xs">
-                      {item.min_stock_warning.toLocaleString()}
+                      {fmtQty(item.min_stock_warning)}
                     </td>
                     <td className="py-3 px-4">
                       {item.is_low_stock ? (

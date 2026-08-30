@@ -130,7 +130,8 @@ export const JobTicketModal: React.FC<JobTicketModalProps> = ({
                   </tr>
                 ) : (
                   items.map((item: any, idx: number) => {
-                    const dim = (item.length && item.width) ? `${item.length}m x ${item.width}m` : '-';
+                    const isMeterItem = ((item.unit_name || '') + ' ' + (item.product_name || item.name || '')).toLowerCase().includes('meter');
+                    const dim = (isMeterItem && item.length && item.width) ? `${item.length}m x ${item.width}m` : '-';
                     const finishList = (item.addons || []).map((a: any) => `${a.addon_name || a.name}${a.qty > 1 ? ` (${a.qty}x)` : ''}`);
 
                     return (

@@ -196,11 +196,14 @@ export const TrackingDetailModal: React.FC<TrackingDetailModalProps> = ({
                           {item.variant_name && (
                             <span className="text-[11px] text-slate-500">Varian: {item.variant_name}</span>
                           )}
-                          {item.length && item.width && (
-                            <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
-                              Ukuran: {item.length}m × {item.width}m (Luas: {(item.length * item.width * item.qty).toFixed(2)} m²)
-                            </p>
-                          )}
+                          {(() => {
+                            const isMeterItem = ((item.unit_name || '') + ' ' + (item.product_name || item.name || '')).toLowerCase().includes('meter');
+                            return isMeterItem && item.length && item.width ? (
+                              <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                                Ukuran: {item.length}m × {item.width}m (Luas: {(item.length * item.width * item.qty).toFixed(2)} m²)
+                              </p>
+                            ) : null;
+                          })()}
                         </div>
                         <div className="text-right">
                           <span className="font-mono font-bold text-xs text-slate-900 dark:text-slate-100">

@@ -24,6 +24,8 @@ pub fn map_raw_material(m: &raw_materials::Model) -> RawMaterialResponse {
         name: m.name.clone(),
         variant: m.variant.clone(),
         unit: m.unit.clone(),
+        package_unit: m.package_unit.clone(),
+        package_size: m.package_size,
         stock: m.stock,
         reserved_stock: m.reserved_stock,
         available_stock,
@@ -131,6 +133,11 @@ pub async fn create_as(
             return Err(AppError::field("roll_width", "Lebar roll harus lebih dari 0"));
         }
     }
+    if let Some(size) = payload.package_size {
+        if size <= Decimal::ZERO {
+            return Err(AppError::field("package_size", "Isi kemasan harus lebih dari 0"));
+        }
+    }
 
     let txn = db.begin().await?;
     if let Some(cat_id) = payload.category_id {
@@ -143,6 +150,8 @@ pub async fn create_as(
         name: Set(name),
         variant: Set(payload.variant.map(|v| v.trim().to_string())),
         unit: Set(payload.unit.unwrap_or_else(|| "pcs".to_string()).trim().to_string()),
+        package_unit: Set(payload.package_unit.map(|v| v.trim().to_string()).filter(|v| !v.is_empty())),
+        package_size: Set(payload.package_size),
         stock: Set(Decimal::ZERO),
         reserved_stock: Set(Decimal::ZERO),
         min_stock_warning: Set(min_warning),
@@ -220,6 +229,11 @@ pub async fn update_as(
             return Err(AppError::field("roll_width", "Lebar roll harus lebih dari 0"));
         }
     }
+    if let Some(value) = payload.package_size {
+        if value <= Decimal::ZERO {
+            return Err(AppError::field("package_size", "Isi kemasan harus lebih dari 0"));
+        }
+    }
 
     let txn = db.begin().await?;
     let item = RawMaterial::find_by_id(id)
@@ -232,6 +246,14 @@ pub async fn update_as(
             return Err(AppError::field("category_id", "Kategori bahan baku tidak ditemukan"));
         }
     }
+    if let Some(unit) = &payload.unit {
+        let new_unit = unit.trim();
+        if new_unit != item.unit && item.reserved_stock > Decimal::ZERO {
+            return Err(AppError::conflict(
+                "Satuan tidak dapat diubah selama masih ada stok terpesan. Selesaikan atau batalkan pesanan terkait terlebih dahulu.",
+            ));
+        }
+    }
     let before = audit::snapshot(&item);
     let mut active: raw_materials::ActiveModel = item.into();
     active.category_id = Set(payload.category_id);
@@ -239,6 +261,12 @@ pub async fn update_as(
     active.variant = Set(payload.variant.map(|v| v.trim().to_string()));
     if let Some(unit) = payload.unit {
         active.unit = Set(unit.trim().to_string());
+    }
+    if let Some(package_unit) = payload.package_unit {
+        active.package_unit = Set(Some(package_unit.trim().to_string()).filter(|v| !v.is_empty()));
+    }
+    if let Some(package_size) = payload.package_size {
+        active.package_size = Set(Some(package_size));
     }
     if let Some(value) = payload.min_stock_warning {
         active.min_stock_warning = Set(value);

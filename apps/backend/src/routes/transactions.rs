@@ -2,8 +2,9 @@ use actix_web::{HttpResponse, web};
 
 use crate::dto::{
     ApiResponse, CancelTransactionRequest, CreateTransactionRequest, InvoicePrintData, ListResponse,
-    Pagination, RecordReworkRequest, RecordWasteRequest, RefundPaymentRequest, TransactionQuery,
-    TransactionResponse, UpdateOrderStatusRequest, UpdatePaymentRequest,
+    Pagination, RecordReworkRequest, RecordWasteRequest, RefundPaymentRequest,
+    SettleTransactionRequest, TransactionQuery, TransactionResponse, UpdateOrderStatusRequest,
+    UpdatePaymentRequest,
 };
 use crate::error::AppError;
 use crate::extractors::{AuthUser, SuperAdmin};
@@ -154,6 +155,22 @@ pub async fn update_payment(
     )
     .await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Pembayaran berhasil diperbarui", data)))
+}
+
+pub async fn settle(
+    state: web::Data<AppState>,
+    user: AuthUser,
+    path: web::Path<i32>,
+    payload: web::Json<SettleTransactionRequest>,
+) -> Result<HttpResponse, AppError> {
+    let data = transaction_service::settle_as(
+        &state.db,
+        Some(user.id),
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::ok("Pelunasan berhasil", data)))
 }
 
 #[utoipa::path(

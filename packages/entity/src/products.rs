@@ -20,6 +20,9 @@ pub struct Model {
     pub min_order: Option<i32>,
     pub unit_name: Option<String>,
     pub has_variants: bool,
+    /// Produk yang produksinya memakai bahan stok: checkout wajib mengisi
+    /// bahan manual. Produk jasa/barang jadi = false.
+    pub uses_material: bool,
     pub raw_material_id: Option<i32>,
     #[sea_orm(column_type = "Decimal(Some((12, 4)))", nullable)]
     pub material_amount: Option<Decimal>,

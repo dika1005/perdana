@@ -47,6 +47,10 @@ export interface CreateTransactionPayload {
       price?: number;
       qty?: number;
     }[];
+    materials?: {
+      raw_material_id: number;
+      material_qty: number;
+    }[];
   }[];
 }
 

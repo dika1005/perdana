@@ -1,8 +1,7 @@
 import React from 'react';
-import { X, Layers } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Product, PriceType } from '../../types/product';
 import { Category } from '../../types/category';
-import { RawMaterial } from '../../types/rawMaterial';
 
 interface ProductFormData {
   name: string;
@@ -14,15 +13,13 @@ interface ProductFormData {
   min_order: number;
   unit_name: string;
   has_variants: boolean;
-  raw_material_id?: number;
-  material_amount?: number;
+  uses_material: boolean;
 }
 
 interface ProductFormModalProps {
   isOpen: boolean;
   item: Product | null;
   categories: Category[];
-  rawMaterials?: RawMaterial[];
   formData: ProductFormData;
   onChange: (field: keyof ProductFormData, value: any) => void;
   submitting: boolean;
@@ -34,7 +31,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   isOpen,
   item,
   categories,
-  rawMaterials = [],
   formData,
   onChange,
   submitting,
@@ -173,41 +169,22 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             )}
           </div>
 
-          {/* Hubungkan Bahan Baku Utama (Opsional) */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-              <Layers className="w-3.5 h-3.5 text-blue-500" />
-              <span>Bahan Baku Utama (Opsional):</span>
-            </div>
-            <select
-              value={formData.raw_material_id || ''}
-              onChange={e => onChange('raw_material_id', e.target.value ? Number(e.target.value) : undefined)}
-              className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-medium text-text-main"
-            >
-              <option value="">-- Tidak Dipatok (Kasir Pilih Manual di POS) --</option>
-              {rawMaterials.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.unit}) - Sisa Stok: {m.stock}
-                </option>
-              ))}
-            </select>
-            <div className="mt-2">
-              <label className="block text-[11px] text-slate-500 mb-0.5">
-                Pemakaian Bahan per 1 m² (atau per 1 pcs bila tanpa ukuran)
-              </label>
+          {/* Memakai bahan stok */}
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
               <input
-                type="number"
-                step="0.0001"
-                min="0"
-                value={formData.material_amount ?? 1}
-                onChange={e => onChange('material_amount', Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono font-bold text-blue-600 dark:text-blue-400"
-                placeholder="1"
+                type="checkbox"
+                checked={formData.uses_material}
+                onChange={e => onChange('uses_material', e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 accent-blue-600"
               />
-              <p className="text-[10px] text-slate-400 mt-1">
-                Contoh: Banner 1 m² butuh 1 m² flexi → isi 1. Bila kosong, kasir bisa pilih bahan manual di POS.
-              </p>
-            </div>
+              <span>Memakai Bahan Stok (wajib diisi saat checkout)</span>
+            </label>
+            <p className="text-[10px] text-slate-400">
+              Aktifkan untuk produk yang produksinya memakai bahan stok (kertas, tinta, amplop, dll).
+              Operator mengisi sendiri estimasi bahan di POS; stok dikunci saat DP/lunas dan
+              dipotong saat pekerjaan masuk PROSES.
+            </p>
           </div>
         </div>
 

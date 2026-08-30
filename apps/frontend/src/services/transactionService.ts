@@ -51,6 +51,16 @@ export const transactionService = {
     return res.data.data;
   },
 
+  settle: async (id: number, payAmount: number, paymentMethod?: PaymentMethod, referenceNo?: string, notes?: string) => {
+    const res = await apiClient.post<ApiResponse<TransactionDetail>>(`/transactions/${id}/settle`, {
+      pay_amount: payAmount,
+      payment_method: paymentMethod,
+      reference_no: referenceNo,
+      notes: notes,
+    });
+    return res.data.data;
+  },
+
   recordWaste: async (id: number, materials: Array<{ transaction_item_material_id: number; qty: number; reason_code: string; notes?: string }>, notes?: string) => {
     const res = await apiClient.post<ApiResponse<TransactionDetail>>(`/transactions/${id}/waste`, {
       materials,

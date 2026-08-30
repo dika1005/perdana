@@ -7,6 +7,8 @@ interface InventoryCreateFormData {
   name: string;
   variant: string;
   unit: string;
+  package_unit: string;
+  package_size?: number;
   stock: number;
   min_stock_warning: number;
   category_id?: number;
@@ -71,13 +73,13 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">Satuan</label>
+              <label className="block text-xs font-medium text-text-muted mb-1">Satuan Dasar (stok & pemakaian)</label>
               <div className="px-4 py-2.5 skeuo-inset rounded-xl">
                 <input 
                   type="text" 
                   value={formData.unit}
                   onChange={e => onChange('unit', e.target.value)}
-                  placeholder="pcs / rim / liter" 
+                  placeholder="lembar / meter / pcs / ml" 
                   className="bg-transparent border-none outline-none w-full text-text-main text-sm"
                 />
               </div>
@@ -89,6 +91,34 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({
                   type="number" 
                   value={formData.stock}
                   onChange={e => onChange('stock', Number(e.target.value))}
+                  className="bg-transparent border-none outline-none w-full text-text-main font-bold text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1">Kemasan Beli (opsional)</label>
+              <div className="px-4 py-2.5 skeuo-inset rounded-xl">
+                <input 
+                  type="text" 
+                  value={formData.package_unit}
+                  onChange={e => onChange('package_unit', e.target.value)}
+                  placeholder="rim / rol / dus / botol" 
+                  className="bg-transparent border-none outline-none w-full text-text-main text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-muted mb-1">Isi per Kemasan</label>
+              <div className="px-4 py-2.5 skeuo-inset rounded-xl">
+                <input 
+                  type="number"
+                  min="0"
+                  value={formData.package_size ?? ''}
+                  onChange={e => onChange('package_size', e.target.value === '' ? undefined : Number(e.target.value))}
+                  placeholder="mis. 500" 
                   className="bg-transparent border-none outline-none w-full text-text-main font-bold text-sm"
                 />
               </div>

@@ -11,6 +11,12 @@ pub struct Model {
     pub name: String,
     pub variant: Option<String>,
     pub unit: String,
+    /// Nama kemasan beli (rim, dus, botol). NULL bila bahan dibeli langsung
+    /// dalam satuan dasar.
+    pub package_unit: Option<String>,
+    /// Isi satu kemasan dalam satuan dasar (mis. 1 rim = 500 lembar).
+    #[sea_orm(column_type = "Decimal(Some((12, 4)))", nullable)]
+    pub package_size: Option<Decimal>,
     /// Stok tersedia. Desimal agar mendukung bahan ukuran pecahan
     /// (meter, gram, lembar setengah, dll).
     pub stock: Decimal,

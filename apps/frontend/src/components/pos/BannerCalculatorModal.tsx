@@ -5,6 +5,7 @@ import { Calculator, X, Check } from 'lucide-react';
 import { Product } from '../../types/product';
 import { formatRupiah } from '../../utils/format';
 import { CartItem } from './types';
+import { isMeteranProduct } from '../../hooks/usePOSState';
 
 interface BannerCalculatorModalProps {
   isOpen: boolean;
@@ -27,12 +28,8 @@ export const BannerCalculatorModal: React.FC<BannerCalculatorModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const bannerProd = products.find(p => 
-        p.name.toLowerCase().includes('spanduk') || 
-        p.name.toLowerCase().includes('banner') || 
-        p.unit_name === 'meter' || 
-        p.price_type === 'CUSTOM'
-      ) || products[0] || null;
+      const meteranProducts = products.filter(isMeteranProduct);
+      const bannerProd = meteranProducts[0] || null;
       setCalcSelectedProduct(bannerProd);
       if (bannerProd) {
         setCalcRatePerMeter(Number(bannerProd.default_price) || 25000);
@@ -96,7 +93,7 @@ export const BannerCalculatorModal: React.FC<BannerCalculatorModalProps> = ({
               }}
               className="w-full px-3.5 py-2.5 rounded-xl skeuo-inset text-xs text-text-main outline-none bg-transparent"
             >
-              {products.map(p => (
+              {products.filter(isMeteranProduct).map(p => (
                 <option key={p.id} value={p.id}>
                   {p.name} ({p.unit_name}) - Default: {formatRupiah(p.default_price)}
                 </option>

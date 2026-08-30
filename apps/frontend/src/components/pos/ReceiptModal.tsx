@@ -17,7 +17,8 @@ export function generateReceiptHtml(invoiceData: any): string {
   const itemsHtml = items.map((item: any) => {
     const unitPrice = Number(item.price || item.custom_price || item.unit_price || 0);
     const subtotal = item.subtotal ? Number(item.subtotal) : (unitPrice * Number(item.qty || 1));
-    const dim = item.length && item.width ? `<div style="font-size: 10px; color: #333; margin-left: 4px;">Ukuran: ${item.length}m x ${item.width}m</div>` : '';
+    const isMeterItem = ((item.unit_name || '') + ' ' + (item.product_name || item.name || '')).toLowerCase().includes('meter');
+    const dim = (isMeterItem && item.length && item.width) ? `<div style="font-size: 10px; color: #333; margin-left: 4px;">Ukuran: ${item.length}m x ${item.width}m</div>` : '';
     
     let addonsText = '';
     if (item.addons && item.addons.length > 0) {
@@ -339,11 +340,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                     <div className="font-bold text-slate-900">
                       {item.product_name || item.name || 'Produk'} {item.variant_name ? `(${item.variant_name})` : ''}
                     </div>
-                    {item.length && item.width && (
-                      <div className="text-[10px] text-slate-600 pl-1">
-                        Ukuran: {item.length}m x {item.width}m
-                      </div>
-                    )}
+                    {(() => {
+                      const isMeterItem = ((item.unit_name || '') + ' ' + (item.product_name || item.name || '')).toLowerCase().includes('meter');
+                      return isMeterItem && item.length && item.width ? (
+                        <div className="text-[10px] text-slate-600 pl-1">
+                          Ukuran: {item.length}m x {item.width}m
+                        </div>
+                      ) : null;
+                    })()}
                     {item.addons && item.addons.length > 0 && (
                       <div className="text-[9px] text-slate-500 pl-1">
                         + Finishing: {item.addons.map((a: any) => `${a.addon_name || a.name || 'Finishing'}${a.qty > 1 ? ` (${a.qty}x)` : ''}`).join(', ')}

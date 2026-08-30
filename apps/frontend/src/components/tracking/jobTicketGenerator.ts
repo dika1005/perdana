@@ -18,7 +18,8 @@ export function generateJobTicketHtml(job: any, customer: any): string {
 
   const items = job.items || [];
   const itemsHtml = items.map((item: any, idx: number) => {
-    const dim = (item.length && item.width) ? `${item.length}m x ${item.width}m (${(item.length * item.width).toFixed(2)} m²)` : '-';
+    const isMeterItem = ((item.unit_name || '') + ' ' + (item.product_name || item.name || '')).toLowerCase().includes('meter');
+    const dim = (isMeterItem && item.length && item.width) ? `${item.length}m x ${item.width}m (${(item.length * item.width).toFixed(2)} m²)` : '-';
     
     let finishingList: string[] = [];
     if (item.addons && item.addons.length > 0) {

@@ -137,6 +137,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     web::patch().to(transactions::update_payment),
                 )
                 .route("/{id}/refund", web::post().to(transactions::refund_payment))
+                .route("/{id}/settle", web::post().to(transactions::settle))
                 .route("/{id}/waste", web::post().to(transactions::record_waste))
                 .route("/{id}/rework", web::post().to(transactions::record_rework))
                 .route(

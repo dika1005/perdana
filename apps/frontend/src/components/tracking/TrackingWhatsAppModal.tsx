@@ -26,7 +26,8 @@ export function generateWhatsAppMessage(job: any): string {
   let itemsList = '';
   if (job.items && job.items.length > 0) {
     itemsList = job.items.map((it: any) => {
-      const dim = (it.length && it.width) ? ` (${it.length}x${it.width}m)` : '';
+      const isMeterItem = ((it.unit_name || '') + ' ' + (it.product_name || it.name || '')).toLowerCase().includes('meter');
+      const dim = (isMeterItem && it.length && it.width) ? ` (${it.length}x${it.width}m)` : '';
       const finish = (it.addons && it.addons.length > 0) 
         ? `\n   ↳ Finishing: ${it.addons.map((a: any) => `${a.addon_name || a.name}${a.qty > 1 ? ` (${a.qty}x)` : ''}`).join(', ')}`
         : '';

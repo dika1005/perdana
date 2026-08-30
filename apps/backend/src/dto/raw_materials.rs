@@ -20,6 +20,12 @@ pub struct CreateRawMaterialRequest {
     pub variant: Option<String>,
     #[schema(example = "lembar")]
     pub unit: Option<String>,
+    /// Nama kemasan beli (rim, dus, botol); opsional.
+    #[schema(example = "rim")]
+    pub package_unit: Option<String>,
+    /// Isi satu kemasan dalam satuan dasar (mis. 500 lembar per rim).
+    #[schema(value_type = Option<f64>, example = 500)]
+    pub package_size: Option<Decimal>,
     #[schema(value_type = Option<f64>, example = 100)]
     pub stock: Option<Decimal>,
     #[schema(value_type = Option<f64>, example = 20)]
@@ -41,6 +47,12 @@ pub struct UpdateRawMaterialRequest {
     pub variant: Option<String>,
     #[schema(example = "lembar")]
     pub unit: Option<String>,
+    /// Nama kemasan beli (rim, dus, botol); opsional.
+    #[schema(example = "rim")]
+    pub package_unit: Option<String>,
+    /// Isi satu kemasan dalam satuan dasar (mis. 500 lembar per rim).
+    #[schema(value_type = Option<f64>, example = 500)]
+    pub package_size: Option<Decimal>,
     #[schema(value_type = Option<f64>, example = 25)]
     pub min_stock_warning: Option<Decimal>,
     #[schema(value_type = Option<f64>, example = 2500)]
@@ -63,6 +75,9 @@ pub struct RawMaterialResponse {
     pub name: String,
     pub variant: Option<String>,
     pub unit: String,
+    pub package_unit: Option<String>,
+    #[schema(value_type = Option<f64>)]
+    pub package_size: Option<Decimal>,
     #[schema(value_type = f64)]
     pub stock: Decimal,
     #[schema(value_type = f64)]

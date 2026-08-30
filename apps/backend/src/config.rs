@@ -187,6 +187,13 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     let _ = db.execute_unprepared("ALTER TABLE transaction_items ADD COLUMN length DECIMAL(10,2) NULL DEFAULT NULL;").await;
     let _ = db.execute_unprepared("ALTER TABLE transaction_items ADD COLUMN width DECIMAL(10,2) NULL DEFAULT NULL;").await;
 
+    // Migrasi input bahan manual (tanpa BOM): kemasan beli per bahan dan
+    // flag produk yang wajib diisi bahan saat checkout. Lihat
+    // requirements/migrations/0002_manual_materials.sql.
+    let _ = db.execute_unprepared("ALTER TABLE raw_materials ADD COLUMN package_unit VARCHAR(50) NULL DEFAULT NULL AFTER unit;").await;
+    let _ = db.execute_unprepared("ALTER TABLE raw_materials ADD COLUMN package_size DECIMAL(12,4) NULL DEFAULT NULL AFTER package_unit;").await;
+    let _ = db.execute_unprepared("ALTER TABLE products ADD COLUMN uses_material TINYINT(1) NOT NULL DEFAULT 0 AFTER has_variants;").await;
+
     // Fondasi inventori produksi (BOM versioning, reservation, ledger,
     // payments, audit, dan lot/offcut) dibuat secara additive agar data lama
     // tidak dihapus saat aplikasi diperbarui.

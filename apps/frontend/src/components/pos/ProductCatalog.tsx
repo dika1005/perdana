@@ -29,7 +29,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
   onSelectCategory,
   searchTerm,
   onSearchTermChange,
-  onSearchSubmit: _onSearchSubmit,
+  onSearchSubmit,
   loading,
   cart,
   onAddToCart,
@@ -49,6 +49,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
             className="bg-transparent border-none outline-none w-full text-xs sm:text-sm text-text-main placeholder:text-slate-400 font-medium"
             value={searchTerm}
             onChange={e => onSearchTermChange(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onSearchSubmit(e); } }}
           />
           {searchTerm && (
             <button 

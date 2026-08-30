@@ -10,7 +10,6 @@ interface AddonListTabProps {
   onOpenAddModal: () => void;
   onOpenEditModal: (addon: ProductAddon) => void;
   onDeleteAddon: (id: number) => void;
-  onConfigureBom: (addon: ProductAddon) => void;
 }
 
 export const AddonListTab: React.FC<AddonListTabProps> = ({
@@ -18,7 +17,6 @@ export const AddonListTab: React.FC<AddonListTabProps> = ({
   onOpenAddModal,
   onOpenEditModal,
   onDeleteAddon,
-  onConfigureBom,
 }) => {
   return (
     <div className="skeuo p-6">
@@ -82,13 +80,6 @@ export const AddonListTab: React.FC<AddonListTabProps> = ({
                   </td>
                   <td className="py-3 text-right">
                     <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => onConfigureBom(a)}
-                        className="w-8 h-8 flex items-center justify-center skeuo-button text-indigo-500 rounded-lg"
-                        title="Atur bahan finishing"
-                      >
-                        <Layers className="w-3.5 h-3.5" />
-                      </button>
                       <button
                         onClick={() => onOpenEditModal(a)}
                         className="w-8 h-8 flex items-center justify-center skeuo-button text-brand-500 rounded-lg"

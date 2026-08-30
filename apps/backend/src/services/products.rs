@@ -47,6 +47,7 @@ pub fn map_product(
         unit_name: m.unit_name.clone().unwrap_or_else(|| "pcs".to_string()),
         has_variants: m.has_variants,
         is_active: m.is_active,
+        uses_material: m.uses_material,
         raw_material_id: m.raw_material_id,
         material_amount: m.material_amount,
         created_at: m.created_at,
@@ -197,6 +198,7 @@ pub async fn create_as(
         min_order: Set(Some(payload.min_order.unwrap_or(1).max(1))),
         unit_name: Set(Some(unit_name)),
         has_variants: Set(payload.has_variants.unwrap_or(false)),
+        uses_material: Set(payload.uses_material.unwrap_or(false)),
         raw_material_id: Set(payload.raw_material_id),
         material_amount: Set(payload.material_amount.or(Some(Decimal::ONE))),
         is_active: Set(true),
@@ -282,6 +284,9 @@ pub async fn update_as(
     active_model.unit_name = Set(Some(unit_name));
     if let Some(has_variants) = payload.has_variants {
         active_model.has_variants = Set(has_variants);
+    }
+    if let Some(uses_material) = payload.uses_material {
+        active_model.uses_material = Set(uses_material);
     }
     active_model.raw_material_id = Set(payload.raw_material_id);
     if payload.material_amount.is_some() {

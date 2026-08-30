@@ -40,8 +40,7 @@ export function useProductManagement() {
     min_order: 1,
     unit_name: 'pcs',
     has_variants: false,
-    raw_material_id: undefined as number | undefined,
-    material_amount: 1,
+    uses_material: false,
   });
 
   const [vForm, setVForm] = useState({
@@ -128,8 +127,7 @@ export function useProductManagement() {
         min_order: prod.min_order || 1,
         unit_name: prod.unit_name || 'pcs',
         has_variants: prod.has_variants || false,
-        raw_material_id: prod.raw_material_id || undefined,
-        material_amount: Number(prod.material_amount) || 1,
+        uses_material: prod.uses_material || false,
       });
       setProductModal({ open: true, item: prod });
     } else {
@@ -143,8 +141,7 @@ export function useProductManagement() {
         min_order: 1,
         unit_name: 'pcs',
         has_variants: false,
-        raw_material_id: undefined,
-        material_amount: 1,
+        uses_material: false,
       });
       setProductModal({ open: true, item: null });
     }

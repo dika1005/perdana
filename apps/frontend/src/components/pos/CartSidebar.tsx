@@ -5,7 +5,7 @@ import { ShoppingCart, Trash2 } from 'lucide-react';
 import { Customer } from '../../types/customer';
 import { ProductAddon } from '../../types/product';
 import { RawMaterial } from '../../types/rawMaterial';
-import { CartItem } from './types';
+import { CartItem, CartItemMaterial } from './types';
 import { CartCustomerSelector } from './CartCustomerSelector';
 import { CartItemCard } from './CartItemCard';
 import { CartFooterSummary } from './CartFooterSummary';
@@ -24,6 +24,9 @@ interface CartSidebarProps {
   onUpdateDimensions: (id: number, length: number, width: number) => void;
   onToggleAddon: (productId: number, addon: ProductAddon) => void;
   onUpdateAddonQty?: (productId: number, addonId: number, qty: number) => void;
+  onAddMaterial: (productId: number) => void;
+  onUpdateMaterial: (productId: number, index: number, patch: Partial<CartItemMaterial>) => void;
+  onRemoveMaterial: (productId: number, index: number) => void;
   onRemoveFromCart: (id: number) => void;
   onClearCart: () => void;
   discountAmount: number;
@@ -32,46 +35,6 @@ interface CartSidebarProps {
   total: number;
   onOpenCheckout: () => void;
 }
-
-const getRecommendedMaterials = (item: CartItem, allMaterials: RawMaterial[]) => {
-  const prodName = item.product.name.toLowerCase();
-  const unitName = (item.product.unit_name || '').toLowerCase();
-  
-  const isBanner = prodName.includes('banner') || prodName.includes('spanduk') || prodName.includes('baliho') || prodName.includes('umbul') || prodName.includes('bendera') || unitName.includes('meter');
-  const isStiker = prodName.includes('stiker') || prodName.includes('label');
-  const isStempel = prodName.includes('stempel') || prodName.includes('id card') || prodName.includes('lanyard') || prodName.includes('pin') || prodName.includes('gantungan');
-  
-  if (isBanner) {
-    const list = allMaterials.filter(m => {
-      const name = m.name.toLowerCase();
-      return name.includes('banner') || name.includes('flexi') || name.includes('spanduk') || name.includes('kain tc') || name.includes('stand') || name.includes('roll') || name.includes('tinta');
-    });
-    return list.length > 0 ? list : allMaterials;
-  }
-  
-  if (isStiker) {
-    const list = allMaterials.filter(m => {
-      const name = m.name.toLowerCase();
-      return name.includes('stiker') || name.includes('cromo') || name.includes('vinyl') || name.includes('kunsruk') || name.includes('art paper');
-    });
-    return list.length > 0 ? list : allMaterials;
-  }
-  
-  if (isStempel) {
-    const list = allMaterials.filter(m => {
-      const name = m.name.toLowerCase();
-      return name.includes('stempel') || name.includes('karet') || name.includes('flash') || name.includes('lanyard') || name.includes('case');
-    });
-    return list.length > 0 ? list : allMaterials;
-  }
-  
-  const list = allMaterials.filter(m => {
-    const name = m.name.toLowerCase();
-    const isBannerSpecific = (name.includes('flexi') || name.includes('stand x') || name.includes('stand y') || name.includes('roll banner') || name.includes('spanduk kain'));
-    return !isBannerSpecific;
-  });
-  return list.length > 0 ? list : allMaterials;
-};
 
 export const CartSidebar: React.FC<CartSidebarProps> = ({
   cart,
@@ -87,6 +50,9 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   onUpdateDimensions,
   onToggleAddon,
   onUpdateAddonQty,
+  onAddMaterial,
+  onUpdateMaterial,
+  onRemoveMaterial,
   onRemoveFromCart,
   onClearCart,
   discountAmount,
@@ -159,7 +125,6 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
           cart.map(item => {
             const isRange = item.product.price_type === 'RANGE';
             const isCustom = item.product.price_type === 'CUSTOM';
-            const isPriceEdited = item.price !== (Number(item.product.default_price) || 0);
             const isEditOpen = editingPriceIds[item.product.id] || isRange || isCustom;
 
             return (
@@ -168,9 +133,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                 item={item}
                 rawMaterials={rawMaterials}
                 availableAddons={availableAddons}
-                isPriceEdited={isPriceEdited}
                 isEditOpen={isEditOpen}
-                recommendedMaterials={[]}
                 onTogglePriceEdit={() => togglePriceEdit(item.product.id)}
                 onUpdateQty={(delta) => onUpdateQty(item.product.id, delta)}
                 onSetQty={(qty) => onUpdateQty(item.product.id, qty - item.qty)}
@@ -178,6 +141,9 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                 onUpdateDimensions={(l, w) => onUpdateDimensions(item.product.id, l, w)}
                 onToggleAddon={(addon) => onToggleAddon(item.product.id, addon)}
                 onUpdateAddonQty={(addonId, qty) => onUpdateAddonQty?.(item.product.id, addonId, qty)}
+                onAddMaterial={() => onAddMaterial(item.product.id)}
+                onUpdateMaterial={(index, patch) => onUpdateMaterial(item.product.id, index, patch)}
+                onRemoveMaterial={(index) => onRemoveMaterial(item.product.id, index)}
                 onRemove={() => onRemoveFromCart(item.product.id)}
               />
             );

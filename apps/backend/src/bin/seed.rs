@@ -59,7 +59,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("✅ Database bersih & skema terverifikasi.");
 
-
     // 1. Akun Pengguna: 1 Super Admin & 1 Admin Kasir
     println!("\n👤 Membuat Akun Pengguna...");
     let superadmin_password = env::var("SEED_SUPERADMIN_PASSWORD").unwrap_or_else(|_| "perdana1".to_string());
@@ -103,77 +102,79 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     }.insert(&db).await?;
 
-    // Daftar Lengkap Bahan Baku Sesuai DAFTAR STOK BARANG
+    // Format: (name, variant, unit, package_unit, package_size, stock, min_stock_warning, category_id)
     let raw_mats = vec![
-        // I. Kertas & Karton (Satuan Dasar: Lembar)
-        ("Kertas BW 23", Some("Plano / Pack"), "lembar", 250, 30, rcat_kertas.id),
-        ("Kertas BW 21", Some("Plano / Pack"), "lembar", 250, 30, rcat_kertas.id),
-        ("Kertas Kunsruk", Some("Art Paper Plano"), "lembar", 500, 50, rcat_kertas.id),
-        ("Kertas Stiker Cromo", Some("A3+ / Pack"), "lembar", 350, 30, rcat_kertas.id),
-        ("Kertas BC Tik", Some("Plano / Pack"), "lembar", 300, 30, rcat_kertas.id),
-        ("Kertas Ciwi Putih", Some("F4 / 50 Rim"), "lembar", 25000, 1500, rcat_kertas.id),
-        ("Ciwi Merah/Pink", Some("F4 / 30 Rim"), "lembar", 15000, 1000, rcat_kertas.id),
-        ("Ciwi Hijau", Some("F4 / 30 Rim"), "lembar", 15000, 1000, rcat_kertas.id),
-        ("Ciwi Kuning", Some("F4 / 30 Rim"), "lembar", 15000, 1000, rcat_kertas.id),
-        ("Ciwi Biru", Some("F4 / 30 Rim"), "lembar", 15000, 1000, rcat_kertas.id),
-        ("Kertas HVS F4 Putih", Some("70-80gr / 120 Rim"), "lembar", 60000, 2500, rcat_kertas.id),
-        ("HVS F4 Kuning", Some("70gr / 40 Rim"), "lembar", 20000, 1000, rcat_kertas.id),
-        ("HVS F4 Hijau", Some("70gr / 40 Rim"), "lembar", 20000, 1000, rcat_kertas.id),
-        ("HVS F4 Biru", Some("70gr / 40 Rim"), "lembar", 20000, 1000, rcat_kertas.id),
-        ("Kertas NCR Putih", Some("Top / 60 Rim"), "lembar", 30000, 2500, rcat_kertas.id),
-        ("NCR Merah", Some("Middle/Bottom / 50 Rim"), "lembar", 25000, 1500, rcat_kertas.id),
-        ("NCR Kuning", Some("Middle/Bottom / 50 Rim"), "lembar", 25000, 1500, rcat_kertas.id),
-        ("NCR Biru", Some("Middle/Bottom / 50 Rim"), "lembar", 25000, 1500, rcat_kertas.id),
-        ("NCR Hijau", Some("Middle/Bottom / 50 Rim"), "lembar", 25000, 1500, rcat_kertas.id),
+        // I. Kertas & Karton (Satuan Dasar: Lembar, Kemasan: Rim / 500 atau Pack / 100)
+        ("Kertas BW 23", Some("Plano / Pack"), "lembar", Some("rim"), Some(500), 2500, 500, rcat_kertas.id),
+        ("Kertas BW 21", Some("Plano / Pack"), "lembar", Some("rim"), Some(500), 2500, 500, rcat_kertas.id),
+        ("Kertas Kunsruk", Some("Art Paper Plano"), "lembar", Some("rim"), Some(500), 5000, 500, rcat_kertas.id),
+        ("Kertas Stiker Cromo", Some("A3+ / Pack"), "lembar", Some("pack"), Some(100), 1000, 100, rcat_kertas.id),
+        ("Kertas BC Tik", Some("Plano / Pack"), "lembar", Some("rim"), Some(500), 2500, 500, rcat_kertas.id),
+        ("Kertas Ciwi Putih", Some("F4 / 50 Rim"), "lembar", Some("rim"), Some(500), 25000, 1500, rcat_kertas.id),
+        ("Ciwi Merah/Pink", Some("F4 / 30 Rim"), "lembar", Some("rim"), Some(500), 15000, 1000, rcat_kertas.id),
+        ("Ciwi Hijau", Some("F4 / 30 Rim"), "lembar", Some("rim"), Some(500), 15000, 1000, rcat_kertas.id),
+        ("Ciwi Kuning", Some("F4 / 30 Rim"), "lembar", Some("rim"), Some(500), 15000, 1000, rcat_kertas.id),
+        ("Ciwi Biru", Some("F4 / 30 Rim"), "lembar", Some("rim"), Some(500), 15000, 1000, rcat_kertas.id),
+        ("Kertas HVS F4 Putih", Some("70-80gr / 120 Rim"), "lembar", Some("rim"), Some(500), 60000, 2500, rcat_kertas.id),
+        ("HVS F4 Kuning", Some("70gr / 40 Rim"), "lembar", Some("rim"), Some(500), 20000, 1000, rcat_kertas.id),
+        ("HVS F4 Hijau", Some("70gr / 40 Rim"), "lembar", Some("rim"), Some(500), 20000, 1000, rcat_kertas.id),
+        ("HVS F4 Biru", Some("70gr / 40 Rim"), "lembar", Some("rim"), Some(500), 20000, 1000, rcat_kertas.id),
+        ("Kertas NCR Putih", Some("Top / 60 Rim"), "lembar", Some("rim"), Some(500), 30000, 2500, rcat_kertas.id),
+        ("NCR Merah", Some("Middle/Bottom / 50 Rim"), "lembar", Some("rim"), Some(500), 25000, 1500, rcat_kertas.id),
+        ("NCR Kuning", Some("Middle/Bottom / 50 Rim"), "lembar", Some("rim"), Some(500), 25000, 1500, rcat_kertas.id),
+        ("NCR Biru", Some("Middle/Bottom / 50 Rim"), "lembar", Some("rim"), Some(500), 25000, 1500, rcat_kertas.id),
+        ("NCR Hijau", Some("Middle/Bottom / 50 Rim"), "lembar", Some("rim"), Some(500), 25000, 1500, rcat_kertas.id),
 
-        // II. Amplop & Plastik Undangan (Satuan Dasar: Pcs)
-        ("Amplop Sedang", Some("Isi 100 / Box"), "pcs", 6000, 500, rcat_amplop.id),
-        ("Amplop Panjang", Some("Isi 100 / Box"), "pcs", 6000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 8", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 8.5", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 9", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 9.5", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 10", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 10.5", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 11", Some("Pack Isi 100"), "pcs", 6000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 11.5", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 12", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 12.5", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 13", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 13.5", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 14", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 14.5", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 15", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 15.5", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 16", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 17", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 17.5", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
-        ("Plastik Und. Ukuran 18", Some("Pack Isi 100"), "pcs", 5000, 500, rcat_amplop.id),
+        // II. Amplop & Plastik Undangan (Satuan Dasar: Pcs, Kemasan: Box / 500 & Dus / 100)
+        ("Amplop Sedang", Some("Isi 100 / Box"), "pcs", Some("box"), Some(500), 6000, 500, rcat_amplop.id),
+        ("Amplop Panjang", Some("Isi 100 / Box"), "pcs", Some("box"), Some(500), 6000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 8", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 8.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 9", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 9.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 10", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 10.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 11", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 6000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 11.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 12", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 12.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 13", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 13.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 14", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 14.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 15", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 15.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 16", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 17", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 17.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
+        ("Plastik Und. Ukuran 18", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
 
-        // III. Tinta, Banner, Stempel & Lem
-        ("Bahan Tinta Cetak Cyan", Some("Botol 1L"), "botol", 25, 3, rcat_tinta_display.id),
-        ("Bahan Tinta Cetak Magenta", Some("Tinta Merah 1L"), "botol", 25, 3, rcat_tinta_display.id),
-        ("Bahan Tinta Cetak Yellow", Some("Botol 1L"), "botol", 25, 3, rcat_tinta_display.id),
-        ("Bahan Tinta Cetak Black", Some("Botol 1L"), "botol", 35, 5, rcat_tinta_display.id),
-        ("Bahan Karet Stempel", Some("Flash / Kayu"), "lembar", 50, 5, rcat_tinta_display.id),
-        ("Lem Fox", Some("Kaleng 1kg"), "kaleng", 25, 3, rcat_tinta_display.id),
-        ("Bahan Flexi Banner 280G", Some("Roll 3.2m x 50m / 12 Roll"), "meter", 600, 50, rcat_tinta_display.id),
-        ("Bahan Spanduk Kain TC", Some("Roll 1.2m x 50m / 10 Roll"), "meter", 500, 50, rcat_tinta_display.id),
-        ("Bahan Stiker Vinyl Roll", Some("Roll 1.05m x 50m / 15 Roll"), "meter", 750, 50, rcat_tinta_display.id),
-        ("Stand X Banner", Some("Rangka 60x160cm"), "pcs", 40, 5, rcat_tinta_display.id),
-        ("Stand Y Banner", Some("Rangka 60x160cm"), "pcs", 30, 5, rcat_tinta_display.id),
-        ("Rangka Roll Banner", Some("Aluminium 60x160cm"), "pcs", 20, 3, rcat_tinta_display.id),
-        ("Tali Lanyard & Case ID", Some("Set Lengkap"), "pcs", 250, 30, rcat_tinta_display.id),
-        ("Gantungan Kunci Polos", Some("Bahan Akrilik/Pin"), "pcs", 300, 30, rcat_tinta_display.id),
+        // III. Tinta, Banner, Stempel & Lem (Tinta Satuan Dasar: ml, Kemasan: Botol / 1000)
+        ("Bahan Tinta Cetak Cyan", Some("Botol 1L"), "ml", Some("botol"), Some(1000), 25000, 3000, rcat_tinta_display.id),
+        ("Bahan Tinta Cetak Magenta", Some("Tinta Merah 1L"), "ml", Some("botol"), Some(1000), 25000, 3000, rcat_tinta_display.id),
+        ("Bahan Tinta Cetak Yellow", Some("Botol 1L"), "ml", Some("botol"), Some(1000), 25000, 3000, rcat_tinta_display.id),
+        ("Bahan Tinta Cetak Black", Some("Botol 1L"), "ml", Some("botol"), Some(1000), 35000, 5000, rcat_tinta_display.id),
+        ("Bahan Karet Stempel", Some("Flash / Kayu"), "lembar", None, None, 50, 5, rcat_tinta_display.id),
+        ("Lem Fox", Some("Kaleng 1kg"), "kaleng", None, None, 25, 3, rcat_tinta_display.id),
+        ("Bahan Flexi Banner 280G", Some("Roll 3.2m x 50m / 12 Roll"), "meter", Some("rol"), Some(50), 600, 50, rcat_tinta_display.id),
+        ("Bahan Spanduk Kain TC", Some("Roll 1.2m x 50m / 10 Roll"), "meter", Some("rol"), Some(50), 500, 50, rcat_tinta_display.id),
+        ("Bahan Stiker Vinyl Roll", Some("Roll 1.05m x 50m / 15 Roll"), "meter", Some("rol"), Some(50), 750, 50, rcat_tinta_display.id),
+        ("Stand X Banner", Some("Rangka 60x160cm"), "pcs", None, None, 40, 5, rcat_tinta_display.id),
+        ("Stand Y Banner", Some("Rangka 60x160cm"), "pcs", None, None, 30, 5, rcat_tinta_display.id),
+        ("Rangka Roll Banner", Some("Aluminium 60x160cm"), "pcs", None, None, 20, 3, rcat_tinta_display.id),
+        ("Tali Lanyard & Case ID", Some("Set Lengkap"), "pcs", None, None, 250, 30, rcat_tinta_display.id),
+        ("Gantungan Kunci Polos", Some("Bahan Akrilik/Pin"), "pcs", None, None, 300, 30, rcat_tinta_display.id),
     ];
 
     let mut map_mat_id = std::collections::HashMap::new();
-    for (name, variant, unit, stock, min_w, c_id) in raw_mats {
+    for (name, variant, unit, pkg_unit, pkg_size, stock, min_w, c_id) in raw_mats {
         let inserted = raw_materials::ActiveModel {
             category_id: Set(Some(c_id)),
             name: Set(name.to_string()),
             variant: Set(variant.map(|s| s.to_string())),
             unit: Set(unit.to_string()),
+            package_unit: Set(pkg_unit.map(|s| s.to_string())),
+            package_size: Set(pkg_size.map(Decimal::from)),
             stock: Set(Decimal::from(stock)),
             min_stock_warning: Set(Decimal::from(min_w)),
             ..Default::default()
@@ -253,6 +254,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("meter".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -267,6 +269,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("meter".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -281,6 +284,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("meter".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -295,6 +299,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("set".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -309,6 +314,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(true),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -343,6 +349,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("set".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -358,6 +365,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("paket".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -372,6 +380,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("meter".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -386,6 +395,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("meter".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -401,6 +411,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -415,6 +426,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -430,6 +442,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("lembar".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -444,6 +457,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("tema".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -458,6 +472,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("lembar".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -472,6 +487,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("box".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -486,6 +502,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("box".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -501,6 +518,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -515,6 +533,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -529,6 +548,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -543,6 +563,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -557,6 +578,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -571,6 +593,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -585,6 +608,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -599,6 +623,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -614,6 +639,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -628,6 +654,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -642,6 +669,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -656,6 +684,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -670,6 +699,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -684,6 +714,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -698,6 +729,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -712,6 +744,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -726,6 +759,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -740,6 +774,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -754,6 +789,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -768,6 +804,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -782,6 +819,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -797,6 +835,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -811,6 +850,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -825,6 +865,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -839,6 +880,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -853,6 +895,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -867,6 +910,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -881,6 +925,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -895,6 +940,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("rim".to_string())),
         has_variants: Set(false),
+        uses_material: Set(true),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -910,6 +956,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(20)),
         unit_name: Set(Some("set".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -924,6 +971,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -938,6 +986,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -952,6 +1001,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -966,6 +1016,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -980,6 +1031,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -994,6 +1046,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -1008,6 +1061,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -1022,6 +1076,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -1036,6 +1091,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("buku".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -1050,6 +1106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(20)),
         unit_name: Set(Some("pcs".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -1064,6 +1121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_order: Set(Some(1)),
         unit_name: Set(Some("jasa".to_string())),
         has_variants: Set(false),
+        uses_material: Set(false),
         ..Default::default()
     }.insert(&db).await?;
 
@@ -1116,11 +1174,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 7. Contoh BOM (Bill of Materials) untuk demonstrasi produksi
     println!("\n🔧 Menanam Contoh BOM Produk...");
-    // We insert BOM rows via raw SQL because the seeder runs before
-    // the SeaORM entity for `product_boms` is generated with full
-    // ActiveModel support. Using SQL keeps the seeder simple.
-
-    // ── Spanduk /meter: 1 m² Flexi Banner per output, 5% waste allowance
+    // Spanduk /meter: 1 m² Flexi Banner per output, 5% waste allowance
     if let (Some(p_spanduk_id), Some(mat_flexi_id)) = (
         find_product_id(&db, "Spanduk /meter").await,
         mat_flexi,
@@ -1130,7 +1184,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  -> BOM Spanduk /meter (Flexi Banner PER_AREA)");
     }
 
-    // ── Sticker (A3+): 1 lembar Stiker Cromo per unit, 3% waste
+    // Sticker (A3+): 1 lembar Stiker Cromo per unit, 3% waste
     if let (Some(p_stiker_id), Some(mat_cromo_id)) = (
         find_product_id(&db, "Sticker (A3+)").await,
         mat_stiker_cromo,
@@ -1140,27 +1194,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  -> BOM Sticker A3+ (Cromo PER_UNIT)");
     }
 
-    // ── Nota NCR 2 Ply: 500 lembar NCR Putih + 500 lembar NCR warna per rim
+    // Nota NCR 2 Ply: 500 lembar NCR Putih + 500 lembar NCR warna per rim
     if let (Some(p_nota_id), Some(mat_ncr_id)) = (
         find_product_id(&db, "Nota / Faktur (NCR 1 Warna 2 Ply) 1 Rim").await,
         mat_ncr_putih,
     ) {
         let bom_id = insert_bom_sql(&db, p_nota_id, None, 1).await?;
         insert_bom_line_sql(&db, bom_id, mat_ncr_id, "MATERIAL", "PER_UNIT", "500.0000", "0.0200", true, 0).await?;
-        // Tinta sebagai fixed component
         if let Some(mat_tinta_id) = map_mat_id.get("Bahan Tinta Cetak Black").copied() {
-            insert_bom_line_sql(&db, bom_id, mat_tinta_id, "MATERIAL", "FIXED", "0.0500", "0.0000", true, 1).await?;
+            insert_bom_line_sql(&db, bom_id, mat_tinta_id, "MATERIAL", "FIXED", "50.0000", "0.0000", true, 1).await?;
         }
         println!("  -> BOM Nota NCR 2 Ply (NCR + Tinta)");
     }
 
-    // ── Addon BOM: Mata Ayam → 0 bahan wajib (jasa murni), tapi bisa ditambahkan
-    // Contoh: Laminasi Glossy membutuhkan bahan laminasi (belum ada di stok, skip)
-    println!("  -> Addon BOMs: skipped (add-on saat ini adalah jasa tanpa bahan)");
-
     // 8. Contoh UOM Conversions
     println!("\n📐 Menanam Konversi Satuan Bahan...");
-    // HVS F4: 1 rim = 500 lembar
     if let Some(hvs_id) = map_mat_id.get("Kertas HVS F4 Putih").copied() {
         let _ = db.execute(Statement::from_string(DbBackend::MySql, format!(
             "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'rim', 'lembar', 500.000000, '1 rim = 500 lembar HVS')",
@@ -1168,7 +1216,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ))).await;
         println!("  -> HVS F4: 1 rim = 500 lembar");
     }
-    // NCR Putih: 1 rim = 500 lembar
     if let Some(ncr_id) = map_mat_id.get("Kertas NCR Putih").copied() {
         let _ = db.execute(Statement::from_string(DbBackend::MySql, format!(
             "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'rim', 'lembar', 500.000000, '1 rim = 500 lembar NCR')",
@@ -1176,7 +1223,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ))).await;
         println!("  -> NCR Putih: 1 rim = 500 lembar");
     }
-    // Art Paper: 1 rim = 500 lembar
     if let Some(ap_id) = map_mat_id.get("Kertas Kunsruk").copied() {
         let _ = db.execute(Statement::from_string(DbBackend::MySql, format!(
             "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'rim', 'lembar', 500.000000, '1 rim = 500 lembar Art Paper')",
@@ -1184,13 +1230,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ))).await;
         println!("  -> Art Paper: 1 rim = 500 lembar");
     }
-    // Amplop: 1 box = 100 pcs
     if let Some(amp_id) = map_mat_id.get("Amplop Sedang").copied() {
         let _ = db.execute(Statement::from_string(DbBackend::MySql, format!(
-            "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'box', 'pcs', 100.000000, '1 box = 100 pcs amplop')",
+            "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'box', 'pcs', 500.000000, '1 box = 500 pcs amplop')",
             amp_id
         ))).await;
-        println!("  -> Amplop Sedang: 1 box = 100 pcs");
+        println!("  -> Amplop Sedang: 1 box = 500 pcs");
     }
 
     println!("\n==================================================");
@@ -1222,12 +1267,11 @@ async fn insert_bom_sql(
     version: i32,
 ) -> Result<i32, Box<dyn std::error::Error>> {
     let variant_sql = variant_id.map_or("NULL".to_string(), |v| v.to_string());
-    db.execute(Statement::from_string(DbBackend::MySql, format!(
+    let res = db.execute(Statement::from_string(DbBackend::MySql, format!(
         "INSERT INTO product_boms (product_id, product_variant_id, version, status, output_qty, notes, activated_at) \
          VALUES ({product_id}, {variant_sql}, {version}, 'ACTIVE', 1.0000, 'Seeded by initial setup', NOW())"
     ))).await?;
-    let row = db.query_one(Statement::from_string(DbBackend::MySql, "SELECT LAST_INSERT_ID() as id".to_string())).await?.unwrap();
-    let id: i64 = row.try_get::<i64>("", "id")?;
+    let id = res.last_insert_id();
     Ok(id as i32)
 }
 

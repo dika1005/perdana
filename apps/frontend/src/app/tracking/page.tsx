@@ -96,8 +96,7 @@ export default function JobTrackingPage() {
 
     setSubmittingSettle(true);
     try {
-      await transactionService.updatePayment(settleModal.job.id, payAmount, 'PAID', settlePaymentMethod);
-      await transactionService.updateOrderStatus(settleModal.job.id, 'DIAMBIL');
+      await transactionService.settle(settleModal.job.id, payAmount, settlePaymentMethod);
       setSettleModal({ open: false, job: null });
       showToast('Pelunasan berhasil dan barang diserahkan!', 'success');
       fetchJobs();

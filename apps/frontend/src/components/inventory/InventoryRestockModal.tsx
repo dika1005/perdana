@@ -35,14 +35,20 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
   const isBanner = unit === 'meter' || variant.includes('roll');
   const isBoxed = unit === 'pcs' && (variant.includes('box') || variant.includes('pack') || variant.includes('isi 100'));
 
+  // Konversi kemasan: utamakan master data (package_unit/package_size),
+  // fallback heuristik untuk bahan yang belum dikonfigurasi.
+  const hasMasterPackage = !!selectedItem?.package_unit && Number(selectedItem?.package_size || 0) > 0;
+  const multiplier = hasMasterPackage
+    ? Number(selectedItem!.package_size)
+    : isPaper && variant.includes('rim') ? 500 : isBanner ? 50 : isBoxed ? 100 : 1;
+  const bulkUnitLabel = hasMasterPackage
+    ? selectedItem!.package_unit!
+    : isPaper && variant.includes('rim') ? 'Rim' : isBanner ? 'Roll' : isBoxed ? 'Box' : (selectedItem?.unit || 'pcs');
+
   // Input Mode: 'BULK' (Rim/Roll/Box) atau 'BASE' (Lembar/Meter/Pcs)
-  const defaultMode = (isPaper && variant.includes('rim')) || isBanner || isBoxed ? 'BULK' : 'BASE';
+  const defaultMode = multiplier > 1 ? 'BULK' : 'BASE';
   const [inputMode, setInputMode] = useState<'BULK' | 'BASE'>(defaultMode);
   const [bulkCount, setBulkCount] = useState<number>(10);
-
-  // Multiplier konversi
-  const multiplier = isPaper && variant.includes('rim') ? 500 : isBanner ? 50 : isBoxed ? 100 : 1;
-  const bulkUnitLabel = isPaper && variant.includes('rim') ? 'Rim' : isBanner ? 'Roll' : isBoxed ? 'Box' : (selectedItem?.unit || 'pcs');
 
   // Sinkronisasi bulk count ke mutationQty
   useEffect(() => {
@@ -70,7 +76,7 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
     onChangeQty(count * multiplier);
   };
 
-  const currentStock = selectedItem.stock;
+  const currentStock = Number(selectedItem.stock) || 0;
   const newStock = currentStock + (mutationQty || 0);
 
   return (
