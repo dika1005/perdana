@@ -84,10 +84,10 @@ pub async fn get(
 )]
 pub async fn create(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     payload: web::Json<CreateProductRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data = product_service::create(&state.db, payload.into_inner()).await?;
+    let data = product_service::create_as(&state.db, Some(admin.id), payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(ApiResponse::ok("Produk berhasil dibuat", data)))
 }
 
@@ -110,12 +110,17 @@ pub async fn create(
 )]
 pub async fn update(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     path: web::Path<i32>,
     payload: web::Json<UpdateProductRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data =
-        product_service::update(&state.db, path.into_inner(), payload.into_inner()).await?;
+    let data = product_service::update_as(
+        &state.db,
+        Some(admin.id),
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Produk berhasil diperbarui", data)))
 }
 
@@ -137,10 +142,10 @@ pub async fn update(
 )]
 pub async fn delete(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     path: web::Path<i32>,
 ) -> Result<HttpResponse, AppError> {
-    product_service::delete(&state.db, path.into_inner()).await?;
+    product_service::delete_as(&state.db, Some(admin.id), path.into_inner()).await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok(
         "Produk berhasil dihapus",
         MessageData { ok: true },
@@ -196,12 +201,17 @@ pub async fn list_variants(
 )]
 pub async fn create_variant(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     path: web::Path<i32>,
     payload: web::Json<CreateVariantRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data =
-        product_service::create_variant(&state.db, path.into_inner(), payload.into_inner()).await?;
+    let data = product_service::create_variant_as(
+        &state.db,
+        Some(admin.id),
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
     Ok(HttpResponse::Created().json(ApiResponse::ok("Varian produk berhasil dibuat", data)))
 }
 
@@ -224,12 +234,17 @@ pub async fn create_variant(
 )]
 pub async fn update_variant(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     path: web::Path<i32>,
     payload: web::Json<UpdateVariantRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data =
-        product_service::update_variant(&state.db, path.into_inner(), payload.into_inner()).await?;
+    let data = product_service::update_variant_as(
+        &state.db,
+        Some(admin.id),
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Varian produk berhasil diperbarui", data)))
 }
 
@@ -251,10 +266,10 @@ pub async fn update_variant(
 )]
 pub async fn delete_variant(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     path: web::Path<i32>,
 ) -> Result<HttpResponse, AppError> {
-    product_service::delete_variant(&state.db, path.into_inner()).await?;
+    product_service::delete_variant_as(&state.db, Some(admin.id), path.into_inner()).await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok(
         "Varian produk berhasil dihapus",
         MessageData { ok: true },

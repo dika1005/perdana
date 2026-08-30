@@ -23,6 +23,8 @@ pub struct Model {
     pub raw_material_id: Option<i32>,
     #[sea_orm(column_type = "Decimal(Some((12, 4)))", nullable)]
     pub material_amount: Option<Decimal>,
+    /// Soft delete untuk menjaga referensi transaksi dan audit historis.
+    pub is_active: bool,
     pub created_at: DateTimeUtc,
 }
 

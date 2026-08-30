@@ -1,11 +1,12 @@
 use actix_web::{HttpResponse, web};
 
 use crate::dto::{
-    ApiResponse, CreateTransactionRequest, InvoicePrintData, ListResponse, Pagination,
-    TransactionQuery, TransactionResponse, UpdateOrderStatusRequest, UpdatePaymentRequest,
+    ApiResponse, CancelTransactionRequest, CreateTransactionRequest, InvoicePrintData, ListResponse,
+    Pagination, RecordReworkRequest, RecordWasteRequest, RefundPaymentRequest, TransactionQuery,
+    TransactionResponse, UpdateOrderStatusRequest, UpdatePaymentRequest,
 };
 use crate::error::AppError;
-use crate::extractors::AuthUser;
+use crate::extractors::{AuthUser, SuperAdmin};
 use crate::services::transactions as transaction_service;
 use crate::state::AppState;
 
@@ -108,12 +109,13 @@ pub async fn create(
 )]
 pub async fn update_status(
     state: web::Data<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     path: web::Path<i32>,
     payload: web::Json<UpdateOrderStatusRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data = transaction_service::update_status(
+    let data = transaction_service::update_status_as(
         &state.db,
+        Some(user.id),
         path.into_inner(),
         payload.order_status.clone(),
     )
@@ -140,13 +142,17 @@ pub async fn update_status(
 )]
 pub async fn update_payment(
     state: web::Data<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     path: web::Path<i32>,
     payload: web::Json<UpdatePaymentRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data =
-        transaction_service::update_payment(&state.db, path.into_inner(), payload.into_inner())
-            .await?;
+    let data = transaction_service::update_payment_as(
+        &state.db,
+        Some(user.id),
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Pembayaran berhasil diperbarui", data)))
 }
 
@@ -169,11 +175,70 @@ pub async fn update_payment(
 )]
 pub async fn cancel(
     state: web::Data<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     path: web::Path<i32>,
+    payload: web::Json<CancelTransactionRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data = transaction_service::cancel(&state.db, path.into_inner()).await?;
+    let data = transaction_service::cancel_as(
+        &state.db,
+        Some(user.id),
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Transaksi berhasil dibatalkan", data)))
+}
+
+/// Catat bahan rusak/reject. Stok tidak dipotong dua kali karena konsumsi
+/// fisiknya sudah terjadi saat order memasuki PROSES.
+pub async fn record_waste(
+    state: web::Data<AppState>,
+    user: AuthUser,
+    path: web::Path<i32>,
+    payload: web::Json<RecordWasteRequest>,
+) -> Result<HttpResponse, AppError> {
+    let data = transaction_service::record_waste_as(
+        &state.db,
+        user.id,
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::ok("Waste produksi berhasil dicatat", data)))
+}
+
+/// Catat konsumsi bahan tambahan untuk cetak ulang/rework.
+pub async fn record_rework(
+    state: web::Data<AppState>,
+    user: AuthUser,
+    path: web::Path<i32>,
+    payload: web::Json<RecordReworkRequest>,
+) -> Result<HttpResponse, AppError> {
+    let data = transaction_service::record_rework_as(
+        &state.db,
+        user.id,
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::ok("Pemakaian bahan rework berhasil dicatat", data)))
+}
+
+/// Refund adalah tindakan finansial sensitif dan hanya dapat dilakukan owner.
+pub async fn refund_payment(
+    state: web::Data<AppState>,
+    admin: SuperAdmin,
+    path: web::Path<i32>,
+    payload: web::Json<RefundPaymentRequest>,
+) -> Result<HttpResponse, AppError> {
+    let data = transaction_service::refund_payment_as(
+        &state.db,
+        admin.id,
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::ok("Refund pembayaran berhasil dicatat", data)))
 }
 
 #[utoipa::path(

@@ -36,7 +36,7 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
   onOpenDetail,
 }) => {
   const isDP = job.payment_status === 'DP' || job.payment_status === 'UNPAID';
-  const remaining = Number(job.total_amount) - Number(job.pay_amount);
+  const remaining = Number(job.total_amount) - Number(job.paid_amount ?? job.pay_amount);
   const cust = customers.find(c => c.id === job.customer_id);
 
   return (

@@ -65,7 +65,6 @@ export default function POSPage() {
     total,
     handleSearch,
     addToCart,
-    updateMaterials,
     handleToggleAddon,
     handleUpdateAddonQty,
     updateQty,
@@ -112,7 +111,6 @@ export default function POSPage() {
           onUpdateQty={updateQty}
           onUpdatePrice={updatePrice}
           onUpdateDimensions={updateDimensions}
-          onUpdateMaterials={updateMaterials}
           onToggleAddon={handleToggleAddon}
           onUpdateAddonQty={handleUpdateAddonQty}
           onRemoveFromCart={removeFromCart}

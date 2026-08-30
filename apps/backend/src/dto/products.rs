@@ -84,6 +84,7 @@ pub struct ProductResponse {
     pub min_order: i32,
     pub unit_name: String,
     pub has_variants: bool,
+    pub is_active: bool,
     pub raw_material_id: Option<i32>,
     #[schema(value_type = Option<f64>, example = 1.0)]
     pub material_amount: Option<Decimal>,
@@ -144,6 +145,7 @@ pub struct ProductVariantResponse {
     pub min_price: Decimal,
     #[schema(value_type = f64, example = 3500)]
     pub max_price: Decimal,
+    pub is_active: bool,
     pub raw_material_id: Option<i32>,
     #[schema(value_type = Option<f64>, example = 1.0)]
     pub material_amount: Option<Decimal>,
@@ -207,5 +209,6 @@ pub struct AddonResponse {
     pub min_price: Decimal,
     #[schema(value_type = f64, example = 2500)]
     pub max_price: Decimal,
+    pub is_active: bool,
     pub created_at: DateTime<Utc>,
 }

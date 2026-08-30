@@ -1,6 +1,6 @@
 import { apiClient } from '../api/client';
 import { ApiResponse, ListResponse } from '../types/api';
-import { Product, ProductVariant, ProductAddon } from '../types/product';
+import { BomLineInput, Product, ProductBom, ProductVariant, ProductAddon } from '../types/product';
 import { Category } from '../types/category';
 
 export const productService = {
@@ -35,6 +35,19 @@ export const productService = {
     apiClient.put<ApiResponse<ProductAddon>>(`/addons/${id}`, payload).then((r) => r.data.data),
   deleteAddon: (id: number) =>
     apiClient.delete(`/addons/${id}`).then((r) => r.data),
+
+  // Server-side production recipes. These are the source of truth for stock;
+  // the POS only sends product, variant, qty, dimensions, and add-ons.
+  getProductBom: (productId: number, productVariantId?: number) =>
+    apiClient.get<ApiResponse<ProductBom | null>>(`/products/${productId}/bom`, {
+      params: productVariantId ? { product_variant_id: productVariantId } : undefined,
+    }).then((r) => r.data.data),
+  saveProductBom: (productId: number, payload: { product_variant_id?: number; output_qty?: number; notes?: string; lines: BomLineInput[] }) =>
+    apiClient.put<ApiResponse<ProductBom>>(`/products/${productId}/bom`, payload).then((r) => r.data.data),
+  getAddonBom: (addonId: number) =>
+    apiClient.get<ApiResponse<BomLineInput[]>>(`/addons/${addonId}/bom`).then((r) => r.data.data),
+  saveAddonBom: (addonId: number, lines: BomLineInput[]) =>
+    apiClient.put<ApiResponse<BomLineInput[]>>(`/addons/${addonId}/bom`, { lines }).then((r) => r.data.data),
 
   // Kategori Produk
   getCategories: () =>

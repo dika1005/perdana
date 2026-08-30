@@ -247,6 +247,8 @@ async fn test_inventory_and_customer_errors() {
             unit: None,
             stock: None,
             min_stock_warning: None,
+            standard_cost: None,
+            roll_width: None,
         },
     )
     .await;
@@ -262,6 +264,8 @@ async fn test_inventory_and_customer_errors() {
             unit: None,
             stock: None,
             min_stock_warning: None,
+            standard_cost: None,
+            roll_width: None,
         },
     )
     .await;

@@ -17,6 +17,9 @@ pub struct Model {
     pub min_price: Decimal,
     #[sea_orm(column_type = "Decimal(Some((12, 2)))")]
     pub max_price: Decimal,
+    /// Soft deactivate so a retired variant cannot be selected for new work
+    /// while historical transaction snapshots remain intact.
+    pub is_active: bool,
     pub raw_material_id: Option<i32>,
     #[sea_orm(column_type = "Decimal(Some((12, 4)))", nullable)]
     pub material_amount: Option<Decimal>,

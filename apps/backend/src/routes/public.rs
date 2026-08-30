@@ -2,7 +2,7 @@ use actix_web::{HttpResponse, web};
 use chrono::{DateTime, NaiveDate, Utc};
 use entity::enums::{OrderStatus, PaymentStatus};
 use entity::prelude::*;
-use entity::{customers, product_categories, products, transaction_items, transactions};
+use entity::{customers, product_categories, product_variants, products, transaction_items, transactions};
 use rust_decimal::Decimal;
 use sea_orm::{ColumnTrait, EntityTrait, LoaderTrait, ModelTrait, QueryFilter, QueryOrder};
 use serde::{Deserialize, Serialize};
@@ -58,6 +58,9 @@ pub struct PublicTrackingResponse {
     pub order_status: OrderStatus,
     pub payment_status: PaymentStatus,
     pub total_amount: Decimal,
+    /// Pembayaran neto setelah kembalian/refund. Field `pay_amount` dipertahankan
+    /// untuk kompatibilitas dan bernilai sama di endpoint publik ini.
+    pub paid_amount: Decimal,
     pub pay_amount: Decimal,
     pub remaining_amount: Decimal,
     pub estimated_done_at: Option<NaiveDate>,
@@ -101,11 +104,17 @@ pub async fn catalog(
 
     // 3. Semua produk + varian
     let product_models = Product::find()
+        .filter(products::Column::IsActive.eq(true))
         .order_by_asc(products::Column::Name)
         .all(&state.db)
         .await?;
 
-    let variants = product_models.load_many(ProductVariant::find(), &state.db).await?;
+    let variants = product_models
+        .load_many(
+            ProductVariant::find().filter(product_variants::Column::IsActive.eq(true)),
+            &state.db,
+        )
+        .await?;
 
     let products_response: Vec<ProductResponse> = product_models
         .into_iter()
@@ -224,7 +233,11 @@ pub async fn tracking(
         })
         .collect();
 
-    let remaining_amount = (trans_model.total_amount - trans_model.pay_amount).max(Decimal::ZERO);
+    // `pay_amount` adalah total tender kumulatif dan dapat memuat uang
+    // kembalian. Pelanggan hanya boleh melihat nilai neto yang benar-benar
+    // diterima toko.
+    let paid_amount = (trans_model.pay_amount - trans_model.change_amount).max(Decimal::ZERO);
+    let remaining_amount = (trans_model.total_amount - paid_amount).max(Decimal::ZERO);
 
     let res = PublicTrackingResponse {
         invoice_number: trans_model.invoice_number,
@@ -232,7 +245,8 @@ pub async fn tracking(
         order_status: trans_model.order_status,
         payment_status: trans_model.payment_status,
         total_amount: trans_model.total_amount,
-        pay_amount: trans_model.pay_amount,
+        paid_amount,
+        pay_amount: paid_amount,
         remaining_amount,
         estimated_done_at: trans_model.estimated_done_at,
         created_at: trans_model.created_at,

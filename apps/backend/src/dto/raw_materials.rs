@@ -24,6 +24,10 @@ pub struct CreateRawMaterialRequest {
     pub stock: Option<Decimal>,
     #[schema(value_type = Option<f64>, example = 20)]
     pub min_stock_warning: Option<Decimal>,
+    #[schema(value_type = Option<f64>, example = 2500)]
+    pub standard_cost: Option<Decimal>,
+    #[schema(value_type = Option<f64>, example = 1.05)]
+    pub roll_width: Option<Decimal>,
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
@@ -39,6 +43,10 @@ pub struct UpdateRawMaterialRequest {
     pub unit: Option<String>,
     #[schema(value_type = Option<f64>, example = 25)]
     pub min_stock_warning: Option<Decimal>,
+    #[schema(value_type = Option<f64>, example = 2500)]
+    pub standard_cost: Option<Decimal>,
+    #[schema(value_type = Option<f64>, example = 1.05)]
+    pub roll_width: Option<Decimal>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -58,7 +66,16 @@ pub struct RawMaterialResponse {
     #[schema(value_type = f64)]
     pub stock: Decimal,
     #[schema(value_type = f64)]
+    pub reserved_stock: Decimal,
+    #[schema(value_type = f64)]
+    pub available_stock: Decimal,
+    #[schema(value_type = f64)]
     pub min_stock_warning: Decimal,
+    #[schema(value_type = f64)]
+    pub standard_cost: Decimal,
+    #[schema(value_type = Option<f64>)]
+    pub roll_width: Option<Decimal>,
+    pub is_active: bool,
     pub is_low_stock: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

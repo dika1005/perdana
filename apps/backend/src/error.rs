@@ -108,8 +108,9 @@ impl ResponseError for AppError {
 
 impl From<DbErr> for AppError {
     fn from(err: DbErr) -> Self {
+        eprintln!("Database error: {err}");
         log::error!("Database error: {err}");
-        Self::Internal("Terjadi kesalahan pada server".into())
+        Self::Internal(format!("Terjadi kesalahan pada server: {err}"))
     }
 }
 

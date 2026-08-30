@@ -187,6 +187,11 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     let _ = db.execute_unprepared("ALTER TABLE transaction_items ADD COLUMN length DECIMAL(10,2) NULL DEFAULT NULL;").await;
     let _ = db.execute_unprepared("ALTER TABLE transaction_items ADD COLUMN width DECIMAL(10,2) NULL DEFAULT NULL;").await;
 
+    // Fondasi inventori produksi (BOM versioning, reservation, ledger,
+    // payments, audit, dan lot/offcut) dibuat secara additive agar data lama
+    // tidak dihapus saat aplikasi diperbarui.
+    crate::schema::apply(&db).await?;
+
     Ok(db)
 }
 

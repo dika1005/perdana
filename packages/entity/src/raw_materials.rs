@@ -14,8 +14,17 @@ pub struct Model {
     /// Stok tersedia. Desimal agar mendukung bahan ukuran pecahan
     /// (meter, gram, lembar setengah, dll).
     pub stock: Decimal,
+    /// Stok yang sudah dijanjikan ke order terkonfirmasi, tetapi belum
+    /// dikonsumsi ke produksi. Stok yang masih dapat dijual = stock - reserved_stock.
+    pub reserved_stock: Decimal,
     /// Batas peringatan stok menipis.
     pub min_stock_warning: Decimal,
+    /// Biaya standar per satuan dasar. Digunakan untuk costing/waste historis.
+    pub standard_cost: Decimal,
+    /// Lebar roll (meter), bila bahan berbentuk roll. NULL untuk bahan non-roll.
+    pub roll_width: Option<Decimal>,
+    /// Master bahan tidak pernah dihapus secara fisik; gunakan nonaktifkan.
+    pub is_active: bool,
     pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }

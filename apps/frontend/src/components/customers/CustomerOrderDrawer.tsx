@@ -68,9 +68,9 @@ export const CustomerOrderDrawer: React.FC<CustomerOrderDrawerProps> = ({
                     <span className={`font-bold ${ord.payment_status === 'PAID' ? 'text-emerald-600' : 'text-amber-600'}`}>
                       Status: {ord.payment_status}
                     </span>
-                    {Number(ord.total_amount) > Number(ord.pay_amount) && (
+                    {Number(ord.total_amount) > Number(ord.paid_amount ?? ord.pay_amount) && (
                       <span className="text-red-500 font-bold">
-                        Sisa DP: {formatRupiah(Number(ord.total_amount) - Number(ord.pay_amount))}
+                        Sisa DP: {formatRupiah(Number(ord.total_amount) - Number(ord.paid_amount ?? ord.pay_amount))}
                       </span>
                     )}
                   </div>

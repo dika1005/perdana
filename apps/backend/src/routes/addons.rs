@@ -79,10 +79,10 @@ pub async fn get(
 )]
 pub async fn create(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     payload: web::Json<CreateAddonRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data = addon_service::create(&state.db, payload.into_inner()).await?;
+    let data = addon_service::create_as(&state.db, Some(admin.id), payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(ApiResponse::ok("Add-on berhasil dibuat", data)))
 }
 
@@ -105,12 +105,17 @@ pub async fn create(
 )]
 pub async fn update(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     path: web::Path<i32>,
     payload: web::Json<UpdateAddonRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data =
-        addon_service::update(&state.db, path.into_inner(), payload.into_inner()).await?;
+    let data = addon_service::update_as(
+        &state.db,
+        Some(admin.id),
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Add-on berhasil diperbarui", data)))
 }
 
@@ -132,10 +137,10 @@ pub async fn update(
 )]
 pub async fn delete(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     path: web::Path<i32>,
 ) -> Result<HttpResponse, AppError> {
-    addon_service::delete(&state.db, path.into_inner()).await?;
+    addon_service::delete_as(&state.db, Some(admin.id), path.into_inner()).await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok(
         "Add-on berhasil dihapus",
         MessageData { ok: true },

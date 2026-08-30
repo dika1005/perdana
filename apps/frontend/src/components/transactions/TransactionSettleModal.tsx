@@ -29,7 +29,7 @@ export const TransactionSettleModal: React.FC<TransactionSettleModalProps> = ({
   if (!isOpen || !item) return null;
 
   const total = Number(item.total_amount) || 0;
-  const alreadyPaid = Number(item.pay_amount) || 0;
+  const alreadyPaid = Number(item.paid_amount ?? item.pay_amount) || 0;
   const remaining = total - alreadyPaid;
 
   const paymentMethods = [

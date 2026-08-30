@@ -11,12 +11,11 @@ import {
   Edit3, 
   RefreshCw, 
   Tag, 
-  X,
   Package,
 } from 'lucide-react';
 import { ProductAddon } from '../../types/product';
 import { RawMaterial } from '../../types/rawMaterial';
-import { CartItem, CartItemMaterial } from './types';
+import { CartItem } from './types';
 import { formatRupiah } from '../../utils/format';
 
 interface CartItemCardProps {
@@ -33,7 +32,6 @@ interface CartItemCardProps {
   onSetQty: (qty: number) => void;
   onUpdatePrice: (price: number) => void;
   onUpdateDimensions: (length: number, width: number) => void;
-  onUpdateMaterials?: (materials: CartItemMaterial[]) => void;
   onToggleAddon: (addon: ProductAddon) => void;
   onUpdateAddonQty?: (addonId: number, qty: number) => void;
   onRemove: () => void;
@@ -41,19 +39,18 @@ interface CartItemCardProps {
 
 export const CartItemCard: React.FC<CartItemCardProps> = ({
   item,
-  rawMaterials,
+  rawMaterials: _rawMaterials,
   availableAddons,
   isPriceEdited,
   isEditOpen,
   isMatOpen: _isMatOpen,
-  recommendedMaterials,
+  recommendedMaterials: _recommendedMaterials,
   onTogglePriceEdit,
   onToggleMaterialSection: _onToggleMaterialSection,
   onUpdateQty,
   onSetQty,
   onUpdatePrice,
   onUpdateDimensions,
-  onUpdateMaterials,
   onToggleAddon,
   onUpdateAddonQty,
   onRemove,
@@ -78,49 +75,6 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
   const itemBaseTotal = item.price * item.qty;
   const itemAddonsTotal = (item.addons || []).reduce((sum, a) => sum + ((Number(a.price) || 0) * (Number(a.qty) || 1)), 0);
   const itemGrandTotal = itemBaseTotal + itemAddonsTotal;
-
-  const currentMaterials = item.materials || [];
-
-  const handleAddMaterial = () => {
-    const defaultMat = recommendedMaterials[0] || rawMaterials[0];
-    if (!defaultMat) return;
-    const newMaterials = [...currentMaterials, {
-      raw_material_id: defaultMat.id,
-      material_qty: defaultMat.unit.toLowerCase().includes('rim') ? 1 : item.qty,
-      material_name: defaultMat.name,
-      material_unit: defaultMat.unit,
-      material_stock: defaultMat.stock,
-    }];
-    onUpdateMaterials?.(newMaterials);
-  };
-
-  const handleUpdateMaterialId = (index: number, newMatId: number) => {
-    const newMaterials = [...currentMaterials];
-    const mat = rawMaterials.find(m => m.id === newMatId);
-    if (!mat) return;
-    newMaterials[index] = {
-      raw_material_id: newMatId,
-      material_qty: newMaterials[index]?.material_qty || (mat.unit.toLowerCase().includes('rim') ? 1 : item.qty),
-      material_name: mat.name,
-      material_unit: mat.unit,
-      material_stock: mat.stock,
-    };
-    onUpdateMaterials?.(newMaterials);
-  };
-
-  const handleUpdateMaterialQty = (index: number, qty: number) => {
-    const newMaterials = [...currentMaterials];
-    if (newMaterials[index]) {
-      newMaterials[index] = { ...newMaterials[index], material_qty: Math.max(1, qty) };
-    }
-    onUpdateMaterials?.(newMaterials);
-  };
-
-  const handleRemoveMaterial = (index: number) => {
-    const newMaterials = [...currentMaterials];
-    newMaterials.splice(index, 1);
-    onUpdateMaterials?.(newMaterials);
-  };
 
   return (
     <div className="rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs transition-all overflow-hidden p-3.5 space-y-2.5">
@@ -262,119 +216,12 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
         </div>
       )}
 
-      {/* 4. Pemakaian Bahan Baku / Kertas */}
-      <div className="pt-1">
-        {currentMaterials.length === 0 ? (
-          <button
-            type="button"
-            onClick={handleAddMaterial}
-            className="w-full py-1.5 px-2.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-600 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors bg-slate-50/50 dark:bg-slate-950/30"
-          >
-            <Package className="w-3 h-3 text-indigo-500" />
-            <span>+ Potong Stok Bahan Baku / Kertas (Opsional)</span>
-          </button>
-        ) : (
-          <div className="p-2.5 rounded-lg bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200/70 dark:border-indigo-900/40 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Package className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
-                <span>Bahan Baku Terpakai ({currentMaterials.length}):</span>
-              </span>
-              <button
-                type="button"
-                onClick={handleAddMaterial}
-                className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
-                title="Tambah bahan baku tambahan"
-              >
-                <Plus className="w-2.5 h-2.5" />
-                <span>Tambah Bahan</span>
-              </button>
-            </div>
-
-            <div className="space-y-1.5">
-              {currentMaterials.map((mat, idx) => {
-                const selectedMat = rawMaterials.find(m => m.id === mat.raw_material_id);
-                return (
-                  <div key={`${item.product.id}-mat-${idx}`} className="p-2 rounded-md bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-bold text-slate-500">Bahan #{idx + 1}</span>
-                      <div className="flex items-center gap-1.5">
-                        {selectedMat && (
-                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold ${
-                            selectedMat.stock <= selectedMat.min_stock_warning 
-                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' 
-                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                          }`}>
-                            Sisa: {selectedMat.stock} {selectedMat.unit}
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMaterial(idx)}
-                          className="text-slate-400 hover:text-rose-500 p-0.5 rounded"
-                          title="Hapus bahan ini"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <select
-                      value={mat.raw_material_id}
-                      onChange={e => handleUpdateMaterialId(idx, Number(e.target.value))}
-                      className="w-full px-2 py-1 text-xs text-text-main outline-none bg-slate-50 dark:bg-slate-950 rounded border border-slate-200 dark:border-slate-800 font-medium focus:border-indigo-400 [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
-                    >
-                      {recommendedMaterials.map(m => (
-                        <option key={m.id} value={m.id}>
-                          {m.name} {m.variant ? `• ${m.variant}` : ''} (Sisa: {m.stock} {m.unit})
-                        </option>
-                      ))}
-                    </select>
-
-                    <div className="flex items-center justify-between gap-2 pt-0.5">
-                      <div>
-                        <label className="text-[10px] text-slate-500 font-semibold block">
-                          Jumlah Pemakaian:
-                        </label>
-                        {selectedMat?.unit.toLowerCase() === 'rim' && mat.material_qty > 0 && (
-                          <span className="text-[9px] text-indigo-600 dark:text-indigo-400 font-semibold">
-                            ≈ {(mat.material_qty / 500).toFixed(2)} Rim
-                          </span>
-                        )}
-                        {selectedMat?.unit.toLowerCase() === 'roll' && mat.material_qty > 0 && (
-                          <span className="text-[9px] text-indigo-600 dark:text-indigo-400 font-semibold">
-                            ≈ {(mat.material_qty / 50).toFixed(2)} Roll
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800">
-                        <input
-                          type="number"
-                          min="1"
-                          value={mat.material_qty}
-                          onChange={e => handleUpdateMaterialQty(idx, Math.max(1, Number(e.target.value)))}
-                          className="w-16 text-center font-extrabold font-mono text-xs text-indigo-600 dark:text-indigo-400 bg-transparent outline-none"
-                          placeholder="Qty"
-                        />
-                        <span className="text-[10px] font-bold text-slate-400">
-                          {selectedMat?.unit.toLowerCase() === 'rim' ? 'lembar' : (selectedMat?.unit.toLowerCase() === 'roll' ? 'meter' : (selectedMat?.unit || 'pcs'))}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Peringatan stok tidak cukup */}
-                    {selectedMat && mat.material_qty > Number(selectedMat.stock) && (
-                      <div className="mt-1 px-2 py-1 rounded-md bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
-                        <span>⚠️</span>
-                        <span>Stok tidak cukup! Butuh {mat.material_qty} {selectedMat.unit}, tersisa {selectedMat.stock} {selectedMat.unit}. Transaksi akan ditolak.</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+      {/* 4. Bahan diputuskan oleh BOM terverifikasi di server, bukan kasir. */}
+      <div className="flex items-start gap-2 rounded-lg border border-indigo-200/70 bg-indigo-50/50 p-2.5 text-[11px] text-indigo-900 dark:border-indigo-900/50 dark:bg-indigo-950/20 dark:text-indigo-200">
+        <Package className="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+        <p>
+          Kebutuhan bahan, allowance waste, dan bahan finishing dihitung dari BOM master saat pesanan dibuat. Stok akan dikunci ketika DP/pelunasan diterima dan dipotong saat pekerjaan masuk proses.
+        </p>
       </div>
 
       {/* 5. Finishing & Add-on Pills */}

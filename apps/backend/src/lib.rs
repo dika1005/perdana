@@ -6,5 +6,6 @@ pub mod http;
 pub mod openapi;
 pub mod routes;
 pub mod services;
+pub mod schema;
 pub mod state;
 pub mod utils;

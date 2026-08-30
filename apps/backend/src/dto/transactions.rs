@@ -69,6 +69,11 @@ pub struct CreateTransactionRequest {
     pub discount_amount: Option<Decimal>,
     #[schema(value_type = f64, example = 250000)]
     pub pay_amount: Decimal,
+    /// Kunci idempoten yang dibuat POS per klik checkout. Mengirim ulang
+    /// payload yang sama karena timeout akan mengembalikan transaksi lama,
+    /// bukan membuat invoice/stock reservation kedua.
+    #[validate(length(min = 8, max = 100, message = "Idempotency key harus 8 - 100 karakter"))]
+    pub idempotency_key: Option<String>,
     pub payment_status: Option<PaymentStatus>,
     pub payment_method: Option<PaymentMethod>,
     #[schema(value_type = Option<String>, example = "2026-08-30")]
@@ -98,8 +103,15 @@ pub struct UpdatePaymentRequest {
     #[serde(alias = "pay_amount", alias = "amount")]
     #[schema(value_type = f64, example = 250000)]
     pub additional_pay_amount: Decimal,
+    /// Deprecated compatibility field. Status selalu dihitung server dari
+    /// payment ledger dan tidak pernah dipercaya dari client.
+    #[serde(default)]
     pub payment_status: Option<PaymentStatus>,
     pub payment_method: Option<PaymentMethod>,
+    #[validate(length(max = 100, message = "Referensi pembayaran maksimal 100 karakter"))]
+    pub reference_no: Option<String>,
+    #[validate(length(max = 500, message = "Catatan pembayaran maksimal 500 karakter"))]
+    pub notes: Option<String>,
 }
 
 // ==========================================
@@ -109,6 +121,7 @@ pub struct UpdatePaymentRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TransactionItemAddonResponse {
     pub id: i32,
+    pub addon_id: Option<i32>,
     pub addon_name: String,
     #[schema(value_type = f64, example = 1500)]
     pub price: Decimal,
@@ -129,7 +142,59 @@ pub struct TransactionItemResponse {
     pub qty: i32,
     #[schema(value_type = f64, example = 500000)]
     pub subtotal: Decimal,
+    #[schema(value_type = Option<f64>)]
+    pub length: Option<Decimal>,
+    #[schema(value_type = Option<f64>)]
+    pub width: Option<Decimal>,
     pub addons: Vec<TransactionItemAddonResponse>,
+    pub materials: Vec<TransactionItemMaterialResponse>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct TransactionItemMaterialResponse {
+    pub id: i64,
+    pub raw_material_id: i32,
+    pub material_lot_id: Option<i32>,
+    #[schema(value_type = Option<f64>)]
+    pub required_width_m: Option<Decimal>,
+    pub allow_offcut: bool,
+    pub material_name: String,
+    pub unit: String,
+    #[schema(value_type = f64)]
+    pub required_qty: Decimal,
+    #[schema(value_type = f64)]
+    pub reserved_qty: Decimal,
+    #[schema(value_type = f64)]
+    pub consumed_qty: Decimal,
+    #[schema(value_type = f64)]
+    pub waste_qty: Decimal,
+    pub source_type: String,
+    pub consumption_basis: String,
+    pub bom_id: Option<i32>,
+    pub bom_version: Option<i32>,
+    pub addon_id: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct PaymentResponse {
+    pub id: i64,
+    pub payment_type: String,
+    #[schema(value_type = f64)]
+    pub amount: Decimal,
+    pub payment_method: String,
+    pub reference_no: Option<String>,
+    pub notes: Option<String>,
+    pub created_by: Option<i32>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct ProductionEventResponse {
+    pub id: i64,
+    pub event_type: String,
+    pub notes: Option<String>,
+    pub actor_id: Option<i32>,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -146,6 +211,10 @@ pub struct TransactionResponse {
     pub total_amount: Decimal,
     #[schema(value_type = f64, example = 250000)]
     pub pay_amount: Decimal,
+    /// Nilai pembayaran neto yang benar-benar diterima setelah kembalian dan
+    /// refund. Gunakan field ini untuk piutang, bukan `pay_amount` mentah.
+    #[schema(value_type = f64, example = 200000)]
+    pub paid_amount: Decimal,
     #[schema(value_type = f64, example = 0)]
     pub change_amount: Decimal,
     pub payment_status: PaymentStatus,
@@ -161,6 +230,10 @@ pub struct TransactionResponse {
     pub created_at: DateTime<Utc>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<TransactionItemResponse>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub payments: Option<Vec<PaymentResponse>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub production_events: Option<Vec<ProductionEventResponse>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -188,6 +261,8 @@ pub struct InvoicePrintData {
     pub total_amount: Decimal,
     #[schema(value_type = f64, example = 500000)]
     pub pay_amount: Decimal,
+    #[schema(value_type = f64, example = 500000)]
+    pub paid_amount: Decimal,
     #[schema(value_type = f64, example = 0)]
     pub change_amount: Decimal,
     #[schema(value_type = f64, example = 0)]

@@ -18,7 +18,7 @@ export function generateWhatsAppMessage(job: any): string {
   const customerName = job.customer_name || 'Pelanggan';
   const invoiceNumber = job.invoice_number;
   const totalAmount = Number(job.total_amount) || 0;
-  const payAmount = Number(job.pay_amount) || 0;
+  const payAmount = Number(job.paid_amount ?? job.pay_amount) || 0;
   const remaining = Math.max(0, totalAmount - payAmount);
   const isPaid = remaining <= 0 || job.payment_status === 'PAID';
 
@@ -55,7 +55,7 @@ export const TrackingWhatsAppModal: React.FC<TrackingWhatsAppModalProps> = ({
   if (!isOpen || !job) return null;
 
   const totalAmount = Number(job.total_amount) || 0;
-  const payAmount = Number(job.pay_amount) || 0;
+  const payAmount = Number(job.paid_amount ?? job.pay_amount) || 0;
   const remaining = Math.max(0, totalAmount - payAmount);
   const isPaid = remaining <= 0 || job.payment_status === 'PAID';
 

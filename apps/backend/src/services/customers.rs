@@ -163,7 +163,7 @@ pub async fn list_customer_transactions(
                     .find(|u| u.id == id)
                     .map(|u| u.name.clone())
             });
-            transaction_mapper::map_transaction(&t, c_name, None)
+            transaction_mapper::map_transaction(&t, c_name, None, None, None)
         })
         .collect();
 

@@ -8,6 +8,7 @@ use sea_orm::{
     ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
     QuerySelect,
 };
+use sea_orm::sea_query::ExprTrait;
 
 use crate::dto::{
     DailySalesReportItem, DashboardSummaryResponse, InventoryMutationReportItem, LowStockItem,
@@ -15,6 +16,12 @@ use crate::dto::{
     TopProductReportItem,
 };
 use crate::error::AppError;
+
+/// `pay_amount` is cumulative tender and can include cash returned to the
+/// customer. Financial reports and receivables must always use the net value.
+fn net_paid(t: &transactions::Model) -> Decimal {
+    (t.pay_amount - t.change_amount).max(Decimal::ZERO)
+}
 
 pub async fn get_dashboard_summary(
     db: &DatabaseConnection,
@@ -35,7 +42,7 @@ pub async fn get_dashboard_summary(
     let all_trans = trans_query.all(db).await?;
 
     let mut total_omset = Decimal::ZERO;       // Total nilai pesanan (total_amount)
-    let mut total_cash_in = Decimal::ZERO;     // Uang benar-benar masuk (pay_amount)
+    let mut total_cash_in = Decimal::ZERO;     // Uang neto setelah kembalian/refund
     let mut total_cash_omset = Decimal::ZERO;
     let mut total_qris_omset = Decimal::ZERO;
     let mut total_transfer_omset = Decimal::ZERO;
@@ -60,11 +67,12 @@ pub async fn get_dashboard_summary(
         }
 
         total_omset += t.total_amount;
-        total_cash_in += t.pay_amount;
+        let paid = net_paid(t);
+        total_cash_in += paid;
 
         // Breakdown omset by initial and settlement payment methods
-        if let Some(settle_amount) = t.settlement_pay_amount {
-            let initial_amount = (t.pay_amount - settle_amount).max(Decimal::ZERO);
+        if let Some(settle_amount) = t.settlement_pay_amount.filter(|amount| *amount > Decimal::ZERO) {
+            let initial_amount = (paid - settle_amount).max(Decimal::ZERO);
             match t.payment_method {
                 entity::enums::PaymentMethod::Cash => total_cash_omset += initial_amount,
                 entity::enums::PaymentMethod::Qris => total_qris_omset += initial_amount,
@@ -81,14 +89,14 @@ pub async fn get_dashboard_summary(
             }
         } else {
             match t.payment_method {
-                entity::enums::PaymentMethod::Cash => total_cash_omset += t.pay_amount,
-                entity::enums::PaymentMethod::Qris => total_qris_omset += t.pay_amount,
-                entity::enums::PaymentMethod::Transfer => total_transfer_omset += t.pay_amount,
+                entity::enums::PaymentMethod::Cash => total_cash_omset += paid,
+                entity::enums::PaymentMethod::Qris => total_qris_omset += paid,
+                entity::enums::PaymentMethod::Transfer => total_transfer_omset += paid,
             }
         }
 
-        if t.total_amount > t.pay_amount {
-            total_piutang += t.total_amount - t.pay_amount;
+        if t.total_amount > paid {
+            total_piutang += t.total_amount - paid;
         }
 
         match t.payment_status {
@@ -102,6 +110,7 @@ pub async fn get_dashboard_summary(
     let low_stock_count = RawMaterial::find()
         .filter(
             sea_orm::sea_query::Expr::col(raw_materials::Column::Stock)
+                .sub(sea_orm::sea_query::Expr::col(raw_materials::Column::ReservedStock))
                 .lte(sea_orm::sea_query::Expr::col(raw_materials::Column::MinStockWarning)),
         )
         .count(db)
@@ -211,11 +220,12 @@ pub async fn get_monthly_sales(
         let m_idx = (t.created_at.month() as usize).saturating_sub(1);
         if m_idx < 12 {
             monthly_data[m_idx].total_sales += t.total_amount;
-            monthly_data[m_idx].total_cash_in += t.pay_amount;
+            let paid = net_paid(&t);
+            monthly_data[m_idx].total_cash_in += paid;
             monthly_data[m_idx].total_transactions += 1;
 
-            if let Some(settle_amount) = t.settlement_pay_amount {
-                let initial_amount = (t.pay_amount - settle_amount).max(Decimal::ZERO);
+            if let Some(settle_amount) = t.settlement_pay_amount.filter(|amount| *amount > Decimal::ZERO) {
+                let initial_amount = (paid - settle_amount).max(Decimal::ZERO);
                 match t.payment_method {
                     entity::enums::PaymentMethod::Cash => monthly_data[m_idx].total_cash_omset += initial_amount,
                     entity::enums::PaymentMethod::Qris => monthly_data[m_idx].total_qris_omset += initial_amount,
@@ -232,9 +242,9 @@ pub async fn get_monthly_sales(
                 }
             } else {
                 match t.payment_method {
-                    entity::enums::PaymentMethod::Cash => monthly_data[m_idx].total_cash_omset += t.pay_amount,
-                    entity::enums::PaymentMethod::Qris => monthly_data[m_idx].total_qris_omset += t.pay_amount,
-                    entity::enums::PaymentMethod::Transfer => monthly_data[m_idx].total_transfer_omset += t.pay_amount,
+                    entity::enums::PaymentMethod::Cash => monthly_data[m_idx].total_cash_omset += paid,
+                    entity::enums::PaymentMethod::Qris => monthly_data[m_idx].total_qris_omset += paid,
+                    entity::enums::PaymentMethod::Transfer => monthly_data[m_idx].total_transfer_omset += paid,
                 }
             }
         }
@@ -294,6 +304,9 @@ pub async fn get_daily_sales(
     let mut ordered_dates = Vec::new();
 
     for t in all_trans {
+        if t.order_status == OrderStatus::Batal {
+            continue;
+        }
         let date_key = t.created_at.format("%Y-%m-%d").to_string();
         let entry = daily_map.entry(date_key.clone()).or_insert_with(|| {
             ordered_dates.push(date_key.clone());
@@ -323,6 +336,7 @@ pub async fn get_top_products(
     query: ReportDateQuery,
 ) -> Result<Vec<TopProductReportItem>, AppError> {
     let mut trans_query = Transaction::find().select_only().column(transactions::Column::Id);
+    trans_query = trans_query.filter(transactions::Column::OrderStatus.ne(OrderStatus::Batal));
 
     if let Some(start) = query.start_date {
         let start_dt = start.and_hms_opt(0, 0, 0).unwrap().and_utc();
@@ -449,6 +463,7 @@ pub async fn get_receivables(
                 .eq(PaymentStatus::Dp)
                 .or(transactions::Column::PaymentStatus.eq(PaymentStatus::Unpaid)),
         )
+        .filter(transactions::Column::OrderStatus.ne(OrderStatus::Batal))
         .order_by_desc(transactions::Column::CreatedAt);
 
     if let Some(start) = query.start_date {
@@ -466,8 +481,9 @@ pub async fn get_receivables(
     let result = all_trans
         .into_iter()
         .map(|t| {
-            let remaining = if t.total_amount > t.pay_amount {
-                t.total_amount - t.pay_amount
+            let paid = net_paid(&t);
+            let remaining = if t.total_amount > paid {
+                t.total_amount - paid
             } else {
                 Decimal::ZERO
             };
@@ -478,7 +494,7 @@ pub async fn get_receivables(
                 payment_status: t.payment_status,
                 order_status: t.order_status,
                 total_amount: t.total_amount,
-                pay_amount: t.pay_amount,
+                pay_amount: paid,
                 remaining_amount: remaining,
                 estimated_done_at: t.estimated_done_at,
                 created_at: t.created_at,
@@ -497,6 +513,7 @@ pub async fn get_low_stock(
     let materials = RawMaterial::find()
         .filter(
             sea_orm::sea_query::Expr::col(raw_materials::Column::Stock)
+                .sub(sea_orm::sea_query::Expr::col(raw_materials::Column::ReservedStock))
                 .lte(sea_orm::sea_query::Expr::col(raw_materials::Column::MinStockWarning)),
         )
         .order_by_asc(raw_materials::Column::Name)

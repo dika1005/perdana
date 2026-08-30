@@ -17,6 +17,8 @@ pub struct Model {
     pub min_price: Decimal,
     #[sea_orm(column_type = "Decimal(Some((12, 2)))")]
     pub max_price: Decimal,
+    /// Soft delete agar add-on lama pada transaksi tetap dapat diaudit.
+    pub is_active: bool,
     pub created_at: DateTimeUtc,
 }
 

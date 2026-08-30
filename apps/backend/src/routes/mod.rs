@@ -14,6 +14,7 @@ pub mod transactions;
 pub mod users;
 pub mod expenses;
 pub mod backup;
+pub mod bom;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
 
@@ -78,7 +79,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .route(
                     "/{id}/variants",
                     web::post().to(products::create_variant),
-                ),
+                )
+                .route("/{id}/bom", web::get().to(bom::get_product_bom))
+                .route("/{id}/bom", web::put().to(bom::upsert_product_bom)),
         )
         .service(
             web::scope("/product-variants")
@@ -91,11 +94,19 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .route("", web::post().to(addons::create))
                 .route("/{id}", web::get().to(addons::get))
                 .route("/{id}", web::put().to(addons::update))
-                .route("/{id}", web::delete().to(addons::delete)),
+                .route("/{id}", web::delete().to(addons::delete))
+                .route("/{id}/bom", web::get().to(bom::get_addon_bom))
+                .route("/{id}/bom", web::put().to(bom::upsert_addon_bom)),
         )
         .service(
             web::scope("/raw-materials")
                 .route("/mutations", web::post().to(raw_materials::create_mutation))
+                .route("/{id}/lots", web::get().to(raw_materials::list_lots))
+                .route("/{id}/lots", web::post().to(raw_materials::receive_lot))
+                .route(
+                    "/{id}/uom-conversions",
+                    web::put().to(raw_materials::upsert_uom_conversion),
+                )
                 .route("/{id}/mutations", web::get().to(raw_materials::list_mutations))
                 .route("", web::get().to(raw_materials::list))
                 .route("", web::post().to(raw_materials::create))
@@ -125,6 +136,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     "/{id}/payment",
                     web::patch().to(transactions::update_payment),
                 )
+                .route("/{id}/refund", web::post().to(transactions::refund_payment))
+                .route("/{id}/waste", web::post().to(transactions::record_waste))
+                .route("/{id}/rework", web::post().to(transactions::record_rework))
                 .route(
                     "/{id}/invoice",
                     web::get().to(transactions::get_invoice),
@@ -157,9 +171,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         )
         .configure(expenses::configure);
 }
-
-
-
 
 
 

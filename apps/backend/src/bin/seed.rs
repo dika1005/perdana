@@ -17,6 +17,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     env_logger::init();
 
+    // ── Safety guard ────────────────────────────────────────────────────
+    let confirm = env::var("SEED_CONFIRM").unwrap_or_default();
+    if confirm != "yes" {
+        eprintln!("⚠️  SEED_CONFIRM tidak diset ke 'yes'. Seeding dibatalkan.");
+        eprintln!("   Jalankan dengan: SEED_CONFIRM=yes cargo run --bin seed");
+        std::process::exit(1);
+    }
+
     let database_url = env::var("DATABASE_URL")
         .unwrap_or_else(|_| "mysql://dika:dikaramadan@localhost:3306/perdana".to_string());
 
@@ -29,19 +37,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\n🧹 Membersihkan data lama di database...");
     db.execute(Statement::from_string(DbBackend::MySql, "SET FOREIGN_KEY_CHECKS = 0;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM transaction_item_addons;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM transaction_items;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM transactions;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM expenses;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM raw_material_mutations;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM raw_materials;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM raw_material_categories;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM product_addons;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM product_variants;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM products;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM product_categories;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM customers;")).await?;
-    db.execute(Statement::from_string(DbBackend::MySql, "DELETE FROM users;")).await?;
+    // Production-domain tables (order matters for FK)
+    for table in [
+        "audit_logs", "production_events", "payments", "inventory_ledger",
+        "stock_reservations", "transaction_item_materials", "material_lots",
+        "material_uom_conversions", "addon_bom_lines", "product_bom_lines",
+        "product_boms", "invoice_counter",
+        // Legacy core tables
+        "transaction_item_addons", "transaction_items", "transactions",
+        "expenses", "raw_material_mutations", "raw_materials",
+        "raw_material_categories", "product_addons", "product_variants",
+        "products", "product_categories", "customers", "users",
+    ] {
+        let _ = db.execute(Statement::from_string(DbBackend::MySql, format!("DELETE FROM {};", table))).await;
+    }
     db.execute(Statement::from_string(DbBackend::MySql, "SET FOREIGN_KEY_CHECKS = 1;")).await?;
 
     // Migrasi Skema Tabel jika kolom category_id belum ada pada product_addons
@@ -49,6 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = db.execute(Statement::from_string(DbBackend::MySql, "ALTER TABLE product_addons ADD CONSTRAINT fk_product_addons_category FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL;")).await;
 
     println!("✅ Database bersih & skema terverifikasi.");
+
 
     // 1. Akun Pengguna: 1 Super Admin & 1 Admin Kasir
     println!("\n👤 Membuat Akun Pengguna...");
@@ -1104,8 +1114,138 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     println!("  -> 5 Kontak Pelanggan Nyata berhasil ditambahkan.");
 
+    // 7. Contoh BOM (Bill of Materials) untuk demonstrasi produksi
+    println!("\n🔧 Menanam Contoh BOM Produk...");
+    // We insert BOM rows via raw SQL because the seeder runs before
+    // the SeaORM entity for `product_boms` is generated with full
+    // ActiveModel support. Using SQL keeps the seeder simple.
+
+    // ── Spanduk /meter: 1 m² Flexi Banner per output, 5% waste allowance
+    if let (Some(p_spanduk_id), Some(mat_flexi_id)) = (
+        find_product_id(&db, "Spanduk /meter").await,
+        mat_flexi,
+    ) {
+        let bom_id = insert_bom_sql(&db, p_spanduk_id, None, 1).await?;
+        insert_bom_line_sql(&db, bom_id, mat_flexi_id, "MATERIAL", "PER_AREA", "1.0000", "0.0500", true, 0).await?;
+        println!("  -> BOM Spanduk /meter (Flexi Banner PER_AREA)");
+    }
+
+    // ── Sticker (A3+): 1 lembar Stiker Cromo per unit, 3% waste
+    if let (Some(p_stiker_id), Some(mat_cromo_id)) = (
+        find_product_id(&db, "Sticker (A3+)").await,
+        mat_stiker_cromo,
+    ) {
+        let bom_id = insert_bom_sql(&db, p_stiker_id, None, 1).await?;
+        insert_bom_line_sql(&db, bom_id, mat_cromo_id, "MATERIAL", "PER_UNIT", "1.0000", "0.0300", true, 0).await?;
+        println!("  -> BOM Sticker A3+ (Cromo PER_UNIT)");
+    }
+
+    // ── Nota NCR 2 Ply: 500 lembar NCR Putih + 500 lembar NCR warna per rim
+    if let (Some(p_nota_id), Some(mat_ncr_id)) = (
+        find_product_id(&db, "Nota / Faktur (NCR 1 Warna 2 Ply) 1 Rim").await,
+        mat_ncr_putih,
+    ) {
+        let bom_id = insert_bom_sql(&db, p_nota_id, None, 1).await?;
+        insert_bom_line_sql(&db, bom_id, mat_ncr_id, "MATERIAL", "PER_UNIT", "500.0000", "0.0200", true, 0).await?;
+        // Tinta sebagai fixed component
+        if let Some(mat_tinta_id) = map_mat_id.get("Bahan Tinta Cetak Black").copied() {
+            insert_bom_line_sql(&db, bom_id, mat_tinta_id, "MATERIAL", "FIXED", "0.0500", "0.0000", true, 1).await?;
+        }
+        println!("  -> BOM Nota NCR 2 Ply (NCR + Tinta)");
+    }
+
+    // ── Addon BOM: Mata Ayam → 0 bahan wajib (jasa murni), tapi bisa ditambahkan
+    // Contoh: Laminasi Glossy membutuhkan bahan laminasi (belum ada di stok, skip)
+    println!("  -> Addon BOMs: skipped (add-on saat ini adalah jasa tanpa bahan)");
+
+    // 8. Contoh UOM Conversions
+    println!("\n📐 Menanam Konversi Satuan Bahan...");
+    // HVS F4: 1 rim = 500 lembar
+    if let Some(hvs_id) = map_mat_id.get("Kertas HVS F4 Putih").copied() {
+        let _ = db.execute(Statement::from_string(DbBackend::MySql, format!(
+            "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'rim', 'lembar', 500.000000, '1 rim = 500 lembar HVS')",
+            hvs_id
+        ))).await;
+        println!("  -> HVS F4: 1 rim = 500 lembar");
+    }
+    // NCR Putih: 1 rim = 500 lembar
+    if let Some(ncr_id) = map_mat_id.get("Kertas NCR Putih").copied() {
+        let _ = db.execute(Statement::from_string(DbBackend::MySql, format!(
+            "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'rim', 'lembar', 500.000000, '1 rim = 500 lembar NCR')",
+            ncr_id
+        ))).await;
+        println!("  -> NCR Putih: 1 rim = 500 lembar");
+    }
+    // Art Paper: 1 rim = 500 lembar
+    if let Some(ap_id) = map_mat_id.get("Kertas Kunsruk").copied() {
+        let _ = db.execute(Statement::from_string(DbBackend::MySql, format!(
+            "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'rim', 'lembar', 500.000000, '1 rim = 500 lembar Art Paper')",
+            ap_id
+        ))).await;
+        println!("  -> Art Paper: 1 rim = 500 lembar");
+    }
+    // Amplop: 1 box = 100 pcs
+    if let Some(amp_id) = map_mat_id.get("Amplop Sedang").copied() {
+        let _ = db.execute(Statement::from_string(DbBackend::MySql, format!(
+            "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'box', 'pcs', 100.000000, '1 box = 100 pcs amplop')",
+            amp_id
+        ))).await;
+        println!("  -> Amplop Sedang: 1 box = 100 pcs");
+    }
+
     println!("\n==================================================");
     println!("🎉 SEEDING DATA ASLI PERCETAKAN PERDANA SUKSES!");
     println!("==================================================");
+    Ok(())
+}
+
+// ── Helper functions for BOM seeding via raw SQL ─────────────────────
+
+async fn find_product_id(db: &DatabaseConnection, name: &str) -> Option<i32> {
+    let result = db
+        .query_one(Statement::from_string(
+            DbBackend::MySql,
+            format!("SELECT id FROM products WHERE name = '{}' LIMIT 1", name.replace('\'', "''")),
+        ))
+        .await
+        .ok()
+        .flatten();
+    result.and_then(|row| {
+        row.try_get::<i32>("", "id").ok()
+    })
+}
+
+async fn insert_bom_sql(
+    db: &DatabaseConnection,
+    product_id: i32,
+    variant_id: Option<i32>,
+    version: i32,
+) -> Result<i32, Box<dyn std::error::Error>> {
+    let variant_sql = variant_id.map_or("NULL".to_string(), |v| v.to_string());
+    db.execute(Statement::from_string(DbBackend::MySql, format!(
+        "INSERT INTO product_boms (product_id, product_variant_id, version, status, output_qty, notes, activated_at) \
+         VALUES ({product_id}, {variant_sql}, {version}, 'ACTIVE', 1.0000, 'Seeded by initial setup', NOW())"
+    ))).await?;
+    let row = db.query_one(Statement::from_string(DbBackend::MySql, "SELECT LAST_INSERT_ID() as id".to_string())).await?.unwrap();
+    let id: i64 = row.try_get::<i64>("", "id")?;
+    Ok(id as i32)
+}
+
+async fn insert_bom_line_sql(
+    db: &DatabaseConnection,
+    bom_id: i32,
+    raw_material_id: i32,
+    component_type: &str,
+    consumption_basis: &str,
+    qty_per_output: &str,
+    waste_pct: &str,
+    is_required: bool,
+    sort_order: i32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    db.execute(Statement::from_string(DbBackend::MySql, format!(
+        "INSERT INTO product_bom_lines (bom_id, raw_material_id, component_type, consumption_basis, qty_per_output, waste_pct, is_required, sort_order) \
+         VALUES ({bom_id}, {raw_material_id}, '{component_type}', '{consumption_basis}', {qty_per_output}, {waste_pct}, {}, {sort_order})",
+        if is_required { "TRUE" } else { "FALSE" }
+    ))).await?;
     Ok(())
 }

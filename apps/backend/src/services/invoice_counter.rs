@@ -10,9 +10,11 @@ use crate::error::AppError;
 /// `invoice_counter` dan menaikkannya lewat `UPDATE ... + 1` di dalam
 /// transaksi yang sama dengan transaksi penjualan. Karena update dilakukan
 /// dalam satu koneksi/transaksi, dua transaksi yang dibuat bersamaan tidak
-/// akan pernah mendapat nomor yang sama (tidak seperti sempalan microsencods
-/// acak yang lama).
+/// akan pernah mendapat nomor yang sama.
 pub async fn next(txn: &DatabaseTransaction, date_str: &str) -> Result<u32, AppError> {
+    if !date_str.chars().all(|value| value.is_ascii_digit()) || date_str.len() != 8 {
+        return Err(AppError::Internal("Format tanggal counter invoice tidak valid".into()));
+    }
     // Pastikan baris counter untuk tanggal ini ada.
     let ensure = Statement::from_string(
         sea_orm::DbBackend::MySql,
@@ -35,12 +37,26 @@ pub async fn next(txn: &DatabaseTransaction, date_str: &str) -> Result<u32, AppE
         format!("SELECT last_seq FROM invoice_counter WHERE date_key = '{date_str}'"),
     );
     let row = txn.query_one(select).await?;
-    let seq: u32 = match row {
-        Some(r) => r.try_get("", "last_seq").unwrap_or(0),
-        None => 0,
+    let seq = match row {
+        Some(r) => {
+            if let Ok(v) = r.try_get::<i32>("", "last_seq") {
+                v as u32
+            } else if let Ok(v) = r.try_get::<i64>("", "last_seq") {
+                v as u32
+            } else if let Ok(v) = r.try_get::<u32>("", "last_seq") {
+                v
+            } else if let Ok(v) = r.try_get_by_index::<i32>(0) {
+                v as u32
+            } else if let Ok(v) = r.try_get_by_index::<i64>(0) {
+                v as u32
+            } else {
+                1
+            }
+        }
+        None => 1,
     };
 
-    Ok(seq)
+    Ok(seq.max(1))
 }
 
 /// Skema tabel (dibuat otomatis di `connect_db` bila belum ada).

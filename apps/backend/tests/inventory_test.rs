@@ -36,6 +36,8 @@ async fn test_raw_materials_and_mutations_lifecycle() {
             unit: Some("lembar".to_string()),
             stock: Some(Decimal::from(50)),
             min_stock_warning: Some(Decimal::from(20)),
+            standard_cost: None,
+            roll_width: None,
         },
     )
     .await
@@ -53,6 +55,8 @@ async fn test_raw_materials_and_mutations_lifecycle() {
             variant: Some("A3+".to_string()),
             unit: Some("lembar".to_string()),
             min_stock_warning: Some(Decimal::from(30)),
+            standard_cost: None,
+            roll_width: None,
         },
     )
     .await
@@ -130,8 +134,10 @@ async fn test_raw_materials_and_mutations_lifecycle() {
     let (history, meta) = raw_material_service::list_mutations(&db, mat.id, &pagination)
         .await
         .expect("List mutations history");
-    assert_eq!(meta.total, 2);
-    assert_eq!(history.len(), 2);
+    // Pembuatan stok awal juga merupakan pergerakan inventori yang harus dapat
+    // diaudit, selain mutasi IN dan OUT yang dibuat pada test ini.
+    assert_eq!(meta.total, 3);
+    assert_eq!(history.len(), 3);
 
     // 9. Cleanup
     raw_material_service::delete(&db, mat.id)

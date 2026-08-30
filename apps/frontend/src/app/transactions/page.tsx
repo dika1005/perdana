@@ -99,13 +99,15 @@ export default function TransactionsHistoryPage() {
 
   const handleCancelTransaction = async (tx: any) => {
     if (!tx?.id) return;
-    const confirmed = window.confirm(
-      `Batalkan transaksi ${tx.invoice_number}?\nStok bahan baku akan dikembalikan secara otomatis. Tindakan ini tidak dapat diurungkan.`
+    const reason = window.prompt(
+      `Alasan pembatalan transaksi ${tx.invoice_number}:\nReservasi bahan akan dilepas. Bahan yang sudah diproduksi tidak dikembalikan.`,
+      'Pelanggan membatalkan pesanan',
     );
+    const confirmed = Boolean(reason?.trim());
     if (!confirmed) return;
     try {
-      await transactionService.cancelTransaction(tx.id);
-      showToast('Transaksi dibatalkan & stok dikembalikan', 'success');
+      await transactionService.cancelTransaction(tx.id, reason!.trim());
+      showToast('Transaksi dibatalkan; reservasi bahan yang belum diproduksi telah dilepas', 'success');
       setSelectedTransaction(null);
       fetchTransactions();
     } catch (err: any) {
@@ -131,7 +133,7 @@ export default function TransactionsHistoryPage() {
   };
 
   const handleOpenSettle = (item: any) => {
-    const remaining = Number(item.total_amount) - Number(item.pay_amount);
+    const remaining = Number(item.total_amount) - Number(item.paid_amount ?? item.pay_amount);
     setSettleModal({ open: true, item });
     setSettlePayAmount(remaining > 0 ? remaining : 0);
     setSettlePaymentMethod('CASH');
@@ -178,8 +180,8 @@ export default function TransactionsHistoryPage() {
       `"${(t.customer_name || 'Pelanggan Umum').replace(/"/g, '""')}"`,
       `"${(t.customer_phone || '').replace(/"/g, '""')}"`,
       t.total_amount,
-      t.pay_amount,
-      t.remaining_amount || (Number(t.total_amount) - Number(t.pay_amount)),
+      t.paid_amount ?? t.pay_amount,
+      t.remaining_amount || (Number(t.total_amount) - Number(t.paid_amount ?? t.pay_amount)),
       `"${t.payment_status}"`,
       `"${t.settlement_payment_method ? `${t.payment_method || 'CASH'} + ${t.settlement_payment_method}` : (t.payment_method || 'CASH')}"`,
       `"${t.order_status}"`

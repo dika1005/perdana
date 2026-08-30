@@ -84,7 +84,7 @@ export default function JobTrackingPage() {
   };
 
   const handleOpenSettle = (job: any) => {
-    const remaining = Number(job.total_amount) - Number(job.pay_amount);
+    const remaining = Number(job.total_amount) - Number(job.paid_amount ?? job.pay_amount);
     setPayAmount(remaining > 0 ? remaining : 0);
     setSettlePaymentMethod('CASH');
     setSettleModal({ open: true, job });

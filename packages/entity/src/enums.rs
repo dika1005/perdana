@@ -158,3 +158,12 @@ pub enum PaymentMethod {
     Transfer,
 }
 
+impl PaymentMethod {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Cash => "CASH",
+            Self::Qris => "QRIS",
+            Self::Transfer => "TRANSFER",
+        }
+    }
+}

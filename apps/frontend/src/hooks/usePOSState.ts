@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Product, ProductAddon } from '../types/product';
 import { Category } from '../types/category';
 import { Customer } from '../types/customer';
 import { RawMaterial } from '../types/rawMaterial';
 import { PaymentStatus, PaymentMethod } from '../types/transaction';
-import { CartItem, CartItemMaterial } from '../components/pos/types';
+import { CartItem } from '../components/pos/types';
 import { productService } from '../services/productService';
 import { customerService } from '../services/customerService';
 import { rawMaterialService } from '../services/rawMaterialService';
 import { transactionService } from '../services/transactionService';
-import { calculateAutoMaterials } from '../components/pos/autoBomRules';
 import { useAlert } from '../context/AlertContext';
 
 export function usePOSState() {
@@ -36,6 +35,7 @@ export function usePOSState() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [estimatedDoneAt, setEstimatedDoneAt] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const checkoutKeyRef = useRef<string | null>(null);
 
   // Receipt Modal State
   const [invoiceData, setInvoiceData] = useState<any | null>(null);
@@ -62,13 +62,6 @@ export function usePOSState() {
       setCustomers(custRes.data);
       setAvailableAddons(addonRes);
       setRawMaterials(matRes.data);
-      setCart(prevCart => prevCart.map(item => {
-        if (!item.materials || item.materials.length === 0) {
-          const autoMats = calculateAutoMaterials(item.product, item.qty, item.length || 1, item.width || 1, matRes.data);
-          return { ...item, materials: autoMats };
-        }
-        return item;
-      }));
     } catch (err: any) {
       console.error('Failed to load POS catalog:', err);
     } finally {
@@ -96,14 +89,11 @@ export function usePOSState() {
       const existing = prevCart.find(item => item.product.id === product.id);
       if (existing) {
         const newQty = existing.qty + 1;
-        const autoMats = calculateAutoMaterials(product, newQty, existing.length || 1, existing.width || 1, rawMaterials);
         return prevCart.map(item => item.product.id === product.id ? { 
           ...item, 
           qty: newQty, 
-          materials: autoMats.length > 0 ? autoMats : item.materials,
         } : item);
       } else {
-        const autoMats = calculateAutoMaterials(product, initialQty, 1, 1, rawMaterials);
         return [...prevCart, { 
           product, 
           qty: initialQty, 
@@ -111,20 +101,12 @@ export function usePOSState() {
           length: 1,
           width: 1,
           addons: [],
-          materials: autoMats,
         }];
       }
     });
   };
 
-  const updateMaterials = (productId: number, materials: CartItemMaterial[]) => {
-    setCart(prevCart => prevCart.map(item => {
-      if (item.product.id === productId) {
-        return { ...item, materials };
-      }
-      return item;
-    }));
-  };
+
 
   const handleToggleAddon = (productId: number, addon: ProductAddon) => {
     setCart(prevCart => prevCart.map(item => {
@@ -180,12 +162,10 @@ export function usePOSState() {
   const updateDimensions = (id: number, length: number, width: number) => {
     setCart(prevCart => prevCart.map(item => {
       if (item.product.id === id) {
-        const autoMats = calculateAutoMaterials(item.product, item.qty, length, width, rawMaterials);
         return { 
           ...item, 
           length, 
           width,
-          materials: autoMats.length > 0 ? autoMats : item.materials 
         };
       }
       return item;
@@ -230,6 +210,7 @@ export function usePOSState() {
     }
 
     setPayAmount(total);
+    checkoutKeyRef.current = crypto.randomUUID();
     setShowCheckoutModal(true);
   };
 
@@ -242,8 +223,8 @@ export function usePOSState() {
         customer_name: selectedCustomer ? selectedCustomer.name : (customCustomerName.trim() || 'Umum'),
         discount_amount: discountAmount > 0 ? discountAmount : undefined,
         pay_amount: payAmount,
-        payment_status: paymentStatus,
         payment_method: paymentMethod,
+        idempotency_key: checkoutKeyRef.current || crypto.randomUUID(),
         estimated_done_at: estimatedDoneAt.trim() ? estimatedDoneAt : undefined,
         items: cart.map(item => ({
           product_id: item.product.id,
@@ -251,10 +232,6 @@ export function usePOSState() {
           qty: item.qty,
           length: item.length && item.length > 0 ? item.length : undefined,
           width: item.width && item.width > 0 ? item.width : undefined,
-          materials: (item.materials || []).map(m => ({
-            raw_material_id: m.raw_material_id,
-            material_qty: m.material_qty,
-          })),
           addons: (item.addons || []).map(a => ({
             addon_id: a.addon.id,
             addon_name: a.addon.name,
@@ -291,6 +268,7 @@ export function usePOSState() {
       setPayAmount(0);
       setPaymentMethod('CASH');
       setEstimatedDoneAt('');
+      checkoutKeyRef.current = null;
     } catch (err: any) {
       console.error('Transaction creation error:', err);
       const errData = err?.response?.data;
@@ -324,7 +302,6 @@ export function usePOSState() {
           length: newItem.length || updatedCart[existingIdx].length,
           width: newItem.width || updatedCart[existingIdx].width,
           price: newItem.price || updatedCart[existingIdx].price,
-          materials: newItem.materials || updatedCart[existingIdx].materials,
         };
       } else {
         updatedCart.push(newItem);
@@ -376,7 +353,6 @@ export function usePOSState() {
     total,
     handleSearch,
     addToCart,
-    updateMaterials,
     handleToggleAddon,
     handleUpdateAddonQty,
     updateQty,

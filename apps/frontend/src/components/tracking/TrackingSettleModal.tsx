@@ -29,7 +29,7 @@ export const TrackingSettleModal: React.FC<TrackingSettleModalProps> = ({
   if (!isOpen || !job) return null;
 
   const totalAmount = Number(job.total_amount) || 0;
-  const currentPaid = Number(job.pay_amount) || 0;
+  const currentPaid = Number(job.paid_amount ?? job.pay_amount) || 0;
   const remaining = totalAmount - currentPaid;
 
   const paymentMethods = [

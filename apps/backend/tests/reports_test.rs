@@ -116,6 +116,8 @@ async fn test_reports_and_analytics() {
             unit: Some("meter".to_string()),
             stock: Some(Decimal::from(10)),
             min_stock_warning: Some(Decimal::from(20)), // Low stock
+            standard_cost: None,
+            roll_width: None,
         },
     )
     .await
@@ -231,6 +233,8 @@ async fn test_reports_and_analytics() {
             unit: Some("botol".to_string()),
             stock: Some(Decimal::from(3)),
             min_stock_warning: Some(Decimal::from(10)),
+            standard_cost: None,
+            roll_width: None,
         },
     )
     .await
@@ -241,5 +245,4 @@ async fn test_reports_and_analytics() {
         .expect("Get low stock report");
     assert!(low_stock_list.iter().any(|ls| ls.id == low_mat.id));
 }
-
 

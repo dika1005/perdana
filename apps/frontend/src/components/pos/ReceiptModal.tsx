@@ -38,7 +38,7 @@ export function generateReceiptHtml(invoiceData: any): string {
   }).join('');
 
   const totalAmount = Number(invoiceData.total_amount || invoiceData.total || 0);
-  const payAmount = Number(invoiceData.pay_amount || 0);
+  const payAmount = Number(invoiceData.paid_amount ?? invoiceData.pay_amount ?? 0);
   const isDp = invoiceData.payment_status === 'DP' || Number(invoiceData.remaining_amount) > 0 || (totalAmount > payAmount);
   const remaining = Number(invoiceData.remaining_amount) || Math.max(0, totalAmount - payAmount);
   const changeAmount = Number(invoiceData.change_amount) || (payAmount > totalAmount ? payAmount - totalAmount : 0);
@@ -257,7 +257,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   };
 
   const totalAmount = Number(invoiceData.total_amount || invoiceData.total || 0);
-  const payAmount = Number(invoiceData.pay_amount || 0);
+  const payAmount = Number(invoiceData.paid_amount ?? invoiceData.pay_amount ?? 0);
   const isDp = invoiceData.payment_status === 'DP' || Number(invoiceData.remaining_amount) > 0 || (totalAmount > payAmount);
   const remaining = Number(invoiceData.remaining_amount) || Math.max(0, totalAmount - payAmount);
   const changeAmount = Number(invoiceData.change_amount) || (payAmount > totalAmount ? payAmount - totalAmount : 0);

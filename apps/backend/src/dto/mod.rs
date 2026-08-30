@@ -4,6 +4,7 @@ pub mod categories;
 pub mod customers;
 pub mod pagination;
 pub mod products;
+pub mod production;
 pub mod raw_materials;
 pub mod reports;
 pub mod response;
@@ -18,10 +19,10 @@ pub use customers::*;
 pub use expenses::*;
 pub use pagination::*;
 pub use products::*;
+pub use production::*;
 pub use raw_materials::*;
 pub use reports::*;
 pub use response::*;
 pub use transactions::*;
 pub use users::*;
-
 

@@ -5,7 +5,7 @@ import { ShoppingCart, Trash2 } from 'lucide-react';
 import { Customer } from '../../types/customer';
 import { ProductAddon } from '../../types/product';
 import { RawMaterial } from '../../types/rawMaterial';
-import { CartItem, CartItemMaterial } from './types';
+import { CartItem } from './types';
 import { CartCustomerSelector } from './CartCustomerSelector';
 import { CartItemCard } from './CartItemCard';
 import { CartFooterSummary } from './CartFooterSummary';
@@ -22,7 +22,6 @@ interface CartSidebarProps {
   onUpdateQty: (id: number, delta: number) => void;
   onUpdatePrice: (id: number, price: number) => void;
   onUpdateDimensions: (id: number, length: number, width: number) => void;
-  onUpdateMaterials?: (productId: number, materials: CartItemMaterial[]) => void;
   onToggleAddon: (productId: number, addon: ProductAddon) => void;
   onUpdateAddonQty?: (productId: number, addonId: number, qty: number) => void;
   onRemoveFromCart: (id: number) => void;
@@ -86,7 +85,6 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   onUpdateQty,
   onUpdatePrice,
   onUpdateDimensions,
-  onUpdateMaterials,
   onToggleAddon,
   onUpdateAddonQty,
   onRemoveFromCart,
@@ -98,7 +96,6 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   onOpenCheckout,
 }) => {
   const [editingPriceIds, setEditingPriceIds] = useState<Record<number, boolean>>({});
-  const [expandedMaterialIds, setExpandedMaterialIds] = useState<Record<number, boolean>>({});
 
   const togglePriceEdit = (productId: number) => {
     setEditingPriceIds(prev => ({
@@ -107,12 +104,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
     }));
   };
 
-  const toggleMaterialSection = (productId: number) => {
-    setExpandedMaterialIds(prev => ({
-      ...prev,
-      [productId]: !prev[productId]
-    }));
-  };
+
 
   return (
     <div className="w-full lg:w-[480px] xl:w-[520px] 2xl:w-[560px] flex flex-col skeuo p-4 lg:p-5 shrink-0 h-[calc(100vh-130px)] transition-all">
@@ -169,8 +161,6 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
             const isCustom = item.product.price_type === 'CUSTOM';
             const isPriceEdited = item.price !== (Number(item.product.default_price) || 0);
             const isEditOpen = editingPriceIds[item.product.id] || isRange || isCustom;
-            const recommendedMaterials = getRecommendedMaterials(item, rawMaterials);
-            const isMatOpen = expandedMaterialIds[item.product.id] || (item.materials || []).length > 0;
 
             return (
               <CartItemCard
@@ -180,15 +170,12 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                 availableAddons={availableAddons}
                 isPriceEdited={isPriceEdited}
                 isEditOpen={isEditOpen}
-                isMatOpen={isMatOpen}
-                recommendedMaterials={recommendedMaterials}
+                recommendedMaterials={[]}
                 onTogglePriceEdit={() => togglePriceEdit(item.product.id)}
-                onToggleMaterialSection={() => toggleMaterialSection(item.product.id)}
                 onUpdateQty={(delta) => onUpdateQty(item.product.id, delta)}
                 onSetQty={(qty) => onUpdateQty(item.product.id, qty - item.qty)}
                 onUpdatePrice={(price) => onUpdatePrice(item.product.id, price)}
                 onUpdateDimensions={(l, w) => onUpdateDimensions(item.product.id, l, w)}
-                onUpdateMaterials={(mats) => onUpdateMaterials?.(item.product.id, mats)}
                 onToggleAddon={(addon) => onToggleAddon(item.product.id, addon)}
                 onUpdateAddonQty={(addonId, qty) => onUpdateAddonQty?.(item.product.id, addonId, qty)}
                 onRemove={() => onRemoveFromCart(item.product.id)}

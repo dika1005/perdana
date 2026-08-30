@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Layers } from 'lucide-react';
 import { Product } from '../../types/product';
 import { Category } from '../../types/category';
 import { formatRupiah } from '../../utils/format';
@@ -15,6 +15,7 @@ interface ProductListTabProps {
   onOpenAddModal: () => void;
   onOpenEditModal: (product: Product) => void;
   onDeleteProduct: (id: number) => void;
+  onConfigureBom: (product: Product) => void;
 }
 
 export const ProductListTab: React.FC<ProductListTabProps> = ({
@@ -26,6 +27,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   onOpenAddModal,
   onOpenEditModal,
   onDeleteProduct,
+  onConfigureBom,
 }) => {
   return (
     <div className="skeuo p-6">
@@ -97,6 +99,13 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => onConfigureBom(p)}
+                          className="p-1.5 skeuo-button text-indigo-600 dark:text-indigo-400 rounded-lg"
+                          title="Atur BOM multi-bahan"
+                        >
+                          <Layers className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={() => onOpenEditModal(p)}
                           className="p-1.5 skeuo-button text-blue-600 dark:text-blue-400 rounded-lg"

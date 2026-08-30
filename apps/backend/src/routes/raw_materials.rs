@@ -1,12 +1,14 @@
 use actix_web::{HttpResponse, web};
 
 use crate::dto::{
-    ApiResponse, CreateMutationRequest, CreateRawMaterialRequest, ListResponse, MessageData,
-    MutationResponse, Pagination, RawMaterialQuery, RawMaterialResponse, UpdateRawMaterialRequest,
+    ApiResponse, CreateMaterialLotRequest, CreateMutationRequest, CreateRawMaterialRequest,
+    ListResponse, MaterialLotResponse, MessageData, MutationResponse, Pagination, RawMaterialQuery,
+    RawMaterialResponse, UpdateRawMaterialRequest, UpsertUomConversionRequest,
 };
 use crate::error::AppError;
 use crate::extractors::{AuthUser, SuperAdmin};
 use crate::services::raw_materials as raw_material_service;
+use crate::services::material_lots as material_lot_service;
 use crate::state::AppState;
 
 #[utoipa::path(
@@ -82,10 +84,10 @@ pub async fn get(
 )]
 pub async fn create(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     payload: web::Json<CreateRawMaterialRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data = raw_material_service::create(&state.db, payload.into_inner()).await?;
+    let data = raw_material_service::create_as(&state.db, Some(admin.id), payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(ApiResponse::ok("Bahan baku berhasil dibuat", data)))
 }
 
@@ -108,12 +110,17 @@ pub async fn create(
 )]
 pub async fn update(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     path: web::Path<i32>,
     payload: web::Json<UpdateRawMaterialRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data =
-        raw_material_service::update(&state.db, path.into_inner(), payload.into_inner()).await?;
+    let data = raw_material_service::update_as(
+        &state.db,
+        Some(admin.id),
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Bahan baku berhasil diperbarui", data)))
 }
 
@@ -135,10 +142,10 @@ pub async fn update(
 )]
 pub async fn delete(
     state: web::Data<AppState>,
-    _admin: SuperAdmin,
+    admin: SuperAdmin,
     path: web::Path<i32>,
 ) -> Result<HttpResponse, AppError> {
-    raw_material_service::delete(&state.db, path.into_inner()).await?;
+    raw_material_service::delete_as(&state.db, Some(admin.id), path.into_inner()).await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok(
         "Bahan baku berhasil dihapus",
         MessageData { ok: true },
@@ -162,11 +169,68 @@ pub async fn delete(
 )]
 pub async fn create_mutation(
     state: web::Data<AppState>,
-    _user: AuthUser,
+    admin: SuperAdmin,
     payload: web::Json<CreateMutationRequest>,
 ) -> Result<HttpResponse, AppError> {
-    let data = raw_material_service::create_mutation(&state.db, payload.into_inner()).await?;
+    let data = raw_material_service::create_mutation_as(
+        &state.db,
+        Some(admin.id),
+        payload.into_inner(),
+    )
+    .await?;
     Ok(HttpResponse::Created().json(ApiResponse::ok("Mutasi stok berhasil dicatat", data)))
+}
+
+/// Terima roll baru pada bahan basis m². Saldo fisik dan lot selalu dibuat
+/// dalam satu transaksi agar tidak ada roll "menggantung" tanpa stok.
+pub async fn receive_lot(
+    state: web::Data<AppState>,
+    admin: SuperAdmin,
+    path: web::Path<i32>,
+    payload: web::Json<CreateMaterialLotRequest>,
+) -> Result<HttpResponse, AppError> {
+    let data = material_lot_service::receive_lot_as(
+        &state.db,
+        admin.id,
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
+    Ok(HttpResponse::Created().json(ApiResponse::<MaterialLotResponse>::ok(
+        "Lot roll berhasil diterima dan stok fisik ditambahkan",
+        data,
+    )))
+}
+
+pub async fn list_lots(
+    state: web::Data<AppState>,
+    _user: AuthUser,
+    path: web::Path<i32>,
+) -> Result<HttpResponse, AppError> {
+    let data = material_lot_service::list_lots(&state.db, path.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::<Vec<MaterialLotResponse>>::ok(
+        "Daftar lot dan offcut bahan",
+        data,
+    )))
+}
+
+pub async fn upsert_uom_conversion(
+    state: web::Data<AppState>,
+    admin: SuperAdmin,
+    path: web::Path<i32>,
+    payload: web::Json<UpsertUomConversionRequest>,
+) -> Result<HttpResponse, AppError> {
+    material_lot_service::upsert_uom_conversion_as(
+        &state.db,
+        admin.id,
+        path.into_inner(),
+        payload.into_inner(),
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::ok(
+        "Konversi satuan bahan berhasil diperbarui",
+        MessageData { ok: true },
+    )))
 }
 
 #[utoipa::path(

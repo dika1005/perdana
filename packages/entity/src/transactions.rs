@@ -10,6 +10,9 @@ pub struct Model {
     pub id: i32,
     #[sea_orm(unique)]
     pub invoice_number: String,
+    /// Client supplied retry key. Prevents duplicate invoices when the POS
+    /// retries a request after a network timeout.
+    pub idempotency_key: Option<String>,
     pub customer_id: Option<i32>,
     pub customer_name: Option<String>,
     #[sea_orm(column_type = "Decimal(Some((12, 2)))")]

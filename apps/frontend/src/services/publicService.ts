@@ -65,6 +65,7 @@ export interface PublicTrackingData {
   order_status: 'ANTRIAN' | 'PROSES' | 'SELESAI' | 'DIAMBIL';
   payment_status: 'PAID' | 'DP' | 'UNPAID';
   total_amount: number | string;
+  paid_amount: number | string;
   pay_amount: number | string;
   remaining_amount: number | string;
   estimated_done_at?: string | null;

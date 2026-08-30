@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Plus, RefreshCw } from 'lucide-react';
 import { rawMaterialService } from '../../services/rawMaterialService';
@@ -13,6 +13,8 @@ import { useAlert } from '../../context/AlertContext';
 import { InventoryTable } from '../../components/inventory/InventoryTable';
 import { InventoryRestockModal } from '../../components/inventory/InventoryRestockModal';
 import { InventoryCreateModal } from '../../components/inventory/InventoryCreateModal';
+import { InventoryLotModal } from '../../components/inventory/InventoryLotModal';
+import { InventoryUomModal } from '../../components/inventory/InventoryUomModal';
 
 export default function InventoryPage() {
   const { showAlert, showToast } = useAlert();
@@ -30,6 +32,14 @@ export default function InventoryPage() {
   const [mutationNotes, setMutationNotes] = useState('');
   const [submittingMutation, setSubmittingMutation] = useState(false);
 
+  // Modal Lot Management
+  const [showLotModal, setShowLotModal] = useState(false);
+  const [lotMaterial, setLotMaterial] = useState<RawMaterial | null>(null);
+
+  // Modal UOM Conversion
+  const [showUomModal, setShowUomModal] = useState(false);
+  const [uomMaterial, setUomMaterial] = useState<RawMaterial | null>(null);
+
   // Modal Create Raw Material
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -42,7 +52,7 @@ export default function InventoryPage() {
   });
   const [submittingCreate, setSubmittingCreate] = useState(false);
 
-  const fetchInventory = async () => {
+  const fetchInventory = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -61,11 +71,11 @@ export default function InventoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, selectedCategory]);
 
   useEffect(() => {
     fetchInventory();
-  }, [selectedCategory]);
+  }, [fetchInventory]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +87,16 @@ export default function InventoryPage() {
     setMutationQty(10);
     setMutationNotes('');
     setShowRestock(true);
+  };
+
+  const handleOpenLots = (item: RawMaterial) => {
+    setLotMaterial(item);
+    setShowLotModal(true);
+  };
+
+  const handleOpenUom = (item: RawMaterial) => {
+    setUomMaterial(item);
+    setShowUomModal(true);
   };
 
   const handleSaveRestock = async () => {
@@ -143,18 +163,18 @@ export default function InventoryPage() {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-3xl font-bold text-text-main mb-2">Inventaris Bahan Baku</h1>
-          <p className="text-text-muted">Data stok bahan baku langsung terhubung ke database MySQL.</p>
+          <p className="text-text-muted">Kelola saldo fisik, stok terpesan (reserved), penerimaan lot roll, dan konversi satuan.</p>
         </div>
         <div className="flex gap-3">
           <button 
             onClick={fetchInventory} 
-            className="flex items-center gap-2 px-4 py-3 font-bold skeuo-button text-text-main rounded-xl"
+            className="flex items-center gap-2 px-4 py-3 font-bold skeuo-button text-text-main rounded-xl cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button 
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-6 py-3 font-bold skeuo-button text-brand-600 rounded-xl"
+            className="flex items-center gap-2 px-6 py-3 font-bold skeuo-button text-brand-600 rounded-xl cursor-pointer"
           >
             <Plus className="w-5 h-5" />
             Bahan Baru
@@ -179,6 +199,8 @@ export default function InventoryPage() {
         onSelectCategory={setSelectedCategory}
         onSearchSubmit={handleSearch}
         onOpenRestock={handleOpenRestock}
+        onOpenLots={handleOpenLots}
+        onOpenUom={handleOpenUom}
       />
 
       {/* Restock Modal */}
@@ -192,6 +214,21 @@ export default function InventoryPage() {
         submitting={submittingMutation}
         onClose={() => setShowRestock(false)}
         onSubmit={handleSaveRestock}
+      />
+
+      {/* Lot / Roll Management Modal */}
+      <InventoryLotModal
+        isOpen={showLotModal}
+        material={lotMaterial}
+        onClose={() => setShowLotModal(false)}
+        onRefreshMaterial={fetchInventory}
+      />
+
+      {/* UOM Conversion Modal */}
+      <InventoryUomModal
+        isOpen={showUomModal}
+        material={uomMaterial}
+        onClose={() => setShowUomModal(false)}
       />
 
       {/* Create Modal */}
