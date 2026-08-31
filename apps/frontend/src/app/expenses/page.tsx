@@ -12,6 +12,7 @@ import {
   ExpenseSummary 
 } from '../../types/expense';
 import { useAlert } from '../../context/AlertContext';
+import { PageHeader, Button, ErrorBanner } from '../../components/shared';
 
 // Modular Expense Components
 import { ExpenseSummaryCards } from '../../components/expenses/ExpenseSummaryCards';
@@ -231,52 +232,40 @@ export default function ExpensesPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-main mb-1">Pengeluaran Operasional</h1>
-          <p className="text-text-muted text-xs sm:text-sm">
-            Catat biaya operasional toko, pembelian bahan baku, gaji karyawan, dan maintenance mesin.
-          </p>
-        </div>
+      <PageHeader
+        title="Pengeluaran Operasional"
+        subtitle="Catat biaya operasional toko, pembelian bahan baku, gaji karyawan, dan maintenance mesin."
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={handleExportCsv}
+              disabled={expenses.length === 0}
+              title="Ekspor pengeluaran ke CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Ekspor CSV
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                fetchExpenses();
+                fetchSummary();
+              }}
+              title="Segarkan data"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Segarkan
+            </Button>
+            <Button variant="primary" onClick={handleOpenAddModal}>
+              <Plus className="w-4 h-4" />
+              Catat Pengeluaran
+            </Button>
+          </>
+        }
+      />
 
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleExportCsv}
-            disabled={expenses.length === 0}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 font-bold skeuo-button text-text-main text-xs rounded-xl disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            title="Ekspor pengeluaran ke CSV"
-          >
-            <Download className="w-3.5 h-3.5 text-blue-500" />
-            <span>Ekspor CSV</span>
-          </button>
-
-          <button
-            onClick={() => {
-              fetchExpenses();
-              fetchSummary();
-            }}
-            className="flex items-center gap-1.5 px-3 py-2.5 font-bold skeuo-button text-text-muted text-xs rounded-xl cursor-pointer"
-            title="Segarkan data"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Segarkan</span>
-          </button>
-          
-          <button
-            onClick={handleOpenAddModal}
-            className="flex items-center gap-2 px-4 py-2.5 font-bold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4 text-white" />
-            <span>Catat Pengeluaran</span>
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50 text-red-600 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={() => { fetchExpenses(); fetchSummary(); }} />}
 
       {/* Summary Cards */}
       <ExpenseSummaryCards summary={summary} />

@@ -6,6 +6,7 @@ import { UserPlus, RefreshCw } from 'lucide-react';
 import { customerService } from '../../services/customerService';
 import { Customer } from '../../types/customer';
 import { useAlert } from '../../context/AlertContext';
+import { PageHeader, Button, ErrorBanner } from '../../components/shared';
 
 // Modular Customer Components
 import { CustomerTable } from '../../components/customers/CustomerTable';
@@ -170,34 +171,24 @@ export default function CustomersPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-main mb-1">Master Pelanggan</h1>
-          <p className="text-text-muted text-xs sm:text-sm">Kelola data pelanggan, kontak WhatsApp, dan pantau riwayat repeat order.</p>
-        </div>
-        <div className="flex gap-2.5">
-          <button 
-            onClick={fetchCustomers} 
-            className="flex items-center gap-2 px-3.5 py-2.5 font-bold skeuo-button text-text-main text-xs sm:text-sm rounded-xl cursor-pointer"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Segarkan</span>
-          </button>
-          <button 
-            onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs sm:text-sm rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4 text-white" />
-            <span>Pelanggan Baru</span>
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Master Pelanggan"
+        subtitle="Kelola data pelanggan, kontak WhatsApp, dan pantau riwayat repeat order."
+        actions={
+          <>
+            <Button variant="secondary" onClick={fetchCustomers}>
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Segarkan
+            </Button>
+            <Button variant="primary" onClick={handleOpenCreateModal}>
+              <UserPlus className="w-4 h-4" />
+              Pelanggan Baru
+            </Button>
+          </>
+        }
+      />
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50 text-red-600 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchCustomers} />}
 
       {/* Customer Table */}
       <CustomerTable

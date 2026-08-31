@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, UserCheck, UserX, KeyRound } from 'lucide-react';
+import { Search, UserCheck, UserX, KeyRound, ShieldCheck } from 'lucide-react';
 import { User } from '../../types/user';
 
 interface UserTableProps {
@@ -80,7 +80,9 @@ export const UserTable: React.FC<UserTableProps> = ({
                         ? 'text-purple-700 bg-purple-50 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/60' 
                         : 'text-blue-700 bg-blue-50 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60'
                     }`}>
-                      {u.role === 'SUPER_ADMIN' ? '👑 Owner / Super Admin' : '🧑‍💼 Kasir'}
+                      {u.role === 'SUPER_ADMIN'
+                        ? <><ShieldCheck className="w-3 h-3" /> Owner / Super Admin</>
+                        : <><UserCheck className="w-3 h-3" /> Kasir</>}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">

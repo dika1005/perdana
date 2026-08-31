@@ -7,6 +7,7 @@ import { userService } from '../../services/userService';
 import { backupService } from '../../services/backupService';
 import { User, UserRole } from '../../types/user';
 import { useAlert } from '../../context/AlertContext';
+import { PageHeader, Button, ErrorBanner } from '../../components/shared';
 
 // Modular User Components
 import { UserTable } from '../../components/users/UserTable';
@@ -165,43 +166,33 @@ export default function UsersManagementPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-text-main mb-1">Manajemen Kasir & Pengguna</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs">Kelola akun kasir, hak akses, dan reset password.</p>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={handleDownloadBackup}
-            disabled={backingUp}
-            className="flex items-center gap-1.5 px-3.5 py-2 font-semibold skeuo-button text-emerald-600 dark:text-emerald-400 text-xs rounded-xl"
-            title="Download cadangan seluruh database (.sql)"
-          >
-            <Download className={`w-3.5 h-3.5 ${backingUp ? 'animate-pulse' : ''}`} />
-            <span>{backingUp ? 'Mengekspor...' : 'Backup Database'}</span>
-          </button>
-          <button 
-            onClick={fetchUsers} 
-            className="flex items-center gap-1.5 px-3.5 py-2 font-semibold skeuo-button text-text-main text-xs rounded-xl"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Segarkan
-          </button>
-          <button 
-            onClick={() => setCreateModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 font-semibold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-sm transition-colors"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            Tambah Kasir Baru
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Manajemen Kasir & Pengguna"
+        subtitle="Kelola akun kasir, hak akses, dan reset password."
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={handleDownloadBackup}
+              disabled={backingUp}
+              title="Download cadangan seluruh database (.sql)"
+            >
+              <Download className={`w-3.5 h-3.5 ${backingUp ? 'animate-pulse' : ''}`} />
+              {backingUp ? 'Mengekspor...' : 'Backup Database'}
+            </Button>
+            <Button variant="secondary" onClick={fetchUsers}>
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Segarkan
+            </Button>
+            <Button variant="primary" onClick={() => setCreateModal(true)}>
+              <UserPlus className="w-3.5 h-3.5" />
+              Tambah Kasir Baru
+            </Button>
+          </>
+        }
+      />
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchUsers} />}
 
       {/* User Table */}
       <UserTable

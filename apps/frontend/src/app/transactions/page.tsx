@@ -15,6 +15,7 @@ import { RefundTransactionModal, RefundPayload } from '../../components/transact
 import { ReceiptModal } from '../../components/pos/ReceiptModal';
 import { formatRupiah } from '../../utils/format';
 import { useAlert } from '../../context/AlertContext';
+import { PageHeader, Button, ErrorBanner } from '../../components/shared';
 
 export default function TransactionsHistoryPage() {
   const { showAlert, showToast } = useAlert();
@@ -227,36 +228,29 @@ export default function TransactionsHistoryPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-main mb-1">Riwayat Transaksi</h1>
-          <p className="text-text-muted text-xs sm:text-sm">Daftar semua transaksi kasir, status pembayaran DP, pelunasan, dan cetak ulang nota.</p>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleExportCsv}
-            disabled={transactions.length === 0}
-            className="flex items-center gap-2 px-3.5 py-2 font-bold skeuo-button text-text-main text-xs rounded-xl disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            title="Ekspor daftar transaksi saat ini ke CSV"
-          >
-            <Download className="w-3.5 h-3.5 text-blue-500" />
-            <span>Ekspor CSV</span>
-          </button>
-          <button 
-            onClick={fetchTransactions}
-            className="flex items-center gap-2 px-3.5 py-2 font-bold skeuo-button text-text-main text-xs rounded-xl cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Segarkan</span>
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Riwayat Transaksi"
+        subtitle="Daftar semua transaksi kasir, status pembayaran DP, pelunasan, dan cetak ulang nota."
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={handleExportCsv}
+              disabled={transactions.length === 0}
+              title="Ekspor daftar transaksi saat ini ke CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Ekspor CSV
+            </Button>
+            <Button variant="secondary" onClick={fetchTransactions}>
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Segarkan
+            </Button>
+          </>
+        }
+      />
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50 text-red-600 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchTransactions} />}
 
       {/* Indikator uang menunggu refund dari pesanan dibatalkan */}
       {pendingRefunds.length > 0 && (

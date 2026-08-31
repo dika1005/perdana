@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { RefreshCw, FileText, Edit3, Trash2, ChevronLeft, ChevronRight, Layers, Wrench, Users, Receipt } from 'lucide-react';
+import { RefreshCw, FileText, Edit3, Trash2, ChevronLeft, ChevronRight, Layers, Wrench, Users, Receipt, Banknote, Landmark } from 'lucide-react';
 import { ExpenseCategory, ExpenseItem } from '../../types/expense';
 import { formatRupiah } from '../../utils/format';
 
@@ -99,8 +99,10 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
                       {formatRupiah(exp.amount)}
                     </td>
                     <td className="py-3 px-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60">
-                        {exp.payment_method === 'CASH' ? '💵 Tunai' : '💳 Transfer'}
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60">
+                        {exp.payment_method === 'CASH'
+                          ? <><Banknote className="w-3 h-3" /> Tunai</>
+                          : <><Landmark className="w-3 h-3" /> Transfer</>}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-slate-500 dark:text-slate-400 text-xs">

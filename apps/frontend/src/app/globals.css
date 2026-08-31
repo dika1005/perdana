@@ -110,6 +110,29 @@ body {
   transform: translateY(0);
 }
 
+.skeuo-button-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 12px 0 rgba(37, 99, 235, 0.3);
+  transition: all 0.15s ease-in-out;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+
+.skeuo-button-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.skeuo-button-primary:active {
+  transform: scale(0.98);
+}
+
+.skeuo-button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Neo-Brutalism Utilities */
 .neo-box {
   background-color: var(--color-bg-skeuo);

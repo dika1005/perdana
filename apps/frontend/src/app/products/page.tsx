@@ -4,6 +4,7 @@ import React from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Tag, Layers, Sparkles, FolderTree, RefreshCw } from 'lucide-react';
 import { useProductManagement } from '../../hooks/useProductManagement';
+import { PageHeader, Button, ErrorBanner } from '../../components/shared';
 
 // Modular Product Components
 import { ProductListTab } from '../../components/products/ProductListTab';
@@ -64,33 +65,18 @@ export default function ProductsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Tag className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <span>Manajemen Produk & Layanan Cetak</span>
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Kelola daftar produk, varian ukuran/kertas, opsi finishing, dan kategori produk percetakan.
-          </p>
-        </div>
+      <PageHeader
+        title="Manajemen Produk & Layanan Cetak"
+        subtitle="Kelola daftar produk, varian ukuran/kertas, opsi finishing, dan kategori produk percetakan."
+        actions={
+          <Button variant="secondary" onClick={fetchAllData} disabled={loading} title="Segarkan data">
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Segarkan
+          </Button>
+        }
+      />
 
-        <button
-          onClick={fetchAllData}
-          disabled={loading}
-          className="skeuo-button px-3.5 py-2 text-xs font-semibold rounded-xl flex items-center gap-2 self-start sm:self-auto text-slate-700 dark:text-slate-300"
-          title="Segarkan data"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
-        </button>
-      </div>
-
-      {error && (
-        <div className="p-4 mb-6 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchAllData} />}
 
       {/* Tabs Header */}
       <div className="flex gap-2 p-1.5 rounded-2xl skeuo-inset bg-slate-100/80 dark:bg-slate-900/60 mb-6 overflow-x-auto">
@@ -98,7 +84,7 @@ export default function ProductsPage() {
           onClick={() => setActiveTab('products')}
           className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'products'
-              ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700'
+              ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
@@ -110,7 +96,7 @@ export default function ProductsPage() {
           onClick={() => setActiveTab('variants')}
           className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'variants'
-              ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700'
+              ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
@@ -122,7 +108,7 @@ export default function ProductsPage() {
           onClick={() => setActiveTab('addons')}
           className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'addons'
-              ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700'
+              ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
@@ -134,7 +120,7 @@ export default function ProductsPage() {
           onClick={() => setActiveTab('categories')}
           className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'categories'
-              ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700'
+              ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >

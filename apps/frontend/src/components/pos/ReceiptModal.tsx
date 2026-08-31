@@ -2,12 +2,13 @@
 
 import React from 'react';
 import { formatRupiah } from '../../utils/format';
-import { Printer, X, Receipt } from 'lucide-react';
+import { Printer, Receipt } from 'lucide-react';
+import { STORE_IDENTITY, RECEIPT_FOOTER } from '../../data/storeIdentity';
+import { Modal, Button } from '../shared';
 
 interface ReceiptModalProps {
   invoiceData: any | null;
   onClose: () => void;
-  onPrint?: () => void;
 }
 
 export function generateReceiptHtml(invoiceData: any): string {
@@ -139,9 +140,9 @@ export function generateReceiptHtml(invoiceData: any): string {
       <body>
         <div class="receipt-wrap">
           <div class="text-center">
-            <div class="header-title">${invoiceData.store_name || 'PERCETAKAN PERDANA'}</div>
-            <div class="header-sub">${invoiceData.store_address || 'Depan Polsek Ciawigebang - Kuningan'}</div>
-            <div class="header-sub">Telp: ${invoiceData.store_phone || '0812-3456-7890'}</div>
+            <div class="header-title">${invoiceData.store_name || STORE_IDENTITY.name}</div>
+            <div class="header-sub">${invoiceData.store_address || STORE_IDENTITY.address}</div>
+            <div class="header-sub">Telp: ${invoiceData.store_phone || STORE_IDENTITY.phone}</div>
           </div>
 
           <div class="divider"></div>
@@ -214,9 +215,9 @@ export function generateReceiptHtml(invoiceData: any): string {
           <div class="divider"></div>
 
           <div class="footer-msg">
-            <div class="font-bold">Terima kasih atas kepercayaan Anda!</div>
-            <div>Barang yang sudah dibeli tidak dapat ditukar/dikembalikan.</div>
-            <div style="font-size: 9px; margin-top: 3px;">Simpan struk nota ini sebagai bukti sah pengambilan.</div>
+            <div class="font-bold">${RECEIPT_FOOTER.thanks}</div>
+            <div>${RECEIPT_FOOTER.policy}</div>
+            <div style="font-size: 9px; margin-top: 3px;">${RECEIPT_FOOTER.keepNote}</div>
           </div>
         </div>
       </body>
@@ -261,154 +262,137 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     : new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="p-5 w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl my-auto">
-        <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <Receipt className="w-4 h-4" />
-            </div>
-            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-              Struk Nota Transaksi
-            </h3>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Thermal Slip Clean Screen Preview */}
-        <div className="bg-white text-black p-4 font-mono text-[11px] leading-tight rounded-lg border border-slate-300 shadow-inner mb-4 space-y-2">
-          <div className="text-center pb-2 border-b border-dashed border-slate-400">
-            <p className="font-black text-xs uppercase">{invoiceData.store_name || 'PERCETAKAN PERDANA'}</p>
-            <p className="text-[10px] text-slate-600">{invoiceData.store_address || 'Depan Polsek Ciawigebang - Kuningan'}</p>
-            <p className="text-[10px] text-slate-600">Telp: {invoiceData.store_phone || '0812-3456-7890'}</p>
-          </div>
-
-          <div className="text-[10px] space-y-0.5 border-b border-dashed border-slate-400 pb-2">
-            <div className="flex justify-between">
-              <span>No. Nota:</span>
-              <span className="font-bold">{invoiceData.invoice_number || '-'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Waktu:</span>
-              <span>{formattedDate}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Pelanggan:</span>
-              <span className="font-bold">{invoiceData.customer_name || 'Pelanggan Umum'}</span>
-            </div>
-            {invoiceData.cashier_name && (
-              <div className="flex justify-between">
-                <span>Kasir:</span>
-                <span>{invoiceData.cashier_name}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span>Metode:</span>
-              <span>{invoiceData.payment_method || 'CASH'}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Status:</span>
-              <span className={`px-1.5 py-0.2 rounded font-bold border text-[9px] ${
-                invoiceData.payment_status === 'PAID'
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-400'
-                  : 'bg-amber-50 text-amber-800 border-amber-400'
-              }`}>
-                {invoiceData.payment_status === 'PAID' ? 'LUNAS' : invoiceData.payment_status === 'DP' ? 'UANG MUKA (DP)' : 'BELUM BAYAR'}
-              </span>
-            </div>
-          </div>
-
-          {/* Items Preview */}
-          <div className="py-1 border-b border-dashed border-slate-400 space-y-1.5 max-h-48 overflow-y-auto">
-            {(invoiceData.items || []).length === 0 ? (
-              <p className="text-center py-2 text-slate-400 text-[10px]">(Pesanan Cetak)</p>
-            ) : (
-              (invoiceData.items || []).map((item: any, idx: number) => {
-                const unitPrice = Number(item.price || item.custom_price || item.unit_price || 0);
-                const subtotal = item.subtotal ? Number(item.subtotal) : (unitPrice * Number(item.qty || 1));
-                return (
-                  <div key={idx} className="space-y-0.5">
-                    <div className="font-bold text-slate-900">
-                      {item.product_name || item.name || 'Produk'} {item.variant_name ? `(${item.variant_name})` : ''}
-                    </div>
-                    {(() => {
-                      const isMeterItem = ((item.unit_name || '') + ' ' + (item.product_name || item.name || '')).toLowerCase().includes('meter');
-                      return isMeterItem && item.length && item.width ? (
-                        <div className="text-[10px] text-slate-600 pl-1">
-                          Ukuran: {item.length}m x {item.width}m
-                        </div>
-                      ) : null;
-                    })()}
-                    {item.addons && item.addons.length > 0 && (
-                      <div className="text-[9px] text-slate-500 pl-1">
-                        + Finishing: {item.addons.map((a: any) => `${a.addon_name || a.name || 'Finishing'}${a.qty > 1 ? ` (${a.qty}x)` : ''}`).join(', ')}
-                      </div>
-                    )}
-                    <div className="flex justify-between pl-1 text-[10px] text-slate-700">
-                      <span>{item.qty || 1} x {formatRupiah(unitPrice)}</span>
-                      <span className="font-bold">{formatRupiah(subtotal)}</span>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Totals */}
-          <div className="space-y-1 pt-1 text-[10px]">
-            <div className="flex justify-between text-slate-700">
-              <span>Subtotal:</span>
-              <span>{formatRupiah(invoiceData.subtotal || invoiceData.subtotal_amount || totalAmount)}</span>
-            </div>
-            {Number(invoiceData.discount_amount) > 0 && (
-              <div className="flex justify-between text-rose-600 font-semibold">
-                <span>Diskon:</span>
-                <span>- {formatRupiah(invoiceData.discount_amount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-xs font-black border-t-2 border-slate-800 pt-1 text-slate-900">
-              <span>TOTAL TAGIHAN:</span>
-              <span>{formatRupiah(totalAmount)}</span>
-            </div>
-            <div className="flex justify-between text-slate-700">
-              <span>Uang Diterima:</span>
-              <span>{formatRupiah(payAmount)}</span>
-            </div>
-            {isDp && (
-              <div className="flex justify-between font-bold text-amber-900 border-t border-dashed border-slate-400 pt-1">
-                <span>SISA TAGIHAN:</span>
-                <span>{formatRupiah(remaining)}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="text-center pt-2 border-t border-dashed border-slate-400 text-[9px] text-slate-600 space-y-0.5">
-            <p className="font-semibold text-slate-800">Terima kasih atas pesanan Anda!</p>
-            <p className="text-[8px] text-slate-500">Barang yang sudah dibeli tidak dapat ditukar.</p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <button 
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2.5 font-bold skeuo-button text-slate-600 dark:text-slate-300 text-xs rounded-xl"
-          >
+    <Modal
+      open
+      onClose={onClose}
+      title="Struk Nota Transaksi"
+      icon={<Receipt className="w-5 h-5" />}
+      maxWidth="sm"
+      footer={
+        <>
+          <Button variant="secondary" className="flex-1" onClick={onClose}>
             Tutup
-          </button>
-          <button 
-            type="button"
-            onClick={handlePrint}
-            className="flex-1 py-2.5 font-bold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Printer className="w-3.5 h-3.5" />
+          </Button>
+          <Button variant="primary" className="flex-1" onClick={handlePrint}>
+            <Printer className="w-4 h-4" />
             Cetak Struk Nota
-          </button>
+          </Button>
+        </>
+      }
+    >
+      {/* Thermal Slip Clean Screen Preview */}
+      <div className="bg-white text-black p-4 font-mono text-[11px] leading-tight rounded-lg border border-slate-300 shadow-inner space-y-2">
+        <div className="text-center pb-2 border-b border-dashed border-slate-400">
+          <p className="font-black text-xs uppercase">{invoiceData.store_name || STORE_IDENTITY.name}</p>
+          <p className="text-[10px] text-slate-600">{invoiceData.store_address || STORE_IDENTITY.address}</p>
+          <p className="text-[10px] text-slate-600">Telp: {invoiceData.store_phone || STORE_IDENTITY.phone}</p>
+        </div>
+
+        <div className="text-[10px] space-y-0.5 border-b border-dashed border-slate-400 pb-2">
+          <div className="flex justify-between">
+            <span>No. Nota:</span>
+            <span className="font-bold">{invoiceData.invoice_number || '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Waktu:</span>
+            <span>{formattedDate}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Pelanggan:</span>
+            <span className="font-bold">{invoiceData.customer_name || 'Pelanggan Umum'}</span>
+          </div>
+          {invoiceData.cashier_name && (
+            <div className="flex justify-between">
+              <span>Kasir:</span>
+              <span>{invoiceData.cashier_name}</span>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <span>Metode:</span>
+            <span>{invoiceData.payment_method || 'CASH'}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>Status:</span>
+            <span className={`px-1.5 py-0.2 rounded font-bold border text-[9px] ${
+              invoiceData.payment_status === 'PAID'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-400'
+                : 'bg-amber-50 text-amber-800 border-amber-400'
+            }`}>
+              {invoiceData.payment_status === 'PAID' ? 'LUNAS' : invoiceData.payment_status === 'DP' ? 'UANG MUKA (DP)' : 'BELUM BAYAR'}
+            </span>
+          </div>
+        </div>
+
+        {/* Items Preview */}
+        <div className="py-1 border-b border-dashed border-slate-400 space-y-1.5 max-h-48 overflow-y-auto">
+          {(invoiceData.items || []).length === 0 ? (
+            <p className="text-center py-2 text-slate-400 text-[10px]">(Pesanan Cetak)</p>
+          ) : (
+            (invoiceData.items || []).map((item: any, idx: number) => {
+              const unitPrice = Number(item.price || item.custom_price || item.unit_price || 0);
+              const subtotal = item.subtotal ? Number(item.subtotal) : (unitPrice * Number(item.qty || 1));
+              return (
+                <div key={idx} className="space-y-0.5">
+                  <div className="font-bold text-slate-900">
+                    {item.product_name || item.name || 'Produk'} {item.variant_name ? `(${item.variant_name})` : ''}
+                  </div>
+                  {(() => {
+                    const isMeterItem = ((item.unit_name || '') + ' ' + (item.product_name || item.name || '')).toLowerCase().includes('meter');
+                    return isMeterItem && item.length && item.width ? (
+                      <div className="text-[10px] text-slate-600 pl-1">
+                        Ukuran: {item.length}m x {item.width}m
+                      </div>
+                    ) : null;
+                  })()}
+                  {item.addons && item.addons.length > 0 && (
+                    <div className="text-[9px] text-slate-500 pl-1">
+                      + Finishing: {item.addons.map((a: any) => `${a.addon_name || a.name || 'Finishing'}${a.qty > 1 ? ` (${a.qty}x)` : ''}`).join(', ')}
+                    </div>
+                  )}
+                  <div className="flex justify-between pl-1 text-[10px] text-slate-700">
+                    <span>{item.qty || 1} x {formatRupiah(unitPrice)}</span>
+                    <span className="font-bold">{formatRupiah(subtotal)}</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Totals */}
+        <div className="space-y-1 pt-1 text-[10px]">
+          <div className="flex justify-between text-slate-700">
+            <span>Subtotal:</span>
+            <span>{formatRupiah(invoiceData.subtotal || invoiceData.subtotal_amount || totalAmount)}</span>
+          </div>
+          {Number(invoiceData.discount_amount) > 0 && (
+            <div className="flex justify-between text-rose-600 font-semibold">
+              <span>Diskon:</span>
+              <span>- {formatRupiah(invoiceData.discount_amount)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-xs font-black border-t-2 border-slate-800 pt-1 text-slate-900">
+            <span>TOTAL TAGIHAN:</span>
+            <span>{formatRupiah(totalAmount)}</span>
+          </div>
+          <div className="flex justify-between text-slate-700">
+            <span>Uang Diterima:</span>
+            <span>{formatRupiah(payAmount)}</span>
+          </div>
+          {isDp && (
+            <div className="flex justify-between font-bold text-amber-900 border-t border-dashed border-slate-400 pt-1">
+              <span>SISA TAGIHAN:</span>
+              <span>{formatRupiah(remaining)}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="text-center pt-2 border-t border-dashed border-slate-400 text-[9px] text-slate-600 space-y-0.5">
+          <p className="font-semibold text-slate-800">{RECEIPT_FOOTER.thanks}</p>
+          <p>{RECEIPT_FOOTER.policy}</p>
+          <p className="text-[8px] text-slate-500">{RECEIPT_FOOTER.keepNote}</p>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

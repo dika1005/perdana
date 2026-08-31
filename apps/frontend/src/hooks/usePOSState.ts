@@ -124,7 +124,7 @@ export function usePOSState() {
     fetchCatalog();
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, override?: { price?: number; qty?: number; length?: number; width?: number }) => {
     let initialPrice = Number(product.default_price) || 0;
     if (product.price_type === 'RANGE' && initialPrice <= 0) {
       initialPrice = Number(product.min_price) || 0;
@@ -134,19 +134,21 @@ export function usePOSState() {
     setCart(prevCart => {
       const existing = prevCart.find(item => item.product.id === product.id);
       if (existing) {
-        const newQty = existing.qty + 1;
         return prevCart.map(item => item.product.id === product.id ? { 
           ...item, 
-          qty: newQty, 
+          qty: item.qty + (override?.qty ?? 1),
+          ...(override?.price !== undefined ? { price: override.price } : {}),
+          ...(override?.length !== undefined ? { length: override.length } : {}),
+          ...(override?.width !== undefined ? { width: override.width } : {}),
         } : item);
       } else {
         const isMeter = isMeteranProduct(product);
         return [...prevCart, { 
           product, 
-          qty: initialQty, 
-          price: initialPrice,
-          length: isMeter ? 1 : undefined,
-          width: isMeter ? 1 : undefined,
+          qty: override?.qty ?? initialQty, 
+          price: override?.price ?? initialPrice,
+          length: override?.length ?? (isMeter ? 1 : undefined),
+          width: override?.width ?? (isMeter ? 1 : undefined),
           addons: [],
           materials: [],
         }];

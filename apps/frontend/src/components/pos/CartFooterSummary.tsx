@@ -3,6 +3,7 @@
 import React from 'react';
 import { CreditCard, Tag } from 'lucide-react';
 import { formatRupiah } from '../../utils/format';
+import { Button } from '../shared';
 
 interface CartFooterSummaryProps {
   cartLength: number;
@@ -63,15 +64,15 @@ export const CartFooterSummary: React.FC<CartFooterSummaryProps> = ({
       </div>
 
       {/* Checkout Button */}
-      <button 
-        type="button"
+      <Button
+        variant="primary"
         disabled={cartLength === 0}
         onClick={onOpenCheckout}
-        className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+        className="w-full"
       >
         <CreditCard className="w-4 h-4" />
-        <span>Lanjut ke Pembayaran — {formatRupiah(total)}</span>
-      </button>
+        Lanjut ke Pembayaran — {formatRupiah(total)}
+      </Button>
     </div>
   );
 };

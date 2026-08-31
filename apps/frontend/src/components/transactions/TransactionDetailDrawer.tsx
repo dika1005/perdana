@@ -13,6 +13,7 @@ import {
   AlertCircle 
 } from 'lucide-react';
 import { formatRupiah } from '../../utils/format';
+import { getPaymentMethod } from '../../data/paymentMethods';
 
 interface TransactionDetailDrawerProps {
   transaction: any | null;
@@ -171,9 +172,16 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
 
                 <div className="flex items-center justify-between text-text-muted">
                   <span>Metode Pembayaran:</span>
-                  <span className="font-bold text-text-main">
-                    {transaction.payment_method === 'QRIS' ? '📱 QRIS' : transaction.payment_method === 'TRANSFER' ? '🏦 Transfer Bank' : '💵 Tunai (Cash)'}
-                  </span>
+                  {(() => {
+                    const pm = getPaymentMethod(transaction.payment_method);
+                    const MethodIcon = pm.icon;
+                    return (
+                      <span className="font-bold text-text-main flex items-center gap-1.5">
+                        <MethodIcon className="w-3.5 h-3.5" />
+                        {pm.label}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {transaction.estimated_done_at && (

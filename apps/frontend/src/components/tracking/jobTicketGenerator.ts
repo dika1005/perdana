@@ -2,6 +2,8 @@
  * Pure generator function for Operator Job Ticket (SPK Produksi Cetak).
  * Menghasilkan HTML mandiri dengan layout double-border profesional untuk dicetak di A4/A5.
  */
+import { STORE_IDENTITY } from '../../data/storeIdentity';
+
 export function generateJobTicketHtml(job: any, customer: any): string {
   if (!job) return '';
 
@@ -138,8 +140,8 @@ export function generateJobTicketHtml(job: any, customer: any): string {
             <tr>
               <td>
                 <div class="title">SURAT PERINTAH KERJA (SPK) PRODUKSI</div>
-                <div style="font-size: 11px; font-weight: bold;">PERCETAKAN PERDANA</div>
-                <div style="font-size: 10px; color: #333;">Depan Polsek Ciawigebang - Kuningan | Telp: 0812-3456-7890</div>
+                <div style="font-size: 11px; font-weight: bold;">${STORE_IDENTITY.name}</div>
+                <div style="font-size: 10px; color: #333;">${STORE_IDENTITY.address} | Telp: ${STORE_IDENTITY.phone}</div>
               </td>
               <td style="text-align: right; vertical-align: top;">
                 <div style="font-size: 10px; color: #555;">NO. NOTA / ORDER:</div>

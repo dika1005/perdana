@@ -9,6 +9,7 @@ import { OrderStatus, PaymentMethod } from '../../types/transaction';
 import { Customer } from '../../types/customer';
 import { createWaLink } from '../../utils/whatsapp';
 import { useAlert } from '../../context/AlertContext';
+import { PageHeader, Button, ErrorBanner } from '../../components/shared';
 
 // Modular Tracking Components
 import { TrackingColumn } from '../../components/tracking/TrackingColumn';
@@ -191,32 +192,18 @@ export default function JobTrackingPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <span>Antrian & Pelacakan Produksi</span>
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Pantau status pengerjaan pesanan cetak dan cetak SPK untuk operator produksi.
-          </p>
-        </div>
-        <button 
-          onClick={fetchJobs} 
-          disabled={loading}
-          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold skeuo-button text-blue-600 dark:text-blue-400 hover:text-blue-700 rounded-xl self-start sm:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Segarkan Antrian</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Antrian & Pelacakan Produksi"
+        subtitle="Pantau status pengerjaan pesanan cetak dan cetak SPK untuk operator produksi."
+        actions={
+          <Button variant="secondary" onClick={fetchJobs} disabled={loading}>
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Segarkan Antrian
+          </Button>
+        }
+      />
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50/50 border border-red-200 text-red-600 text-xs flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={fetchJobs} className="underline font-bold">Coba Lagi</button>
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchJobs} />}
 
       {/* Kanban Board 4 Kolom */}
       <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">

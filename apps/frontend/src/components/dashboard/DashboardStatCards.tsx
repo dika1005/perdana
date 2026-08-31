@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TrendingUp, TrendingDown, CreditCard, Clock, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, CreditCard, Clock, AlertTriangle, Banknote } from 'lucide-react';
 import { DashboardSummary } from '../../types/report';
 
 import { formatRupiah } from '../../utils/format';
@@ -11,7 +11,7 @@ interface StatCardProps {
   value: string;
   icon: React.ComponentType<{ className?: string }>;
   colorClass: string;
-  subtitle: string;
+  subtitle: React.ReactNode;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, colorClass, subtitle }) => (
@@ -74,7 +74,9 @@ export const DashboardStatCards: React.FC<DashboardStatCardsProps> = ({ summary,
         value={formatRupiah(summary?.total_omset)} 
         icon={TrendingUp} 
         colorClass="text-blue-600 bg-blue-50 border-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900/50" 
-        subtitle={summary?.total_cash_in !== undefined ? `💵 Kas Masuk: ${formatRupiah(summary.total_cash_in)}` : `${summary?.total_transactions || 0} transaksi`}
+        subtitle={summary?.total_cash_in !== undefined
+          ? <span className="inline-flex items-center gap-1"><Banknote className="w-3 h-3" /> Kas Masuk: {formatRupiah(summary.total_cash_in)}</span>
+          : `${summary?.total_transactions || 0} transaksi`}
       />
       <StatCard 
         title="Total Pengeluaran" 

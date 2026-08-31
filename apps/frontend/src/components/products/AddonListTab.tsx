@@ -4,6 +4,7 @@ import React from 'react';
 import { Plus, Edit2, Trash2, Layers } from 'lucide-react';
 import { ProductAddon } from '../../types/product';
 import { formatRupiah } from '../../utils/format';
+import { Button } from '../shared';
 
 interface AddonListTabProps {
   addons: ProductAddon[];
@@ -25,13 +26,10 @@ export const AddonListTab: React.FC<AddonListTabProps> = ({
           <h2 className="text-base font-bold text-text-main">Master Finishing & Add-ons</h2>
           <p className="text-xs text-text-muted">Finishing percetakan: Pita Yasin, Sudut Siku, Mata Ayam, Cutting, Laminasi, dsb.</p>
         </div>
-        <button
-          onClick={onOpenAddModal}
-          className="flex items-center gap-2 px-5 py-2.5 font-bold skeuo-button text-brand-600 text-sm"
-        >
+        <Button variant="primary" onClick={onOpenAddModal}>
           <Plus className="w-4 h-4" />
           Tambah Add-on
-        </button>
+        </Button>
       </div>
 
       <div className="overflow-x-auto">

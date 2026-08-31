@@ -90,9 +90,9 @@ export const TransactionFilterBar: React.FC<TransactionFilterBarProps> = ({
               className="bg-transparent border-none outline-none text-xs text-text-main font-medium cursor-pointer [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
             >
               <option value="">Metode: Semua</option>
-              <option value="CASH">💵 Tunai (Cash)</option>
-              <option value="QRIS">📱 QRIS</option>
-              <option value="TRANSFER">🏦 Transfer Bank</option>
+              <option value="CASH">Tunai</option>
+              <option value="QRIS">QRIS</option>
+              <option value="TRANSFER">Transfer Bank</option>
             </select>
           </div>
         )}

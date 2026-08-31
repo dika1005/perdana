@@ -4,6 +4,7 @@ import React from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { Product, ProductVariant } from '../../types/product';
 import { formatRupiah } from '../../utils/format';
+import { Button } from '../shared';
 
 interface VariantListTabProps {
   products: Product[];
@@ -62,14 +63,10 @@ export const VariantListTab: React.FC<VariantListTabProps> = ({
             </h2>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">Kelola opsi ukuran, ketebalan, atau tipe cetak varian.</p>
           </div>
-          <button
-            onClick={onOpenAddModal}
-            disabled={!selectedProductId}
-            className="flex items-center gap-1.5 px-3 py-1.5 font-semibold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-sm disabled:opacity-40 transition-colors"
-          >
+          <Button variant="primary" size="sm" onClick={onOpenAddModal} disabled={!selectedProductId}>
             <Plus className="w-3.5 h-3.5" />
             Tambah Varian
-          </button>
+          </Button>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">

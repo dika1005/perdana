@@ -7,6 +7,7 @@ import { RefreshCw } from 'lucide-react';
 import { reportService } from '../../services/reportService';
 import { authService, UserProfile } from '../../services/authService';
 import { DashboardSummary, MonthlySalesReport, TopProductReport } from '../../types/report';
+import { PageHeader, Button, ErrorBanner } from '../../components/shared';
 
 // Modular Dashboard Components
 import { DashboardStatCards } from '../../components/dashboard/DashboardStatCards';
@@ -51,33 +52,22 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-text-main mb-2">
-            {isSuperAdmin ? 'Ringkasan Bisnis' : 'Ringkasan Operasional'}
-          </h1>
-          <p className="text-text-muted">
-            {isSuperAdmin 
-              ? 'Data performa keuangan & operasional percetakan tahunan.' 
-              : 'Pantau antrian pesanan, siap diambil, dan status kasir hari ini.'}
-          </p>
-        </div>
-        <button 
-          onClick={fetchDashboardData} 
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-bold skeuo-button text-brand-600 hover:text-brand-700 disabled:opacity-50 rounded-xl"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Segarkan Data
-        </button>
-      </div>
+      <PageHeader
+        title={isSuperAdmin ? 'Ringkasan Bisnis' : 'Ringkasan Operasional'}
+        subtitle={
+          isSuperAdmin
+            ? 'Data performa keuangan & operasional percetakan tahunan.'
+            : 'Pantau antrian pesanan, siap diambil, dan status kasir hari ini.'
+        }
+        actions={
+          <Button variant="secondary" onClick={fetchDashboardData} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Segarkan Data
+          </Button>
+        }
+      />
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50/50 border border-red-200 text-red-600 text-sm flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={fetchDashboardData} className="underline font-bold">Coba Lagi</button>
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchDashboardData} />}
 
       {/* Stats Cards */}
       <DashboardStatCards summary={summary} isSuperAdmin={isSuperAdmin} />

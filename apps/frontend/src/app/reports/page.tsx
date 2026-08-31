@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { Calendar, RefreshCw, Download, TrendingUp, Package, AlertTriangle, CreditCard, Printer } from 'lucide-react';
+import { RefreshCw, Download, TrendingUp, Package, AlertTriangle, CreditCard, Printer } from 'lucide-react';
 import { reportService } from '../../services/reportService';
 import { transactionService } from '../../services/transactionService';
-import { 
+import {
   DashboardSummary, 
   MonthlySalesReport, 
   TopProductReport, 
@@ -15,6 +15,7 @@ import {
 } from '../../types/report';
 import { PaymentMethod } from '../../types/transaction';
 import { useAlert } from '../../context/AlertContext';
+import { PageHeader, Button, ErrorBanner, Field, Select, Input } from '../../components/shared';
 
 // Modular Report Components
 import { ReportSummaryTab } from '../../components/reports/ReportSummaryTab';
@@ -152,87 +153,52 @@ export default function ReportsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-text-main mb-1">Laporan & Rekapitulasi Bisnis</h1>
-          <p className="text-text-muted text-sm">Analisis pendapatan bulanan, piutang pesanan, kontrol bahan baku, dan mutasi.</p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          <button 
-            onClick={fetchReportsData} 
-            className="flex items-center gap-1.5 px-3.5 py-2 font-bold skeuo-button text-slate-700 dark:text-slate-300 text-xs rounded-xl"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Segarkan</span>
-          </button>
-          <button 
-            onClick={() => setShowPrintModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 font-bold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-md transition-colors"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Cetak Rekap Bulanan (PDF)</span>
-          </button>
-          <button 
-            onClick={exportToCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 font-bold skeuo-button text-emerald-700 dark:text-emerald-400 text-xs rounded-xl"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Laporan & Rekapitulasi Bisnis"
+        subtitle="Analisis pendapatan bulanan, piutang pesanan, kontrol bahan baku, dan mutasi."
+        actions={
+          <>
+            <Button variant="secondary" onClick={fetchReportsData}>
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Segarkan
+            </Button>
+            <Button variant="secondary" onClick={exportToCSV}>
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
+            </Button>
+            <Button variant="primary" onClick={() => setShowPrintModal(true)}>
+              <Printer className="w-3.5 h-3.5" />
+              Cetak Rekap Bulanan (PDF)
+            </Button>
+          </>
+        }
+      />
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50 text-red-600 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchReportsData} />}
 
       {/* Date & Year Filter */}
       <div className="skeuo p-5 mb-6">
-        <form onSubmit={handleFilter} className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Year Selector */}
-            <div className="flex items-center gap-2 px-3 py-2 skeuo-inset rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <Calendar className="w-4 h-4 text-blue-500" />
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Tahun Laporan:</span>
-              <select
-                value={selectedYear}
-                onChange={e => setSelectedYear(Number(e.target.value))}
-                className="bg-transparent outline-none text-xs font-bold font-mono text-text-main cursor-pointer"
-              >
-                {[2024, 2025, 2026, 2027, 2028].map(y => (
-                  <option key={y} value={y} className="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">
-                    Tahun {y}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2 px-3 py-2 skeuo-inset rounded-xl">
-              <Calendar className="w-4 h-4 text-text-muted" />
-              <span className="text-xs text-text-muted">Mulai:</span>
-              <input 
-                type="date" 
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-                className="bg-transparent outline-none text-xs text-text-main"
-              />
-            </div>
-            <div className="flex items-center gap-2 px-3 py-2 skeuo-inset rounded-xl">
-              <Calendar className="w-4 h-4 text-text-muted" />
-              <span className="text-xs text-text-muted">Sampai:</span>
-              <input 
-                type="date" 
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-                className="bg-transparent outline-none text-xs text-text-main"
-              />
-            </div>
-            <button type="submit" className="px-5 py-2 font-bold skeuo-button text-text-main text-xs rounded-xl">
-              Terapkan Filter
-            </button>
-          </div>
+        <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-3">
+          <Field label="Tahun Laporan">
+            <Select
+              value={selectedYear}
+              onChange={e => setSelectedYear(Number(e.target.value))}
+              className="w-36"
+            >
+              {[2024, 2025, 2026, 2027, 2028].map(y => (
+                <option key={y} value={y}>Tahun {y}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Mulai">
+            <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+          </Field>
+          <Field label="Sampai">
+            <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+          </Field>
+          <Button type="submit" variant="secondary">
+            Terapkan Filter
+          </Button>
         </form>
       </div>
 

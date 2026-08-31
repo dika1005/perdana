@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Lock, X } from 'lucide-react';
+import { Lock, KeyRound } from 'lucide-react';
 import { User } from '../../types/user';
+import { Modal, Button, Field } from '../shared';
 
 interface UserResetPasswordModalProps {
   isOpen: boolean;
@@ -23,56 +24,41 @@ export const UserResetPasswordModal: React.FC<UserResetPasswordModalProps> = ({
   onClose,
   onSubmit,
 }) => {
-  if (!isOpen || !user) return null;
+  if (!user) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <form onSubmit={onSubmit} className="skeuo p-8 w-full max-w-md">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-bold text-text-main">Reset Password Kasir</h2>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text-main">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="text-xs text-text-muted mb-4">
-          Masukkan password baru untuk akun <strong>{user.name}</strong> ({user.username}).
-        </p>
-
-        <div className="space-y-4 text-sm">
-          <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">Password Baru (Min. 8 Karakter) *</label>
-            <div className="flex items-center gap-2 px-4 py-2.5 skeuo-inset rounded-xl">
-              <Lock className="w-4 h-4 text-text-muted" />
-              <input
-                type="password"
-                required
-                value={newPassword}
-                onChange={e => onChangePassword(e.target.value)}
-                placeholder="Masukkan password baru..."
-                className="w-full bg-transparent outline-none text-text-main text-sm"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 mt-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2.5 font-bold skeuo-button text-text-muted text-sm rounded-xl"
-          >
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      title="Reset Password Kasir"
+      subtitle={<>Masukkan password baru untuk akun <strong className="text-text-main">{user.name}</strong> ({user.username}).</>}
+      icon={<KeyRound className="w-5 h-5" />}
+      maxWidth="sm"
+      footer={
+        <>
+          <Button variant="secondary" className="flex-1" onClick={onClose}>
             Batal
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="flex-1 py-2.5 font-bold skeuo-button text-brand-600 text-sm rounded-xl"
-          >
+          </Button>
+          <Button variant="primary" type="submit" disabled={submitting} className="flex-1">
             {submitting ? 'Memproses...' : 'Ubah Password'}
-          </button>
+          </Button>
+        </>
+      }
+    >
+      <Field label="Password Baru (Min. 8 Karakter)" required>
+        <div className="flex items-center gap-2 px-3.5 py-2.5 skeuo-inset rounded-xl focus-within:border-brand-500 transition-colors">
+          <Lock className="w-4 h-4 text-text-muted shrink-0" />
+          <input
+            type="password"
+            required
+            value={newPassword}
+            onChange={e => onChangePassword(e.target.value)}
+            placeholder="Masukkan password baru..."
+            className="w-full bg-transparent outline-none text-text-main text-sm"
+          />
         </div>
-      </form>
-    </div>
+      </Field>
+    </Modal>
   );
 };

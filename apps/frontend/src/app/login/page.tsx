@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Lock, User, RefreshCw, Eye, EyeOff, ArrowLeft, Sun, Moon, ShieldCheck } from 'lucide-react';
 import { authService } from '../../services/authService';
+import { Button, ErrorBanner } from '../../components/shared';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -95,11 +96,7 @@ export default function LoginPage() {
           </div>
 
           {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 text-rose-700 dark:text-rose-300 text-xs font-semibold leading-relaxed">
-              {error}
-            </div>
-          )}
+          {error && <ErrorBanner message={error} />}
 
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
@@ -145,14 +142,10 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full py-3.5 mt-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 active:scale-95 disabled:opacity-50 transition-all"
-            >
+            <Button variant="primary" type="submit" disabled={loading} className="w-full mt-3">
               {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
-              <span>{loading ? 'Memverifikasi...' : 'Masuk ke Dashboard'}</span>
-            </button>
+              {loading ? 'Memverifikasi...' : 'Masuk ke Dashboard'}
+            </Button>
           </form>
 
           {/* Security Notice */}

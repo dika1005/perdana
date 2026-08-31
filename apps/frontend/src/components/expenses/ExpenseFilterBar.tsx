@@ -63,11 +63,11 @@ export const ExpenseFilterBar: React.FC<ExpenseFilterBarProps> = ({
             className="bg-transparent border-none outline-none text-sm text-text-main"
           >
             <option value="">Kategori ▾</option>
-            <option value="BAHAN_BAKU">🎨 Bahan Baku & Tinta</option>
-            <option value="OPERASIONAL">⚡ Operasional</option>
-            <option value="MAINTENANCE">🔧 Perawatan Mesin</option>
-            <option value="GAJI">👷 Gaji & Upah</option>
-            <option value="LAINNYA">📋 Lain-lain</option>
+            <option value="BAHAN_BAKU">Bahan Baku</option>
+            <option value="OPERASIONAL">Operasional</option>
+            <option value="MAINTENANCE">Perawatan</option>
+            <option value="GAJI">Gaji & Upah</option>
+            <option value="LAINNYA">Lain-lain</option>
           </select>
         </div>
 
@@ -80,8 +80,8 @@ export const ExpenseFilterBar: React.FC<ExpenseFilterBarProps> = ({
             className="bg-transparent border-none outline-none text-sm text-text-main"
           >
             <option value="">Metode ▾</option>
-            <option value="CASH">💵 Tunai</option>
-            <option value="TRANSFER">🏦 Transfer</option>
+            <option value="CASH">Tunai</option>
+            <option value="TRANSFER">Transfer</option>
           </select>
         </div>
 

@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { X } from 'lucide-react';
+import { Package } from 'lucide-react';
+import { Modal, Button, Field, Input } from '../shared';
 
 interface InventoryCreateFormData {
   name: string;
@@ -31,131 +32,94 @@ export const InventoryCreateModal: React.FC<InventoryCreateModalProps> = ({
   onClose,
   onSubmit,
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <form onSubmit={onSubmit} className="skeuo p-8 w-full max-w-md">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xl font-bold text-text-main">Tambah Bahan Baku Baru</h2>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text-main">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <div className="space-y-4 text-sm">
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1">Nama Bahan *</label>
-            <div className="px-4 py-2.5 skeuo-inset rounded-xl">
-              <input 
-                type="text" 
-                required
-                value={formData.name}
-                onChange={e => onChange('name', e.target.value)}
-                placeholder="Contoh: Kertas Art Paper 260gr" 
-                className="bg-transparent border-none outline-none w-full text-text-main text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1">Varian (Opsional)</label>
-            <div className="px-4 py-2.5 skeuo-inset rounded-xl">
-              <input 
-                type="text" 
-                value={formData.variant}
-                onChange={e => onChange('variant', e.target.value)}
-                placeholder="Contoh: A3+ / Roll" 
-                className="bg-transparent border-none outline-none w-full text-text-main text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">Satuan Dasar (stok & pemakaian)</label>
-              <div className="px-4 py-2.5 skeuo-inset rounded-xl">
-                <input 
-                  type="text" 
-                  value={formData.unit}
-                  onChange={e => onChange('unit', e.target.value)}
-                  placeholder="lembar / meter / pcs / ml" 
-                  className="bg-transparent border-none outline-none w-full text-text-main text-sm"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">Stok Awal</label>
-              <div className="px-4 py-2.5 skeuo-inset rounded-xl">
-                <input 
-                  type="number" 
-                  value={formData.stock}
-                  onChange={e => onChange('stock', Number(e.target.value))}
-                  className="bg-transparent border-none outline-none w-full text-text-main font-bold text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">Kemasan Beli (opsional)</label>
-              <div className="px-4 py-2.5 skeuo-inset rounded-xl">
-                <input 
-                  type="text" 
-                  value={formData.package_unit}
-                  onChange={e => onChange('package_unit', e.target.value)}
-                  placeholder="rim / rol / dus / botol" 
-                  className="bg-transparent border-none outline-none w-full text-text-main text-sm"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">Isi per Kemasan</label>
-              <div className="px-4 py-2.5 skeuo-inset rounded-xl">
-                <input 
-                  type="number"
-                  min="0"
-                  value={formData.package_size ?? ''}
-                  onChange={e => onChange('package_size', e.target.value === '' ? undefined : Number(e.target.value))}
-                  placeholder="mis. 500" 
-                  className="bg-transparent border-none outline-none w-full text-text-main font-bold text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1">Peringatan Stok Minimum</label>
-            <div className="px-4 py-2.5 skeuo-inset rounded-xl">
-              <input 
-                type="number" 
-                value={formData.min_stock_warning}
-                onChange={e => onChange('min_stock_warning', Number(e.target.value))}
-                className="bg-transparent border-none outline-none w-full text-text-main font-bold text-sm"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-4 mt-8">
-          <button 
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-3 font-bold skeuo-button text-text-muted text-sm rounded-xl"
-            disabled={submitting}
-          >
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      title="Tambah Bahan Baku Baru"
+      icon={<Package className="w-5 h-5" />}
+      maxWidth="sm"
+      footer={
+        <>
+          <Button variant="secondary" className="flex-1" onClick={onClose} disabled={submitting}>
             Batal
-          </button>
-          <button 
-            type="submit"
-            disabled={submitting}
-            className="flex-1 py-3 font-bold skeuo-button text-brand-600 text-sm rounded-xl"
-          >
+          </Button>
+          <Button variant="primary" type="submit" disabled={submitting} className="flex-1">
             {submitting ? 'Menyimpan...' : 'Simpan Bahan'}
-          </button>
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Field label="Nama Bahan" required>
+          <Input
+            type="text"
+            required
+            value={formData.name}
+            onChange={e => onChange('name', e.target.value)}
+            placeholder="Contoh: Kertas Art Paper 260gr"
+          />
+        </Field>
+
+        <Field label="Varian (Opsional)">
+          <Input
+            type="text"
+            value={formData.variant}
+            onChange={e => onChange('variant', e.target.value)}
+            placeholder="Contoh: A3+ / Roll"
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Satuan Dasar (stok & pemakaian)">
+            <Input
+              type="text"
+              value={formData.unit}
+              onChange={e => onChange('unit', e.target.value)}
+              placeholder="lembar / meter / pcs / ml"
+            />
+          </Field>
+          <Field label="Stok Awal">
+            <Input
+              type="number"
+              value={formData.stock}
+              onChange={e => onChange('stock', Number(e.target.value))}
+              className="font-bold"
+            />
+          </Field>
         </div>
-      </form>
-    </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Kemasan Beli (opsional)">
+            <Input
+              type="text"
+              value={formData.package_unit}
+              onChange={e => onChange('package_unit', e.target.value)}
+              placeholder="rim / rol / dus / botol"
+            />
+          </Field>
+          <Field label="Isi per Kemasan">
+            <Input
+              type="number"
+              min="0"
+              value={formData.package_size ?? ''}
+              onChange={e => onChange('package_size', e.target.value === '' ? undefined : Number(e.target.value))}
+              placeholder="mis. 500"
+              className="font-bold"
+            />
+          </Field>
+        </div>
+
+        <Field label="Peringatan Stok Minimum">
+          <Input
+            type="number"
+            value={formData.min_stock_warning}
+            onChange={e => onChange('min_stock_warning', Number(e.target.value))}
+            className="font-bold"
+          />
+        </Field>
+      </div>
+    </Modal>
   );
 };

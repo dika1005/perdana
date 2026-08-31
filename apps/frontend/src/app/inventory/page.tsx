@@ -8,6 +8,7 @@ import { categoryService } from '../../services/categoryService';
 import { RawMaterial } from '../../types/rawMaterial';
 import { Category } from '../../types/category';
 import { useAlert } from '../../context/AlertContext';
+import { PageHeader, Button, ErrorBanner } from '../../components/shared';
 
 // Modular Inventory Components
 import { InventoryTable } from '../../components/inventory/InventoryTable';
@@ -166,33 +167,24 @@ export default function InventoryPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-text-main mb-2">Inventaris Bahan Baku</h1>
-          <p className="text-text-muted">Kelola saldo fisik, stok terpesan (reserved), penerimaan lot roll, dan konversi satuan.</p>
-        </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={fetchInventory} 
-            className="flex items-center gap-2 px-4 py-3 font-bold skeuo-button text-text-main rounded-xl cursor-pointer"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-6 py-3 font-bold skeuo-button text-brand-600 rounded-xl cursor-pointer"
-          >
-            <Plus className="w-5 h-5" />
-            Bahan Baru
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Inventaris Bahan Baku"
+        subtitle="Kelola saldo fisik, stok terpesan (reserved), penerimaan lot roll, dan konversi satuan."
+        actions={
+          <>
+            <Button variant="secondary" onClick={fetchInventory}>
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Segarkan
+            </Button>
+            <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+              <Plus className="w-4 h-4" />
+              Bahan Baru
+            </Button>
+          </>
+        }
+      />
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl skeuo-inset bg-red-50 text-red-600 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={fetchInventory} />}
 
       {/* Inventory Table */}
       <InventoryTable

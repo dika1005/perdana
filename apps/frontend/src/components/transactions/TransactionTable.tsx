@@ -4,6 +4,7 @@ import React from 'react';
 import { Eye, CreditCard, Printer, ChevronLeft, ChevronRight, RefreshCw, FileText } from 'lucide-react';
 import { PaymentStatus, OrderStatus } from '../../types/transaction';
 import { formatRupiah } from '../../utils/format';
+import { getPaymentMethod } from '../../data/paymentMethods';
 
 interface TransactionTableProps {
   transactions: any[];
@@ -63,27 +64,20 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     const settleMethod = tx.settlement_payment_method;
 
     const renderBadge = (method: string) => {
-      switch (method) {
-        case 'QRIS':
-          return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60">
-              📱 QRIS
-            </span>
-          );
-        case 'TRANSFER':
-          return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/60">
-              🏦 Transfer
-            </span>
-          );
-        case 'CASH':
-        default:
-          return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60">
-              💵 Cash
-            </span>
-          );
-      }
+      const pm = getPaymentMethod(method);
+      const Icon = pm.icon;
+      const colorClass =
+        method === 'QRIS'
+          ? 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60'
+          : method === 'TRANSFER'
+            ? 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/60'
+            : 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60';
+      return (
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${colorClass}`}>
+          <Icon className="w-3 h-3" />
+          {pm.id === 'CASH' ? 'Cash' : pm.label}
+        </span>
+      );
     };
 
     if (settleMethod && settleMethod !== initialMethod) {

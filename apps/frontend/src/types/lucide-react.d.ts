@@ -88,5 +88,7 @@ declare module 'lucide-react' {
   export const TrendingDown: LucideIcon;
   export const Receipt: LucideIcon;
   export const Wrench: LucideIcon;
+  export const QrCode: LucideIcon;
+  export const Landmark: LucideIcon;
 }
 

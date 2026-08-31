@@ -104,7 +104,7 @@ export const Sidebar = () => {
     <aside className="w-64 h-[calc(100vh-2rem)] p-5 flex flex-col skeuo bg-bg-skeuo my-4 ml-4 sticky top-4">
       {/* Brand Header */}
       <div className="flex items-center gap-3 mb-4 px-2">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg bg-brand-600 text-white shadow-sm shadow-brand-500/30">
           P
         </div>
         <div>
@@ -168,7 +168,7 @@ export const Sidebar = () => {
             <span>{isDarkMode ? 'Mode Gelap' : 'Mode Terang'}</span>
           </div>
           <span className="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-            {isDarkMode ? '🌙 Dark' : '☀️ Light'}
+            {isDarkMode ? 'Dark' : 'Light'}
           </span>
         </button>
 

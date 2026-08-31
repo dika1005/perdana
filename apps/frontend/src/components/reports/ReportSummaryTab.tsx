@@ -4,7 +4,7 @@ import React from 'react';
 import { DashboardSummary, MonthlySalesReport, TopProductReport } from '../../types/report';
 import { formatRupiah } from '../../utils/format';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { TrendingUp, Award, Calendar } from 'lucide-react';
+import { TrendingUp, Award, Calendar, Banknote, Landmark, QrCode } from 'lucide-react';
 
 interface ReportSummaryTabProps {
   summary: DashboardSummary | null;
@@ -68,12 +68,13 @@ export const ReportSummaryTab: React.FC<ReportSummaryTabProps> = ({
       {/* Rekonsiliasi Kas Toko (Cash vs QRIS vs Transfer) */}
       <div className="p-5 skeuo rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-blue-950/20 border border-slate-200 dark:border-slate-800">
         <h3 className="font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-3.5 flex items-center gap-2">
-          <span>🏛️ Rekonsiliasi Kas Masuk (Pemisahan Metode Bayar):</span>
+          <Landmark className="w-3.5 h-3.5" />
+          <span>Rekonsiliasi Kas Masuk (Pemisahan Metode Bayar):</span>
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-4 rounded-xl skeuo-inset bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">💵 Uang Tunai (Laci Kasir)</span>
+              <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5"><Banknote className="w-3.5 h-3.5" /> Uang Tunai (Laci Kasir)</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Fisik</span>
             </div>
             <p className="text-xl font-black text-emerald-700 dark:text-emerald-300 font-mono">
@@ -84,7 +85,7 @@ export const ReportSummaryTab: React.FC<ReportSummaryTabProps> = ({
 
           <div className="p-4 rounded-xl skeuo-inset bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-blue-800 dark:text-blue-300">📱 QRIS / E-Wallet</span>
+              <span className="text-xs font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-1.5"><QrCode className="w-3.5 h-3.5" /> QRIS / E-Wallet</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">Digital</span>
             </div>
             <p className="text-xl font-black text-blue-700 dark:text-blue-300 font-mono">
@@ -95,7 +96,7 @@ export const ReportSummaryTab: React.FC<ReportSummaryTabProps> = ({
 
           <div className="p-4 rounded-xl skeuo-inset bg-purple-50/60 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800/60">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-purple-800 dark:text-purple-300">🏦 Transfer Bank</span>
+              <span className="text-xs font-semibold text-purple-800 dark:text-purple-300 flex items-center gap-1.5"><Landmark className="w-3.5 h-3.5" /> Transfer Bank</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">Bank</span>
             </div>
             <p className="text-xl font-black text-purple-700 dark:text-purple-300 font-mono">

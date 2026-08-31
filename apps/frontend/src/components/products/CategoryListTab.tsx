@@ -3,6 +3,7 @@
 import React from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { Category } from '../../types/category';
+import { Button } from '../shared';
 
 interface CategoryListTabProps {
   categories: Category[];
@@ -24,13 +25,10 @@ export const CategoryListTab: React.FC<CategoryListTabProps> = ({
           <h2 className="text-xs font-bold text-text-main">Kategori Produk</h2>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">Pengelompokan produk cetak (Banner, Stiker, Undangan, Brosur, dll).</p>
         </div>
-        <button
-          onClick={onOpenAddModal}
-          className="flex items-center gap-1.5 px-3.5 py-2 font-semibold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-sm transition-colors"
-        >
+        <Button variant="primary" onClick={onOpenAddModal}>
           <Plus className="w-3.5 h-3.5" />
           Tambah Kategori
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-2.5">

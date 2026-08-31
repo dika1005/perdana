@@ -37,7 +37,6 @@ export default function POSPage() {
     setSearchTerm,
     loading,
     cart,
-    setCart,
     selectedCustomer,
     setSelectedCustomer,
     customCustomerName,
@@ -152,20 +151,14 @@ export default function POSPage() {
         isOpen={showCalcModal}
         onClose={() => setShowCalcModal(false)}
         products={products}
-        onAddToCart={item => {
-          const existing = cart.find(c => c.product.id === item.product.id);
-          if (existing) {
-            setCart(cart.map(c => c.product.id === item.product.id ? { 
-              ...c, 
-              qty: c.qty + item.qty, 
-              price: item.price,
-              length: item.length,
-              width: item.width
-            } : c));
-          } else {
-            setCart([...cart, item]);
-          }
-        }}
+        onAddToCart={item =>
+          addToCart(item.product, {
+            qty: item.qty,
+            price: item.price,
+            length: item.length,
+            width: item.width,
+          })
+        }
       />
 
       {/* AI Smart Order Modal */}

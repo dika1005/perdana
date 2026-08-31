@@ -5,6 +5,7 @@ import { CreditCard, MessageSquare, ArrowRight, Printer, FileText, X } from 'luc
 import { OrderStatus } from '../../types/transaction';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
+import { Button } from '../shared';
 
 interface TrackingCardProps {
   job: any;
@@ -178,15 +179,16 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
 
         {/* Advance Status Button (Pindah ke Tahap Berikutnya) */}
         {status !== 'DIAMBIL' && (!isDP || status !== 'SELESAI') && (
-          <button 
-            type="button"
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => onAdvanceStatus(job.id, job.order_status)}
-            className="flex-1 min-w-0 px-2.5 py-1.5 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-1 transition-colors shadow-xs"
+            className="flex-1 min-w-0 rounded-lg"
             title={`Lanjut: ${advanceLabels[status]}`}
           >
-            <span>{advanceLabels[status]}</span>
+            {advanceLabels[status]}
             <ArrowRight className="w-3 h-3" />
-          </button>
+          </Button>
         )}
       </div>
     </div>

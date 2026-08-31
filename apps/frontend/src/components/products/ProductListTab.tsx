@@ -5,6 +5,7 @@ import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
 import { Product } from '../../types/product';
 import { Category } from '../../types/category';
 import { formatRupiah } from '../../utils/format';
+import { Button } from '../shared';
 
 interface ProductListTabProps {
   products: Product[];
@@ -41,13 +42,10 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
             className="bg-transparent border-none outline-none w-full text-xs text-text-main placeholder:text-slate-400 font-medium"
           />
         </div>
-        <button
-          onClick={onOpenAddModal}
-          className="flex items-center gap-1.5 px-3.5 py-2 font-semibold bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-xl shadow-sm transition-colors"
-        >
+        <Button variant="primary" onClick={onOpenAddModal}>
           <Plus className="w-4 h-4" />
           Tambah Produk
-        </button>
+        </Button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
