@@ -92,8 +92,6 @@ export interface TransactionItemMaterial {
   waste_qty: number;
   source_type: string;
   consumption_basis: string;
-  bom_id?: number | null;
-  bom_version?: number | null;
   addon_id?: number | null;
 }
 

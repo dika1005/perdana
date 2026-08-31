@@ -17,22 +17,16 @@ import { formatRupiah } from '../../utils/format';
 interface TransactionDetailDrawerProps {
   transaction: any | null;
   onClose: () => void;
-  onCancel?: (tx: any) => void;
 }
 
 export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = ({
   transaction,
   onClose,
-  onCancel,
 }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'materials' | 'payments' | 'events'>('info');
 
   if (!transaction) return null;
 
-  const canCancel =
-    transaction.order_status !== 'SELESAI' &&
-    transaction.order_status !== 'DIAMBIL' &&
-    transaction.order_status !== 'BATAL';
   const netPaid = Number(transaction.paid_amount ?? transaction.pay_amount) || 0;
   const remaining = Math.max(0, Number(transaction.total_amount) - netPaid);
 
@@ -59,7 +53,7 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
           reserved_qty: Number(m.reserved_qty) || 0,
           consumed_qty: Number(m.consumed_qty) || 0,
           waste_qty: Number(m.waste_qty) || 0,
-          source_type: m.source_type || 'BOM',
+          source_type: m.source_type || 'MANUAL_POS',
         });
       });
     }
@@ -256,13 +250,13 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
             </div>
           )}
 
-          {/* TAB 2: MATERIALS (BOM SNAPSHOT) */}
+          {/* TAB 2: MATERIALS (SNAPSHOT BAHAN MANUAL) */}
           {activeTab === 'materials' && (
             <div className="space-y-3">
               {allMaterials.length === 0 ? (
                 <div className="p-6 text-center bg-white/60 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
                   <Layers className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="font-semibold">Tidak ada data BOM bahan pada transaksi ini.</p>
+                  <p className="font-semibold">Tidak ada data bahan pada transaksi ini.</p>
                 </div>
               ) : (
                 allMaterials.map((mat, i) => (
@@ -399,14 +393,6 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
 
         {/* Footer Actions */}
         <div className="pt-4 mt-4 border-t border-black/10 dark:border-white/10">
-          {canCancel && onCancel && (
-            <button
-              onClick={() => onCancel(transaction)}
-              className="w-full mb-2 py-2.5 font-bold rounded-xl border border-rose-300 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 text-xs hover:bg-rose-100 dark:hover:bg-rose-950/70 transition-colors cursor-pointer"
-            >
-              Batalkan Transaksi (Lepas Reservasi Stok)
-            </button>
-          )}
           <button
             onClick={onClose}
             className="w-full py-2.5 font-bold skeuo-button text-text-muted text-xs rounded-xl cursor-pointer"

@@ -41,8 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for table in [
         "audit_logs", "production_events", "payments", "inventory_ledger",
         "stock_reservations", "transaction_item_materials", "material_lots",
-        "material_uom_conversions", "addon_bom_lines", "product_bom_lines",
-        "product_boms", "invoice_counter",
+        "material_uom_conversions", "invoice_counter",
         // Legacy core tables
         "transaction_item_addons", "transaction_items", "transactions",
         "expenses", "raw_material_mutations", "raw_materials",
@@ -1172,41 +1171,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     println!("  -> 5 Kontak Pelanggan Nyata berhasil ditambahkan.");
 
-    // 7. Contoh BOM (Bill of Materials) untuk demonstrasi produksi
-    println!("\n🔧 Menanam Contoh BOM Produk...");
-    // Spanduk /meter: 1 m² Flexi Banner per output, 5% waste allowance
-    if let (Some(p_spanduk_id), Some(mat_flexi_id)) = (
-        find_product_id(&db, "Spanduk /meter").await,
-        mat_flexi,
-    ) {
-        let bom_id = insert_bom_sql(&db, p_spanduk_id, None, 1).await?;
-        insert_bom_line_sql(&db, bom_id, mat_flexi_id, "MATERIAL", "PER_AREA", "1.0000", "0.0500", true, 0).await?;
-        println!("  -> BOM Spanduk /meter (Flexi Banner PER_AREA)");
-    }
-
-    // Sticker (A3+): 1 lembar Stiker Cromo per unit, 3% waste
-    if let (Some(p_stiker_id), Some(mat_cromo_id)) = (
-        find_product_id(&db, "Sticker (A3+)").await,
-        mat_stiker_cromo,
-    ) {
-        let bom_id = insert_bom_sql(&db, p_stiker_id, None, 1).await?;
-        insert_bom_line_sql(&db, bom_id, mat_cromo_id, "MATERIAL", "PER_UNIT", "1.0000", "0.0300", true, 0).await?;
-        println!("  -> BOM Sticker A3+ (Cromo PER_UNIT)");
-    }
-
-    // Nota NCR 2 Ply: 500 lembar NCR Putih + 500 lembar NCR warna per rim
-    if let (Some(p_nota_id), Some(mat_ncr_id)) = (
-        find_product_id(&db, "Nota / Faktur (NCR 1 Warna 2 Ply) 1 Rim").await,
-        mat_ncr_putih,
-    ) {
-        let bom_id = insert_bom_sql(&db, p_nota_id, None, 1).await?;
-        insert_bom_line_sql(&db, bom_id, mat_ncr_id, "MATERIAL", "PER_UNIT", "500.0000", "0.0200", true, 0).await?;
-        if let Some(mat_tinta_id) = map_mat_id.get("Bahan Tinta Cetak Black").copied() {
-            insert_bom_line_sql(&db, bom_id, mat_tinta_id, "MATERIAL", "FIXED", "50.0000", "0.0000", true, 1).await?;
-        }
-        println!("  -> BOM Nota NCR 2 Ply (NCR + Tinta)");
-    }
-
     // 8. Contoh UOM Conversions
     println!("\n📐 Menanam Konversi Satuan Bahan...");
     if let Some(hvs_id) = map_mat_id.get("Kertas HVS F4 Putih").copied() {
@@ -1241,55 +1205,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n==================================================");
     println!("🎉 SEEDING DATA ASLI PERCETAKAN PERDANA SUKSES!");
     println!("==================================================");
-    Ok(())
-}
-
-// ── Helper functions for BOM seeding via raw SQL ─────────────────────
-
-async fn find_product_id(db: &DatabaseConnection, name: &str) -> Option<i32> {
-    let result = db
-        .query_one(Statement::from_string(
-            DbBackend::MySql,
-            format!("SELECT id FROM products WHERE name = '{}' LIMIT 1", name.replace('\'', "''")),
-        ))
-        .await
-        .ok()
-        .flatten();
-    result.and_then(|row| {
-        row.try_get::<i32>("", "id").ok()
-    })
-}
-
-async fn insert_bom_sql(
-    db: &DatabaseConnection,
-    product_id: i32,
-    variant_id: Option<i32>,
-    version: i32,
-) -> Result<i32, Box<dyn std::error::Error>> {
-    let variant_sql = variant_id.map_or("NULL".to_string(), |v| v.to_string());
-    let res = db.execute(Statement::from_string(DbBackend::MySql, format!(
-        "INSERT INTO product_boms (product_id, product_variant_id, version, status, output_qty, notes, activated_at) \
-         VALUES ({product_id}, {variant_sql}, {version}, 'ACTIVE', 1.0000, 'Seeded by initial setup', NOW())"
-    ))).await?;
-    let id = res.last_insert_id();
-    Ok(id as i32)
-}
-
-async fn insert_bom_line_sql(
-    db: &DatabaseConnection,
-    bom_id: i32,
-    raw_material_id: i32,
-    component_type: &str,
-    consumption_basis: &str,
-    qty_per_output: &str,
-    waste_pct: &str,
-    is_required: bool,
-    sort_order: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
-    db.execute(Statement::from_string(DbBackend::MySql, format!(
-        "INSERT INTO product_bom_lines (bom_id, raw_material_id, component_type, consumption_basis, qty_per_output, waste_pct, is_required, sort_order) \
-         VALUES ({bom_id}, {raw_material_id}, '{component_type}', '{consumption_basis}', {qty_per_output}, {waste_pct}, {}, {sort_order})",
-        if is_required { "TRUE" } else { "FALSE" }
-    ))).await?;
     Ok(())
 }

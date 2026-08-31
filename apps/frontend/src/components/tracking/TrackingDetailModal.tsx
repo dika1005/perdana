@@ -68,7 +68,7 @@ export const TrackingDetailModal: React.FC<TrackingDetailModalProps> = ({
           reserved_qty: Number(m.reserved_qty) || 0,
           consumed_qty: Number(m.consumed_qty) || 0,
           waste_qty: Number(m.waste_qty) || 0,
-          source_type: m.source_type || 'BOM',
+          source_type: m.source_type || 'MANUAL_POS',
         });
       });
     }
@@ -128,7 +128,7 @@ export const TrackingDetailModal: React.FC<TrackingDetailModalProps> = ({
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Bahan BOM ({allItemMaterials.length})</span>
+            <span>Bahan ({allItemMaterials.length})</span>
           </button>
 
           <button
@@ -262,20 +262,20 @@ export const TrackingDetailModal: React.FC<TrackingDetailModalProps> = ({
             </div>
           )}
 
-          {/* Tab: Materials (BOM Snapshot) */}
+          {/* Tab: Materials (Snapshot Bahan) */}
           {activeTab === 'materials' && (
             <div className="space-y-3">
               {allItemMaterials.length === 0 ? (
                 <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
                   <Layers className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="font-semibold">Tidak ada data BOM bahan baku tercatat untuk pesanan ini.</p>
-                  <p className="text-[11px] mt-1 text-slate-500">Bahan otomatis dihitung dan dikunci oleh server saat pesanan dibuat dengan DP/lunas.</p>
+                  <p className="font-semibold">Tidak ada bahan baku tercatat untuk pesanan ini.</p>
+                  <p className="text-[11px] mt-1 text-slate-500">Bahan diinput manual saat checkout dan dikunci oleh server saat pesanan dibuat dengan DP/lunas.</p>
                 </div>
               ) : (
                 <div className="space-y-2.5">
                   <div className="p-3 rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 text-[11px] text-blue-800 dark:text-blue-300 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 shrink-0 text-blue-600" />
-                    <span>Snapshot resep BOM tersimpan secara permanen pada database untuk keakuratan audit stok.</span>
+                    <span>Snapshot kebutuhan bahan tersimpan permanen pada database untuk keakuratan audit stok.</span>
                   </div>
 
                   {allItemMaterials.map((mat, i) => (

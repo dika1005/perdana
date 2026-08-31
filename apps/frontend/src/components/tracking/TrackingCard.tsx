@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CreditCard, MessageSquare, ArrowRight, Printer, FileText } from 'lucide-react';
+import { CreditCard, MessageSquare, ArrowRight, Printer, FileText, X } from 'lucide-react';
 import { OrderStatus } from '../../types/transaction';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
@@ -15,6 +15,7 @@ interface TrackingCardProps {
   onAdvanceStatus: (id: number, currentStatus: OrderStatus) => void;
   onPrintSpk: (job: any) => void;
   onOpenDetail: (job: any) => void;
+  onCancel?: (job: any) => void;
 }
 
 const advanceLabels: Record<OrderStatus, string> = {
@@ -34,6 +35,7 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
   onAdvanceStatus,
   onPrintSpk,
   onOpenDetail,
+  onCancel,
 }) => {
   const isDP = job.payment_status === 'DP' || job.payment_status === 'UNPAID';
   const remaining = Number(job.total_amount) - Number(job.paid_amount ?? job.pay_amount);
@@ -122,6 +124,18 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
             title="Cetak SPK / Tiket Kerja Operator"
           >
             <Printer className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Tombol Batalkan Pesanan (khusus ANTRIAN) */}
+        {status === 'ANTRIAN' && onCancel && (
+          <button
+            type="button"
+            onClick={() => onCancel(job)}
+            className="p-1.5 rounded-lg skeuo-button text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+            title="Batalkan pesanan (reservasi stok dilepas)"
+          >
+            <X className="w-3.5 h-3.5" />
           </button>
         )}
 

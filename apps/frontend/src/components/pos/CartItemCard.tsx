@@ -63,6 +63,8 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
   const refPrice = meteranRefPrice(item.product, item.length, item.width);
   const isPriceEdited = item.price !== refPrice;
   const isOutOfRange = isRange && ((minP > 0 && item.price < minP) || (maxP > 0 && item.price > maxP));
+  const minOrder = Number(item.product.min_order) || 0;
+  const belowMinOrder = minOrder > 0 && item.qty < minOrder;
 
   const prodUnit = (item.product.unit_name || '').toLowerCase();
   const prodNameLower = (item.product.name || '').toLowerCase();
@@ -102,6 +104,11 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
                 Kustom
               </span>
             )}
+            {isOutOfRange && (
+              <span className="text-[9px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 px-1.5 py-0.2 rounded font-bold">
+                Di luar rentang
+              </span>
+            )}
           </div>
         </div>
 
@@ -136,7 +143,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800">
+            <div className={`flex-1 flex items-center bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-md border ${isOutOfRange ? 'border-rose-400 dark:border-rose-700' : 'border-slate-200 dark:border-slate-800'}`}>
               <span className="font-bold text-slate-400 text-xs mr-1.5">Rp</span>
               <input
                 type="number"
@@ -144,7 +151,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
                 step="500"
                 value={item.price || ''}
                 onChange={e => onUpdatePrice(Number(e.target.value))}
-                className="w-full text-xs font-mono font-bold bg-transparent outline-none text-text-main"
+                className={`w-full text-xs font-mono font-bold bg-transparent outline-none ${isOutOfRange ? 'text-rose-600 dark:text-rose-400' : 'text-text-main'}`}
                 placeholder="Masukkan nominal harga..."
               />
             </div>
@@ -161,8 +168,10 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
             )}
           </div>
           {isRange && (
-            <p className={`text-[10px] font-medium ${isOutOfRange ? 'text-rose-500' : 'text-amber-600'}`}>
-              Rentang standar: {formatRupiah(minP)} – {formatRupiah(maxP)}
+            <p className={`text-[10px] font-medium ${isOutOfRange ? 'text-rose-500 font-bold' : 'text-amber-600'}`}>
+              {isOutOfRange
+                ? `Harga di luar rentang ${formatRupiah(minP)} – ${formatRupiah(maxP)} — perbaiki sebelum checkout.`
+                : `Rentang standar: ${formatRupiah(minP)} – ${formatRupiah(maxP)}`}
             </p>
           )}
         </div>
@@ -382,33 +391,40 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
-          <button 
-            type="button"
-            onClick={() => onUpdateQty(-1)} 
-            className="w-7 h-7 flex items-center justify-center rounded-md bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-2xs"
-            title="Kurangi jumlah"
-          >
-            <Minus className="w-3.5 h-3.5" />
-          </button>
-          <input
-            type="number"
-            min="1"
-            value={item.qty}
-            onChange={e => {
-              const val = Math.max(1, parseInt(e.target.value) || 1);
-              onSetQty(val);
-            }}
-            className="w-11 text-center text-xs font-black font-mono text-text-main bg-transparent outline-none"
-          />
-          <button 
-            type="button"
-            onClick={() => onUpdateQty(1)} 
-            className="w-7 h-7 flex items-center justify-center rounded-md bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-2xs"
-            title="Tambah jumlah"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+        <div className="flex flex-col items-end gap-1">
+          <div className={`flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border ${belowMinOrder ? 'border-rose-400 dark:border-rose-700' : 'border-slate-200 dark:border-slate-700'}`}>
+            <button 
+              type="button"
+              onClick={() => onUpdateQty(-1)} 
+              className="w-7 h-7 flex items-center justify-center rounded-md bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-2xs"
+              title="Kurangi jumlah"
+            >
+              <Minus className="w-3.5 h-3.5" />
+            </button>
+            <input
+              type="number"
+              min="1"
+              value={item.qty}
+              onChange={e => {
+                const val = Math.max(1, parseInt(e.target.value) || 1);
+                onSetQty(val);
+              }}
+              className="w-11 text-center text-xs font-black font-mono text-text-main bg-transparent outline-none"
+            />
+            <button 
+              type="button"
+              onClick={() => onUpdateQty(1)} 
+              className="w-7 h-7 flex items-center justify-center rounded-md bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-2xs"
+              title="Tambah jumlah"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {belowMinOrder && (
+            <span className="text-[9px] font-bold text-rose-500">
+              Min. order {minOrder} {item.product.unit_name || 'pcs'}
+            </span>
+          )}
         </div>
       </div>
     </div>

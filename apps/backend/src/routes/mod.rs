@@ -14,7 +14,6 @@ pub mod transactions;
 pub mod users;
 pub mod expenses;
 pub mod backup;
-pub mod bom;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
 
@@ -79,9 +78,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .route(
                     "/{id}/variants",
                     web::post().to(products::create_variant),
-                )
-                .route("/{id}/bom", web::get().to(bom::get_product_bom))
-                .route("/{id}/bom", web::put().to(bom::upsert_product_bom)),
+                ),
         )
         .service(
             web::scope("/product-variants")
@@ -94,9 +91,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .route("", web::post().to(addons::create))
                 .route("/{id}", web::get().to(addons::get))
                 .route("/{id}", web::put().to(addons::update))
-                .route("/{id}", web::delete().to(addons::delete))
-                .route("/{id}/bom", web::get().to(bom::get_addon_bom))
-                .route("/{id}/bom", web::put().to(bom::upsert_addon_bom)),
+                .route("/{id}", web::delete().to(addons::delete)),
         )
         .service(
             web::scope("/raw-materials")

@@ -82,10 +82,9 @@ export const transactionService = {
     return res.data.data;
   },
 
-  cancelTransaction: async (id: number, reason: string, wasteMaterials?: Array<{ transaction_item_material_id: number; qty: number; reason_code: string; notes?: string }>) => {
-    const res = await apiClient.post<ApiResponse<TransactionDetail>>(`/transactions/${id}/cancel`, { 
+  cancelTransaction: async (id: number, reason: string) => {
+    const res = await apiClient.post<ApiResponse<TransactionDetail>>(`/transactions/${id}/cancel`, {
       reason,
-      waste_materials: wasteMaterials,
     });
     return res.data.data;
   },

@@ -133,7 +133,7 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     "#;
     let _ = db.execute_unprepared(create_expenses_sql).await;
 
-    // Migrasi BOM (Resep Bahan Baku) pada products dan product_variants jika belum ada
+    // Field legacy single-material pada products dan product_variants jika belum ada
     let _ = db.execute_unprepared("ALTER TABLE products ADD COLUMN raw_material_id INT NULL DEFAULT NULL;").await;
     let _ = db.execute_unprepared("ALTER TABLE products ADD COLUMN material_amount DECIMAL(12,4) NULL DEFAULT 1.0000;").await;
     let _ = db.execute_unprepared("ALTER TABLE products ADD CONSTRAINT fk_products_raw_material FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE SET NULL;").await;
@@ -194,9 +194,9 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     let _ = db.execute_unprepared("ALTER TABLE raw_materials ADD COLUMN package_size DECIMAL(12,4) NULL DEFAULT NULL AFTER package_unit;").await;
     let _ = db.execute_unprepared("ALTER TABLE products ADD COLUMN uses_material TINYINT(1) NOT NULL DEFAULT 0 AFTER has_variants;").await;
 
-    // Fondasi inventori produksi (BOM versioning, reservation, ledger,
-    // payments, audit, dan lot/offcut) dibuat secara additive agar data lama
-    // tidak dihapus saat aplikasi diperbarui.
+    // Fondasi inventori produksi (reservation, ledger, payments, audit, dan
+    // lot/offcut) dibuat secara additive agar data lama tidak dihapus saat
+    // aplikasi diperbarui.
     crate::schema::apply(&db).await?;
 
     Ok(db)

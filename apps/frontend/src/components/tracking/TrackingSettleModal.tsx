@@ -155,8 +155,8 @@ export const TrackingSettleModal: React.FC<TrackingSettleModalProps> = ({
           </button>
           <button
             type="submit"
-            disabled={submitting}
-            className="flex-1 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs flex items-center justify-center gap-1.5 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
+            disabled={submitting || payAmount < remaining}
+            className="flex-1 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs flex items-center justify-center gap-1.5 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Check className="w-4 h-4" />
             {submitting ? 'Menyimpan...' : 'Lunasi & Serahkan'}

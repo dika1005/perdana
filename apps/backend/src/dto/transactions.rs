@@ -181,8 +181,6 @@ pub struct TransactionItemMaterialResponse {
     pub waste_qty: Decimal,
     pub source_type: String,
     pub consumption_basis: String,
-    pub bom_id: Option<i32>,
-    pub bom_version: Option<i32>,
     pub addon_id: Option<i32>,
 }
 

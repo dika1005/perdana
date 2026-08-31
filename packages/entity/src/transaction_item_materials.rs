@@ -2,7 +2,8 @@ use sea_orm::entity::prelude::*;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-/// Snapshot kebutuhan bahan per item. Tidak ikut berubah bila BOM/master bahan berubah.
+/// Snapshot kebutuhan bahan per item (estimasi manual kasir saat checkout).
+/// Tidak ikut berubah bila master bahan berubah.
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "transaction_item_materials")]
 pub struct Model {
@@ -21,9 +22,6 @@ pub struct Model {
     pub waste_qty: Decimal,
     pub source_type: String,
     pub consumption_basis: String,
-    pub bom_id: Option<i32>,
-    pub bom_line_id: Option<i32>,
-    pub bom_version: Option<i32>,
     pub addon_id: Option<i32>,
     pub created_at: DateTimeUtc,
 }

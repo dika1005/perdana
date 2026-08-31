@@ -16,6 +16,7 @@ import { TrackingSettleModal } from '../../components/tracking/TrackingSettleMod
 import { TrackingWhatsAppModal, generateWhatsAppMessage } from '../../components/tracking/TrackingWhatsAppModal';
 import { TrackingDetailModal } from '../../components/tracking/TrackingDetailModal';
 import { JobTicketModal } from '../../components/tracking/JobTicketModal';
+import { CancelTransactionModal } from '../../components/transactions/CancelTransactionModal';
 import { ReceiptModal } from '../../components/pos/ReceiptModal';
 
 export default function JobTrackingPage() {
@@ -34,6 +35,8 @@ export default function JobTrackingPage() {
   const [spkModal, setSpkModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
   const [detailModal, setDetailModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
   const [receiptModal, setReceiptModal] = useState<{ open: boolean; invoiceData: any | null }>({ open: false, invoiceData: null });
+  const [cancelTarget, setCancelTarget] = useState<any | null>(null);
+  const [submittingCancel, setSubmittingCancel] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -163,6 +166,26 @@ export default function JobTrackingPage() {
     }
   };
 
+  const handleSubmitCancel = async (reason: string) => {
+    if (!cancelTarget?.id) return;
+    setSubmittingCancel(true);
+    try {
+      await transactionService.cancelTransaction(cancelTarget.id, reason);
+      showToast('Pesanan dibatalkan; reservasi bahan dilepas', 'success');
+      setCancelTarget(null);
+      fetchJobs();
+    } catch (err: any) {
+      console.error('Failed to cancel order:', err);
+      await showAlert({
+        title: 'Gagal Membatalkan Pesanan',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat membatalkan pesanan.',
+        type: 'error',
+      });
+    } finally {
+      setSubmittingCancel(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -207,6 +230,7 @@ export default function JobTrackingPage() {
           onAdvanceStatus={handleAdvanceStatus}
           onPrintSpk={handlePrintSpk}
           onOpenDetail={handleOpenDetail}
+          onCancel={setCancelTarget}
         />
         
         <TrackingColumn
@@ -302,6 +326,17 @@ export default function JobTrackingPage() {
         <ReceiptModal
           invoiceData={receiptModal.invoiceData}
           onClose={() => setReceiptModal({ open: false, invoiceData: null })}
+        />
+      )}
+
+      {/* Cancel Modal (khusus pesanan masih ANTRIAN) */}
+      {cancelTarget && (
+        <CancelTransactionModal
+          key={cancelTarget.id}
+          transaction={cancelTarget}
+          submitting={submittingCancel}
+          onClose={() => setCancelTarget(null)}
+          onSubmit={handleSubmitCancel}
         />
       )}
     </DashboardLayout>

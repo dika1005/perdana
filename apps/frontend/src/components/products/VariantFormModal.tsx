@@ -73,11 +73,11 @@ export const VariantFormModal: React.FC<VariantFormModalProps> = ({
             </select>
           </div>
 
-          {/* BOM: Bahan Baku Varian */}
+          {/* Bahan Baku Varian */}
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-brand-600">
               <Layers className="w-4 h-4" />
-              <span>Resep Bahan Baku Varian</span>
+              <span>Bahan Baku Varian</span>
             </div>
             <div className="grid grid-cols-1 gap-2.5">
               <div>

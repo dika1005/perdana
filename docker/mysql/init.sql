@@ -191,59 +191,6 @@ CREATE TABLE IF NOT EXISTS invoice_counter (
 -- Semua saldo agregat di raw_materials diturunkan dari ledger immutable ini.
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS product_boms (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    product_id INT NOT NULL,
-    product_variant_id INT DEFAULT NULL,
-    version INT NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
-    output_qty DECIMAL(14,4) NOT NULL DEFAULT 1.0000,
-    notes TEXT DEFAULT NULL,
-    effective_from DATE DEFAULT NULL,
-    effective_to DATE DEFAULT NULL,
-    created_by INT DEFAULT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    activated_at TIMESTAMP NULL DEFAULT NULL,
-    UNIQUE KEY uq_product_bom_version (product_id, product_variant_id, version),
-    KEY idx_product_bom_active (product_id, product_variant_id, status),
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
-    FOREIGN KEY (product_variant_id) REFERENCES product_variants(id) ON DELETE RESTRICT,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
-);
-
-CREATE TABLE IF NOT EXISTS product_bom_lines (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    bom_id INT NOT NULL,
-    raw_material_id INT NOT NULL,
-    component_type VARCHAR(20) NOT NULL DEFAULT 'MATERIAL',
-    consumption_basis VARCHAR(20) NOT NULL DEFAULT 'PER_UNIT',
-    qty_per_output DECIMAL(14,4) NOT NULL,
-    waste_pct DECIMAL(8,4) NOT NULL DEFAULT 0,
-    width_requirement_m DECIMAL(10,4) DEFAULT NULL,
-    allow_offcut BOOLEAN NOT NULL DEFAULT TRUE,
-    is_required BOOLEAN NOT NULL DEFAULT TRUE,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    KEY idx_product_bom_lines_bom (bom_id, sort_order),
-    FOREIGN KEY (bom_id) REFERENCES product_boms(id) ON DELETE RESTRICT,
-    FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE RESTRICT
-);
-
-CREATE TABLE IF NOT EXISTS addon_bom_lines (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    addon_id INT NOT NULL,
-    raw_material_id INT NOT NULL,
-    consumption_basis VARCHAR(20) NOT NULL DEFAULT 'PER_UNIT',
-    qty_per_addon DECIMAL(14,4) NOT NULL,
-    waste_pct DECIMAL(8,4) NOT NULL DEFAULT 0,
-    is_required BOOLEAN NOT NULL DEFAULT TRUE,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    KEY idx_addon_bom_lines_addon (addon_id, sort_order),
-    FOREIGN KEY (addon_id) REFERENCES product_addons(id) ON DELETE RESTRICT,
-    FOREIGN KEY (raw_material_id) REFERENCES raw_materials(id) ON DELETE RESTRICT
-);
-
 CREATE TABLE IF NOT EXISTS transaction_item_materials (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     transaction_item_id INT NOT NULL,
@@ -259,9 +206,6 @@ CREATE TABLE IF NOT EXISTS transaction_item_materials (
     waste_qty DECIMAL(14,4) NOT NULL DEFAULT 0,
     source_type VARCHAR(20) NOT NULL,
     consumption_basis VARCHAR(20) NOT NULL,
-    bom_id INT DEFAULT NULL,
-    bom_line_id INT DEFAULT NULL,
-    bom_version INT DEFAULT NULL,
     addon_id INT DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_tim_item (transaction_item_id),

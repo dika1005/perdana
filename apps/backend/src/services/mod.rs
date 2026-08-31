@@ -3,7 +3,6 @@ pub mod audit;
 pub mod ai;
 pub mod auth;
 pub mod backup;
-pub mod bom;
 pub mod categories;
 pub mod customers;
 pub mod expenses;

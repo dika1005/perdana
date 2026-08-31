@@ -97,28 +97,6 @@ export default function TransactionsHistoryPage() {
     }
   };
 
-  const handleCancelTransaction = async (tx: any) => {
-    if (!tx?.id) return;
-    const reason = window.prompt(
-      `Alasan pembatalan transaksi ${tx.invoice_number}:\nReservasi bahan akan dilepas. Bahan yang sudah diproduksi tidak dikembalikan.`,
-      'Pelanggan membatalkan pesanan',
-    );
-    const confirmed = Boolean(reason?.trim());
-    if (!confirmed) return;
-    try {
-      await transactionService.cancelTransaction(tx.id, reason!.trim());
-      showToast('Transaksi dibatalkan; reservasi bahan yang belum diproduksi telah dilepas', 'success');
-      setSelectedTransaction(null);
-      fetchTransactions();
-    } catch (err: any) {
-      await showAlert({
-        title: 'Gagal Membatalkan Transaksi',
-        message: err?.response?.data?.message || 'Terjadi kesalahan saat membatalkan transaksi.',
-        type: 'error',
-      });
-    }
-  };
-
   const handlePrintInvoice = async (id: number) => {
     try {
       const data = await transactionService.getInvoiceData(id);
@@ -264,7 +242,6 @@ export default function TransactionsHistoryPage() {
       <TransactionDetailDrawer
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
-        onCancel={handleCancelTransaction}
       />
 
       {/* Settle Modal */}

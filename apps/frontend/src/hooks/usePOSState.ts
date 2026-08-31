@@ -10,6 +10,7 @@ import { customerService } from '../services/customerService';
 import { rawMaterialService } from '../services/rawMaterialService';
 import { transactionService } from '../services/transactionService';
 import { useAlert } from '../context/AlertContext';
+import { formatRupiah } from '../utils/format';
 
 export function isMeteranProduct(product: Product): boolean {
   const unit = (product.unit_name || '').toLowerCase();
@@ -21,6 +22,26 @@ export function meteranRefPrice(product: Product, length?: number, width?: numbe
   const rate = Number(product.default_price) || 0;
   if (!isMeteranProduct(product)) return rate;
   return Math.round((length || 1) * (width || 1) * rate);
+}
+
+/** Pesan error bila harga item produk RANGE berada di luar rentang master. */
+export function cartItemRangeIssue(item: CartItem): string | null {
+  if (item.product.price_type !== 'RANGE') return null;
+  const min = Number(item.product.min_price) || 0;
+  const max = Number(item.product.max_price) || 0;
+  if ((min > 0 && item.price < min) || (max > 0 && item.price > max)) {
+    return `Harga "${item.product.name}" (${formatRupiah(item.price)}) berada di luar rentang standar ${formatRupiah(min)} – ${formatRupiah(max)}.`;
+  }
+  return null;
+}
+
+/** Pesan error bila qty item di bawah minimum order produk. */
+export function cartItemMinOrderIssue(item: CartItem): string | null {
+  const minOrder = Number(item.product.min_order) || 0;
+  if (minOrder > 0 && item.qty < minOrder) {
+    return `"${item.product.name}" memiliki minimum order ${minOrder} ${item.product.unit_name || 'pcs'}, sedangkan jumlah saat ini ${item.qty}.`;
+  }
+  return null;
 }
 
 export function usePOSState() {
@@ -251,6 +272,27 @@ export function usePOSState() {
         await showAlert({
           title: 'Harga Belum Diisi',
           message: `Harga untuk produk "${item.product.name}" belum diisi (masih Rp 0). Silakan masukkan nominal harga terlebih dahulu.`,
+          type: 'warning',
+        });
+        return;
+      }
+    }
+
+    for (const item of cart) {
+      const rangeIssue = cartItemRangeIssue(item);
+      if (rangeIssue) {
+        await showAlert({
+          title: 'Harga di Luar Rentang',
+          message: `${rangeIssue} Sesuaikan harga terlebih dahulu sebelum checkout.`,
+          type: 'warning',
+        });
+        return;
+      }
+      const minOrderIssue = cartItemMinOrderIssue(item);
+      if (minOrderIssue) {
+        await showAlert({
+          title: 'Minimum Order Belum Terpenuhi',
+          message: `${minOrderIssue} Naikkan jumlah atau hapus item tersebut.`,
           type: 'warning',
         });
         return;

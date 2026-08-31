@@ -41,9 +41,6 @@ struct ProcessedMaterial {
     consumption_basis: String,
     required_width_m: Option<Decimal>,
     allow_offcut: bool,
-    bom_id: Option<i32>,
-    bom_line_id: Option<i32>,
-    bom_version: Option<i32>,
     addon_id: Option<i32>,
 }
 
@@ -142,8 +139,6 @@ pub fn map_item_material(
         waste_qty: m.waste_qty,
         source_type: m.source_type.clone(),
         consumption_basis: m.consumption_basis.clone(),
-        bom_id: m.bom_id,
-        bom_version: m.bom_version,
         addon_id: m.addon_id,
     }
 }
@@ -424,9 +419,6 @@ async fn resolve_product_materials(
             consumption_basis: "MANUAL".to_string(),
             required_width_m: None,
             allow_offcut: false,
-            bom_id: None,
-            bom_line_id: None,
-            bom_version: None,
             addon_id: None,
         });
     }
@@ -876,9 +868,6 @@ pub async fn create(
                 waste_qty: Set(Decimal::ZERO),
                 source_type: Set(material.source_type),
                 consumption_basis: Set(material.consumption_basis),
-                bom_id: Set(material.bom_id),
-                bom_line_id: Set(material.bom_line_id),
-                bom_version: Set(material.bom_version),
                 addon_id: Set(material.addon_id),
                 ..Default::default()
             }
@@ -1063,6 +1052,8 @@ pub async fn update_payment_as(
 /// Pelunasan atomik: mencatat pembayaran + memajukan status ke DIAMBIL
 /// dalam satu DB transaction. Menghindari inkonsistensi bila salah satu
 /// langkah gagal (misal payment tercatat tapi status tidak berubah).
+/// Tender wajib menutup seluruh sisa tagihan; order SELESAI yang sudah lunas
+/// diambil lewat perubahan status biasa, bukan endpoint ini.
 pub async fn settle_as(
     db: &DatabaseConnection,
     actor_id: Option<i32>,
@@ -1098,7 +1089,20 @@ pub async fn settle_as(
     }
 
     let tender = payload.pay_amount;
-    let applied = tender.min(outstanding);
+    // Pelunasan sekaligus pengambilan barang: tender wajib menutup seluruh
+    // sisa tagihan supaya konsisten dengan aturan DIAMBIL wajib lunas di
+    // update_status. Pembayaran sebagian tanpa pengambilan barang memakai
+    // endpoint pembayaran biasa.
+    if tender < outstanding {
+        return Err(AppError::field(
+            "pay_amount",
+            format!(
+                "Pelunasan harus menutup seluruh sisa tagihan sebesar {}. Pembayaran sebagian tidak dapat mengambil barang.",
+                outstanding
+            ),
+        ));
+    }
+    let applied = outstanding;
     let change = tender - applied;
     let paid_after = previous_paid + applied;
     let payment_method = payload.payment_method.unwrap_or(PaymentMethod::Cash);
@@ -1514,7 +1518,6 @@ pub async fn cancel(
         id,
         CancelTransactionRequest {
             reason: "Pembatalan legacy/POS".to_string(),
-            waste_materials: None,
         },
     )
     .await
@@ -1533,42 +1536,17 @@ pub async fn cancel_as(
         .one(&txn)
         .await?
         .ok_or_else(|| AppError::not_found("Transaksi tidak ditemukan"))?;
+    // Pembatalan hanya boleh selama pesanan masih mengantri: begitu masuk
+    // PROSES bahan sudah dikonsumsi fisik sehingga pembatalan sistem tidak
+    // lagi masuk akal (waste/rework dicatat via endpoint terpisah).
     match transaction.order_status {
-        OrderStatus::Antrian | OrderStatus::Proses => {}
-        OrderStatus::Selesai | OrderStatus::Diambil => {
-            return Err(AppError::conflict("Order selesai/diambil tidak dapat dibatalkan; gunakan retur/refund terpisah"));
+        OrderStatus::Antrian => {}
+        OrderStatus::Proses | OrderStatus::Selesai | OrderStatus::Diambil => {
+            return Err(AppError::conflict("Pesanan sudah masuk produksi sehingga tidak dapat dibatalkan"));
         }
         OrderStatus::Batal => return Err(AppError::conflict("Transaksi sudah dibatalkan")),
     }
     let before = audit::snapshot(&transaction);
-    // Waste optional before cancel: useful when customer cancels after a print
-    // failure. Physical consumption is never restored.
-    if let Some(wastes) = &payload.waste_materials {
-        let snapshots = snapshots_for_transaction(&txn, transaction.id).await?;
-        for waste in wastes {
-            if waste.qty <= Decimal::ZERO {
-                return Err(AppError::field("waste_materials.qty", "Waste harus lebih dari 0"));
-            }
-            let snapshot = snapshots
-                .iter()
-                .find(|snapshot| snapshot.id == waste.transaction_item_material_id)
-                .ok_or_else(|| AppError::field("waste_materials", "Bahan waste tidak milik transaksi"))?;
-            inventory::record_waste_from_consumed(
-                &txn,
-                snapshot,
-                waste.qty,
-                &waste.reason_code.trim().to_ascii_uppercase(),
-                inventory::LedgerContext {
-                    transaction_id: Some(transaction.id),
-                    transaction_item_id: Some(snapshot.transaction_item_id),
-                    actor_id,
-                    notes: Some(format!("Waste saat pembatalan: {}", payload.reason)),
-                    ..Default::default()
-                },
-            )
-            .await?;
-        }
-    }
     let reservations = StockReservation::find()
         .filter(stock_reservations::Column::TransactionId.eq(transaction.id))
         .filter(stock_reservations::Column::State.eq("ACTIVE"))
