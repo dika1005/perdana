@@ -170,7 +170,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                  {paymentStatus === 'DP' ? 'Nominal Uang Muka / DP (Rp):' : 'Jumlah Uang Diterima (Rp):'}
+                  {paymentStatus === 'DP' ? 'Nominal Uang Muka / DP (Rp):' : 'Nominal Dibayar (Rp):'}
                 </label>
                 <button
                   type="button"
@@ -183,25 +183,21 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
               <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus-within:border-blue-500 flex items-center gap-2">
                 <span className="font-bold text-slate-400 text-sm">Rp</span>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={payAmount > 0 ? payAmount.toLocaleString('id-ID') : ''}
                   onChange={e => {
                     const clean = e.target.value.replace(/\D/g, '');
-                    onPayAmountChange(clean ? parseInt(clean, 10) : 0);
+                    onPayAmountChange(Math.min(clean ? parseInt(clean, 10) : 0, total));
                   }}
                   placeholder="0"
                   className="bg-transparent border-none outline-none w-full text-slate-900 dark:text-slate-100 font-black text-xl font-mono"
                 />
               </div>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Maksimal sebesar total tagihan; kembalian dihitung manual di luar sistem.
+              </p>
 
-              {/* Kembalian / Sisa DP */}
-              {payAmount > total && (
-                <div className="mt-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs flex justify-between items-center">
-                  <span>💵 Uang Kembalian:</span>
-                  <span className="font-mono text-sm font-black">{formatRupiah(payAmount - total)}</span>
-                </div>
-              )}
               {payAmount < total && paymentStatus === 'DP' && (
                 <div className="mt-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-bold text-xs flex justify-between items-center">
                   <span>📋 Sisa Tagihan (Pelunasan Nanti):</span>

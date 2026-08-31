@@ -49,7 +49,8 @@ export const CancelTransactionModal: React.FC<CancelTransactionModalProps> = ({
         <div className="p-3 rounded-xl text-xs mb-4 border bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
           Pesanan masih mengantri: reservasi bahan akan dilepas sehingga stok kembali
           tersedia untuk pesanan lain. Uang yang sudah masuk (DP/lunas){' '}
-          <strong>tidak otomatis direfund</strong> — proses refund terpisah oleh Super Admin.
+          <strong>tidak otomatis direfund</strong> — proses refund dicatat terpisah
+          melalui halaman Riwayat Transaksi.
         </div>
 
         <div>

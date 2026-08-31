@@ -1,9 +1,9 @@
 use backend::config::{self, AppConfig};
 use backend::dto::{
-    CategoryRequest, CreateAddonRequest, CreateCustomerRequest, CreateProductRequest,
-    CreateRawMaterialRequest, CreateTransactionRequest, CreateUserRequest, CreateVariantRequest,
-    Pagination, TransactionAddonInput, TransactionItemInput, TransactionMaterialInput,
-    TransactionQuery, UpdatePaymentRequest,
+    CancelTransactionRequest, CategoryRequest, CreateAddonRequest, CreateCustomerRequest,
+    CreateProductRequest, CreateRawMaterialRequest, CreateTransactionRequest, CreateUserRequest,
+    CreateVariantRequest, Pagination, RefundPaymentRequest, TransactionAddonInput,
+    TransactionItemInput, TransactionMaterialInput, TransactionQuery, UpdatePaymentRequest,
 };
 use backend::error::AppError;
 use backend::services::{
@@ -11,7 +11,9 @@ use backend::services::{
     products as product_service, raw_materials as raw_material_service,
     transactions as transaction_service, users as user_service,
 };
-use entity::enums::{OrderStatus, PaymentStatus, PriceType, RangePriceType, UserRole};
+use entity::enums::{
+    OrderStatus, PaymentMethod, PaymentStatus, PriceType, RangePriceType, UserRole,
+};
 use rust_decimal::Decimal;
 
 #[tokio::test]
@@ -199,20 +201,31 @@ async fn test_pos_transaction_complete_lifecycle() {
             .expect("Update order status to Selesai");
     assert_eq!(finished_status.order_status, OrderStatus::Selesai);
 
-    // 6. Settle DP (Pelunasan sisa Rp 1.000.000 + bayar Rp 1.050.000 -> kembalian Rp 50.000)
-    let settled = transaction_service::update_payment(
+    // 6. Settle DP (sisa Rp 1.000.000 dibayar tepat; bayar lebih ditolak)
+    let overpaid = transaction_service::update_payment(
         &db,
         trans.id,
         UpdatePaymentRequest {
             additional_pay_amount: Decimal::from(1050000),
+            ..Default::default()
+        },
+    )
+    .await;
+    assert!(overpaid.is_err(), "Pembayaran melebihi sisa tagihan harus ditolak");
+
+    let settled = transaction_service::update_payment(
+        &db,
+        trans.id,
+        UpdatePaymentRequest {
+            additional_pay_amount: Decimal::from(1000000),
             payment_status: Some(PaymentStatus::Paid),
             ..Default::default()
         },
     )
     .await
     .expect("Settle DP payment");
-    assert_eq!(settled.pay_amount, Decimal::from(1650000));
-    assert_eq!(settled.change_amount, Decimal::from(50000));
+    assert_eq!(settled.pay_amount, Decimal::from(1600000));
+    assert_eq!(settled.change_amount, Decimal::ZERO);
     assert_eq!(settled.payment_status, PaymentStatus::Paid);
 
     // 7. Customer picks up order (Selesai -> Diambil)
@@ -227,7 +240,7 @@ async fn test_pos_transaction_complete_lifecycle() {
         .expect("Get invoice print data");
     assert_eq!(invoice.invoice_number, trans.invoice_number);
     assert_eq!(invoice.remaining_amount, Decimal::ZERO);
-    assert_eq!(invoice.change_amount, Decimal::from(50000));
+    assert_eq!(invoice.change_amount, Decimal::ZERO);
     assert_eq!(invoice.items.len(), 2);
     assert_eq!(invoice.store_name, config.store.name);
 
@@ -501,4 +514,199 @@ async fn test_manual_materials_checkout_lifecycle() {
         .expect("Get material after consume");
     assert_eq!(consumed_mat.stock, Decimal::from(500));
     assert_eq!(consumed_mat.reserved_stock, Decimal::ZERO);
+}
+
+#[tokio::test]
+async fn test_cashier_refund_only_for_cancelled_orders() {
+    let config = AppConfig::from_env();
+    let db = config::connect_db(&config.database_url)
+        .await
+        .expect("Koneksi DB gagal");
+
+    let unique_suffix = chrono::Utc::now().timestamp_micros();
+
+    let cashier = user_service::create(
+        &db,
+        CreateUserRequest {
+            name: format!("Kasir Refund {}", unique_suffix),
+            username: format!("kasir_refund_{}", unique_suffix),
+            password: "password123".to_string(),
+            role: UserRole::Admin,
+        },
+    )
+    .await
+    .expect("Create cashier");
+
+    let customer = customer_service::create(
+        &db,
+        CreateCustomerRequest {
+            name: format!("Pelanggan Refund {}", unique_suffix),
+            phone: None,
+            address: None,
+        },
+    )
+    .await
+    .expect("Create customer");
+
+    let cat = category_service::create_product_category(
+        &db,
+        CategoryRequest {
+            name: format!("Kategori Refund {}", unique_suffix),
+        },
+    )
+    .await
+    .expect("Create category");
+
+    let prod = product_service::create(
+        &db,
+        CreateProductRequest {
+            category_id: Some(cat.id),
+            name: format!("Produk Refund {}", unique_suffix),
+            price_type: PriceType::Fixed,
+            default_price: Some(Decimal::from(50000)),
+            min_price: None,
+            max_price: None,
+            min_order: Some(1),
+            unit_name: Some("pcs".to_string()),
+            has_variants: Some(false),
+            uses_material: None,
+            raw_material_id: None,
+            material_amount: None,
+        },
+    )
+    .await
+    .expect("Create product");
+
+    let dp_item = TransactionItemInput {
+        product_id: prod.id,
+        product_variant_id: None,
+        custom_price: None,
+        qty: 1,
+        addons: None,
+        ..Default::default()
+    };
+
+    // Transaksi DP yang masih mengantri
+    let queued = transaction_service::create(
+        &db,
+        cashier.id,
+        CreateTransactionRequest {
+            customer_id: Some(customer.id),
+            customer_name: None,
+            discount_amount: None,
+            pay_amount: Decimal::from(20000),
+            payment_status: Some(PaymentStatus::Dp),
+            estimated_done_at: None,
+            items: vec![dp_item.clone()],
+            ..Default::default()
+        },
+    )
+    .await
+    .expect("Create DP transaction (mengantri)");
+
+    // 1. Kasir refund pesanan non-BATAL -> ditolak
+    let denied = transaction_service::refund_payment_as(
+        &db,
+        cashier.id,
+        false,
+        queued.id,
+        RefundPaymentRequest {
+            amount: Decimal::from(20000),
+            payment_method: PaymentMethod::Cash,
+            reason: "Pelanggan membatalkan".to_string(),
+            reference_no: None,
+        },
+    )
+    .await;
+    assert!(
+        matches!(denied, Err(AppError::Forbidden(_))),
+        "Refund kasir untuk pesanan non-BATAL harus ditolak"
+    );
+
+    // 2. Setelah dibatalkan, kasir boleh refund
+    transaction_service::cancel_as(
+        &db,
+        Some(cashier.id),
+        queued.id,
+        CancelTransactionRequest {
+            reason: "Pelanggan membatalkan".to_string(),
+        },
+    )
+    .await
+    .expect("Cancel transaction");
+
+    let refunded = transaction_service::refund_payment_as(
+        &db,
+        cashier.id,
+        false,
+        queued.id,
+        RefundPaymentRequest {
+            amount: Decimal::from(20000),
+            payment_method: PaymentMethod::Cash,
+            reason: "Pengembalian DP pelanggan".to_string(),
+            reference_no: None,
+        },
+    )
+    .await
+    .expect("Refund kasir untuk pesanan BATAL");
+    assert_eq!(refunded.pay_amount, Decimal::ZERO);
+    assert_eq!(refunded.payment_status, PaymentStatus::Unpaid);
+
+    // 3. Refund lanjutan ditolak karena tidak ada pembayaran tersisa
+    let over = transaction_service::refund_payment_as(
+        &db,
+        cashier.id,
+        false,
+        queued.id,
+        RefundPaymentRequest {
+            amount: Decimal::from(1000),
+            payment_method: PaymentMethod::Cash,
+            reason: "Refund kedua".to_string(),
+            reference_no: None,
+        },
+    )
+    .await;
+    assert!(
+        over.is_err(),
+        "Refund melebihi sisa pembayaran harus ditolak"
+    );
+
+    // 4. Pesanan dalam produksi juga tidak bisa direfund kasir
+    let in_production = transaction_service::create(
+        &db,
+        cashier.id,
+        CreateTransactionRequest {
+            customer_id: Some(customer.id),
+            customer_name: None,
+            discount_amount: None,
+            pay_amount: Decimal::from(10000),
+            payment_status: Some(PaymentStatus::Dp),
+            estimated_done_at: None,
+            items: vec![dp_item],
+            ..Default::default()
+        },
+    )
+    .await
+    .expect("Create DP transaction (produksi)");
+    transaction_service::update_status(&db, in_production.id, OrderStatus::Proses)
+        .await
+        .expect("Move order to Proses");
+
+    let denied_proses = transaction_service::refund_payment_as(
+        &db,
+        cashier.id,
+        false,
+        in_production.id,
+        RefundPaymentRequest {
+            amount: Decimal::from(10000),
+            payment_method: PaymentMethod::Cash,
+            reason: "Refund pesanan produksi".to_string(),
+            reference_no: None,
+        },
+    )
+    .await;
+    assert!(
+        matches!(denied_proses, Err(AppError::Forbidden(_))),
+        "Refund kasir untuk pesanan dalam produksi harus ditolak"
+    );
 }

@@ -7,7 +7,7 @@ use crate::dto::{
     UpdatePaymentRequest,
 };
 use crate::error::AppError;
-use crate::extractors::{AuthUser, SuperAdmin};
+use crate::extractors::AuthUser;
 use crate::services::transactions as transaction_service;
 use crate::state::AppState;
 
@@ -241,16 +241,18 @@ pub async fn record_rework(
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Pemakaian bahan rework berhasil dicatat", data)))
 }
 
-/// Refund adalah tindakan finansial sensitif dan hanya dapat dilakukan owner.
+/// Refund pembayaran. Kasir (ADMIN) hanya boleh me-refund pesanan yang
+/// dibatalkan; status lain khusus Super Admin (ditegakkan di service).
 pub async fn refund_payment(
     state: web::Data<AppState>,
-    admin: SuperAdmin,
+    user: AuthUser,
     path: web::Path<i32>,
     payload: web::Json<RefundPaymentRequest>,
 ) -> Result<HttpResponse, AppError> {
     let data = transaction_service::refund_payment_as(
         &state.db,
-        admin.id,
+        user.id,
+        user.is_super_admin(),
         path.into_inner(),
         payload.into_inner(),
     )

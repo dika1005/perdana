@@ -17,11 +17,13 @@ import { formatRupiah } from '../../utils/format';
 interface TransactionDetailDrawerProps {
   transaction: any | null;
   onClose: () => void;
+  onRefund?: (transaction: any) => void;
 }
 
 export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = ({
   transaction,
   onClose,
+  onRefund,
 }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'materials' | 'payments' | 'events'>('info');
 
@@ -392,7 +394,16 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-4 mt-4 border-t border-black/10 dark:border-white/10">
+        <div className="pt-4 mt-4 border-t border-black/10 dark:border-white/10 space-y-2">
+          {transaction.order_status === 'BATAL' && netPaid > 0 && onRefund && (
+            <button
+              onClick={() => onRefund(transaction)}
+              className="w-full py-2.5 font-bold bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs flex items-center justify-center gap-1.5 rounded-xl shadow-md transition-all cursor-pointer"
+            >
+              <DollarSign className="w-4 h-4" />
+              Proses Refund ({formatRupiah(netPaid)})
+            </button>
+          )}
           <button
             onClick={onClose}
             className="w-full py-2.5 font-bold skeuo-button text-text-muted text-xs rounded-xl cursor-pointer"

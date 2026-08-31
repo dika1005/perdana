@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { RefreshCw, Download } from 'lucide-react';
+import { RefreshCw, Download, AlertCircle } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
 import { OrderStatus, PaymentMethod, PaymentStatus } from '../../types/transaction';
 
@@ -11,7 +11,9 @@ import { TransactionFilterBar } from '../../components/transactions/TransactionF
 import { TransactionTable } from '../../components/transactions/TransactionTable';
 import { TransactionDetailDrawer } from '../../components/transactions/TransactionDetailDrawer';
 import { TransactionSettleModal } from '../../components/transactions/TransactionSettleModal';
+import { RefundTransactionModal, RefundPayload } from '../../components/transactions/RefundTransactionModal';
 import { ReceiptModal } from '../../components/pos/ReceiptModal';
+import { formatRupiah } from '../../utils/format';
 import { useAlert } from '../../context/AlertContext';
 
 export default function TransactionsHistoryPage() {
@@ -34,9 +36,11 @@ export default function TransactionsHistoryPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
   const [invoicePrintData, setInvoicePrintData] = useState<any | null>(null);
   const [settleModal, setSettleModal] = useState<{ open: boolean; item?: any | null }>({ open: false });
-  const [settlePayAmount, setSettlePayAmount] = useState<number>(0);
   const [settlePaymentMethod, setSettlePaymentMethod] = useState<PaymentMethod>('CASH');
   const [submittingSettle, setSubmittingSettle] = useState(false);
+  const [refundTarget, setRefundTarget] = useState<any | null>(null);
+  const [submittingRefund, setSubmittingRefund] = useState(false);
+  const [pendingRefunds, setPendingRefunds] = useState<any[]>([]);
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -64,8 +68,24 @@ export default function TransactionsHistoryPage() {
     }
   };
 
+  const fetchPendingRefunds = async () => {
+    try {
+      const res = await transactionService.getTransactions({
+        page: 1,
+        per_page: 100,
+        order_status: 'BATAL',
+      });
+      setPendingRefunds(
+        res.data.filter(t => Number(t.paid_amount ?? t.pay_amount) > 0)
+      );
+    } catch {
+      // Indikator bersifat informatif; kegagalan ambil data tidak perlu mengganggu halaman.
+    }
+  };
+
   useEffect(() => {
     fetchTransactions();
+    fetchPendingRefunds();
   }, [page, filterPayment, filterPaymentMethod, filterOrder]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -111,20 +131,19 @@ export default function TransactionsHistoryPage() {
   };
 
   const handleOpenSettle = (item: any) => {
-    const remaining = Number(item.total_amount) - Number(item.paid_amount ?? item.pay_amount);
     setSettleModal({ open: true, item });
-    setSettlePayAmount(remaining > 0 ? remaining : 0);
     setSettlePaymentMethod('CASH');
   };
 
   const handleProcessSettle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settleModal.item) return;
+    const remaining = Number(settleModal.item.total_amount) - Number(settleModal.item.paid_amount ?? settleModal.item.pay_amount);
     setSubmittingSettle(true);
     try {
       const res = await transactionService.updatePayment(
         settleModal.item.id,
-        settlePayAmount,
+        remaining,
         'PAID',
         settlePaymentMethod
       );
@@ -146,6 +165,36 @@ export default function TransactionsHistoryPage() {
       });
     } finally {
       setSubmittingSettle(false);
+    }
+  };
+
+  const handleOpenRefund = (item: any) => {
+    setRefundTarget(item);
+  };
+
+  const handleSubmitRefund = async (payload: RefundPayload) => {
+    if (!refundTarget) return;
+    setSubmittingRefund(true);
+    try {
+      await transactionService.refundPayment(
+        refundTarget.id,
+        payload.amount,
+        payload.paymentMethod,
+        payload.reason,
+        payload.referenceNo
+      );
+      setRefundTarget(null);
+      setSelectedTransaction(null);
+      showToast('Refund berhasil dicatat di ledger.', 'success');
+      await Promise.all([fetchTransactions(), fetchPendingRefunds()]);
+    } catch (err: any) {
+      await showAlert({
+        title: 'Gagal Memproses Refund',
+        message: err?.response?.data?.message || 'Terjadi kesalahan saat memproses refund.',
+        type: 'error',
+      });
+    } finally {
+      setSubmittingRefund(false);
     }
   };
 
@@ -209,6 +258,33 @@ export default function TransactionsHistoryPage() {
         </div>
       )}
 
+      {/* Indikator uang menunggu refund dari pesanan dibatalkan */}
+      {pendingRefunds.length > 0 && (
+        <div className="mb-4 p-3.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-xs">
+          <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
+            <AlertCircle className="w-4 h-4" />
+            Menunggu keputusan refund: {pendingRefunds.length} transaksi •{' '}
+            <span className="font-mono">
+              {formatRupiah(pendingRefunds.reduce((sum, t) => sum + Number(t.paid_amount ?? t.pay_amount), 0))}
+            </span>
+          </div>
+          <p className="text-amber-700 dark:text-amber-400 mt-1">
+            Pesanan dibatalkan ini masih menyimpan uang pelanggan. Klik nota untuk memproses refund.
+          </p>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {pendingRefunds.map(t => (
+              <button
+                key={t.id}
+                onClick={() => handleViewDetail(t.id)}
+                className="px-2 py-1 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 font-mono font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors cursor-pointer"
+              >
+                {t.invoice_number} • {formatRupiah(Number(t.paid_amount ?? t.pay_amount))}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Filter Bar */}
       <TransactionFilterBar
         searchTerm={searchTerm}
@@ -242,14 +318,23 @@ export default function TransactionsHistoryPage() {
       <TransactionDetailDrawer
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
+        onRefund={handleOpenRefund}
       />
+
+      {/* Refund Modal */}
+      {refundTarget && (
+        <RefundTransactionModal
+          transaction={refundTarget}
+          submitting={submittingRefund}
+          onClose={() => setRefundTarget(null)}
+          onSubmit={handleSubmitRefund}
+        />
+      )}
 
       {/* Settle Modal */}
       <TransactionSettleModal
         isOpen={settleModal.open}
         item={settleModal.item}
-        payAmount={settlePayAmount}
-        onPayAmountChange={setSettlePayAmount}
         paymentMethod={settlePaymentMethod}
         onPaymentMethodChange={setSettlePaymentMethod}
         submitting={submittingSettle}

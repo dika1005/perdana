@@ -345,6 +345,10 @@ pub async fn list(
     }
     if let Some(status) = query.order_status {
         select = select.filter(transactions::Column::OrderStatus.eq(status));
+    } else {
+        // Riwayat default bersih: transaksi batal tetap tersimpan untuk audit
+        // tetapi tidak ditampilkan kecuali dipfilter eksplisit.
+        select = select.filter(transactions::Column::OrderStatus.ne(OrderStatus::Batal));
     }
     let (rows, meta) = pagination.fetch(select, db).await?;
     let mut output = Vec::with_capacity(rows.len());
@@ -789,8 +793,15 @@ pub async fn create(
     }
     let total = subtotal - discount;
     let tender = payload.pay_amount;
-    let paid = tender.min(total);
-    let change = tender - paid;
+    // Kebijakan owner: sistem tidak mencatat kembalian. Nominal bayar dibatasi
+    // maksimal total tagihan; selisih uang tunai dihitung manual oleh kasir.
+    if tender > total {
+        return Err(AppError::field(
+            "pay_amount",
+            "Pembayaran tidak boleh melebihi total tagihan; kembalian dihitung manual di luar sistem",
+        ));
+    }
+    let paid = tender;
     let payment_status = payment_status_for(paid, total);
     let payment_method = payload.payment_method.unwrap_or(PaymentMethod::Cash);
     let transaction = transactions::ActiveModel {
@@ -802,7 +813,7 @@ pub async fn create(
         discount_amount: Set(discount),
         total_amount: Set(total),
         pay_amount: Set(tender),
-        change_amount: Set(change),
+        change_amount: Set(Decimal::ZERO),
         payment_status: Set(payment_status.clone()),
         payment_method: Set(payment_method.clone()),
         settlement_payment_method: Set(None),
@@ -892,11 +903,7 @@ pub async fn create(
             paid,
             payment_method.clone(),
             None,
-            Some(if change > Decimal::ZERO {
-                format!("Tender {} dengan kembalian {}", tender, change)
-            } else {
-                "Pembayaran saat checkout".to_string()
-            }),
+            Some("Pembayaran saat checkout".to_string()),
             Some(user_id),
         )
         .await?;
@@ -977,15 +984,22 @@ pub async fn update_payment_as(
         return Err(AppError::conflict("Transaksi ini sudah lunas; gunakan refund bila perlu"));
     }
     let tender = payload.additional_pay_amount;
-    let applied = tender.min(outstanding);
-    let change = tender - applied;
+    if tender > outstanding {
+        return Err(AppError::field(
+            "additional_pay_amount",
+            format!(
+                "Pembayaran tidak boleh melebihi sisa tagihan sebesar {}; kembalian dihitung manual di luar sistem",
+                outstanding
+            ),
+        ));
+    }
+    let applied = tender;
     let paid_after = previous_paid + applied;
     let status_after = payment_status_for(paid_after, transaction.total_amount);
     let payment_method = payload.payment_method.unwrap_or(PaymentMethod::Cash);
     let before = audit::snapshot(&transaction);
     let mut active: transactions::ActiveModel = transaction.clone().into();
     active.pay_amount = Set(transaction.pay_amount + tender);
-    active.change_amount = Set(transaction.change_amount + change);
     active.payment_status = Set(status_after.clone());
     active.settlement_payment_method = Set(Some(payment_method.clone()));
     active.settlement_pay_amount = Set(Some(tender));
@@ -999,11 +1013,7 @@ pub async fn update_payment_as(
         payment_method,
         payload.reference_no.map(|value| value.trim().to_string()),
         payload.notes.map(|value| value.trim().to_string()).or_else(|| {
-            Some(if change > Decimal::ZERO {
-                format!("Tender {} dengan kembalian {}", tender, change)
-            } else {
-                "Pelunasan/DP tambahan".to_string()
-            })
+            Some("Pelunasan/DP tambahan".to_string())
         }),
         actor_id,
     )
@@ -1061,9 +1071,6 @@ pub async fn settle_as(
     payload: SettleTransactionRequest,
 ) -> Result<TransactionResponse, AppError> {
     payload.validate()?;
-    if payload.pay_amount <= Decimal::ZERO {
-        return Err(AppError::field("pay_amount", "Nominal pelunasan harus lebih dari 0"));
-    }
     let txn = db.begin().await?;
     let transaction = Transaction::find_by_id(id)
         .lock_exclusive()
@@ -1088,32 +1095,18 @@ pub async fn settle_as(
         return Err(AppError::conflict("Transaksi ini sudah lunas"));
     }
 
-    let tender = payload.pay_amount;
-    // Pelunasan sekaligus pengambilan barang: tender wajib menutup seluruh
-    // sisa tagihan supaya konsisten dengan aturan DIAMBIL wajib lunas di
-    // update_status. Pembayaran sebagian tanpa pengambilan barang memakai
-    // endpoint pembayaran biasa.
-    if tender < outstanding {
-        return Err(AppError::field(
-            "pay_amount",
-            format!(
-                "Pelunasan harus menutup seluruh sisa tagihan sebesar {}. Pembayaran sebagian tidak dapat mengambil barang.",
-                outstanding
-            ),
-        ));
-    }
+    // Pelunasan sekaligus pengambilan barang: sistem mencatat tepat sebesar
+    // sisa tagihan; uang tunai & kembalian dihitung manual oleh kasir.
     let applied = outstanding;
-    let change = tender - applied;
     let paid_after = previous_paid + applied;
     let payment_method = payload.payment_method.unwrap_or(PaymentMethod::Cash);
 
     let before = audit::snapshot(&transaction);
     let mut active: transactions::ActiveModel = transaction.clone().into();
-    active.pay_amount = Set(transaction.pay_amount + tender);
-    active.change_amount = Set(transaction.change_amount + change);
+    active.pay_amount = Set(transaction.pay_amount + applied);
     active.payment_status = Set(payment_status_for(paid_after, transaction.total_amount));
     active.settlement_payment_method = Set(Some(payment_method.clone()));
-    active.settlement_pay_amount = Set(Some(tender));
+    active.settlement_pay_amount = Set(Some(applied));
     active.settlement_at = Set(Some(Utc::now()));
     // Atomically advance to DIAMBIL
     active.order_status = Set(OrderStatus::Diambil);
@@ -1127,11 +1120,7 @@ pub async fn settle_as(
         payment_method,
         payload.reference_no.map(|v| v.trim().to_string()),
         payload.notes.map(|v| v.trim().to_string()).or_else(|| {
-            Some(if change > Decimal::ZERO {
-                format!("Pelunasan. Tender {} dengan kembalian {}", tender, change)
-            } else {
-                "Pelunasan".to_string()
-            })
+            Some("Pelunasan".to_string())
         }),
         actor_id,
     )
@@ -1165,6 +1154,7 @@ pub async fn settle_as(
 pub async fn refund_payment_as(
     db: &DatabaseConnection,
     actor_id: i32,
+    actor_is_super_admin: bool,
     id: i32,
     payload: RefundPaymentRequest,
 ) -> Result<TransactionResponse, AppError> {
@@ -1178,6 +1168,11 @@ pub async fn refund_payment_as(
         .one(&txn)
         .await?
         .ok_or_else(|| AppError::not_found("Transaksi tidak ditemukan"))?;
+    if !actor_is_super_admin && transaction.order_status != OrderStatus::Batal {
+        return Err(AppError::Forbidden(
+            "Kasir hanya dapat me-refund pesanan yang dibatalkan; untuk status lain hubungi Super Admin".into(),
+        ));
+    }
     let paid_before = net_paid(&transaction);
     if payload.amount > paid_before {
         return Err(AppError::conflict("Refund melebihi total pembayaran neto pelanggan"));

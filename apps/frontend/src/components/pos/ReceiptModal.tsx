@@ -42,7 +42,6 @@ export function generateReceiptHtml(invoiceData: any): string {
   const payAmount = Number(invoiceData.paid_amount ?? invoiceData.pay_amount ?? 0);
   const isDp = invoiceData.payment_status === 'DP' || Number(invoiceData.remaining_amount) > 0 || (totalAmount > payAmount);
   const remaining = Number(invoiceData.remaining_amount) || Math.max(0, totalAmount - payAmount);
-  const changeAmount = Number(invoiceData.change_amount) || (payAmount > totalAmount ? payAmount - totalAmount : 0);
 
   const formattedDate = invoiceData.created_at 
     ? new Date(invoiceData.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
@@ -210,12 +209,7 @@ export function generateReceiptHtml(invoiceData: any): string {
               <span>SISA TAGIHAN:</span>
               <span>${formatRupiah(remaining)}</span>
             </div>
-          ` : `
-            <div class="row">
-              <span>Kembalian:</span>
-              <span>${formatRupiah(changeAmount)}</span>
-            </div>
-          `}
+          ` : ''}
 
           <div class="divider"></div>
 
@@ -261,7 +255,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   const payAmount = Number(invoiceData.paid_amount ?? invoiceData.pay_amount ?? 0);
   const isDp = invoiceData.payment_status === 'DP' || Number(invoiceData.remaining_amount) > 0 || (totalAmount > payAmount);
   const remaining = Number(invoiceData.remaining_amount) || Math.max(0, totalAmount - payAmount);
-  const changeAmount = Number(invoiceData.change_amount) || (payAmount > totalAmount ? payAmount - totalAmount : 0);
 
   const formattedDate = invoiceData.created_at 
     ? new Date(invoiceData.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
@@ -383,15 +376,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <span>Uang Diterima:</span>
               <span>{formatRupiah(payAmount)}</span>
             </div>
-            {isDp ? (
+            {isDp && (
               <div className="flex justify-between font-bold text-amber-900 border-t border-dashed border-slate-400 pt-1">
                 <span>SISA TAGIHAN:</span>
                 <span>{formatRupiah(remaining)}</span>
-              </div>
-            ) : (
-              <div className="flex justify-between text-slate-700">
-                <span>Kembalian:</span>
-                <span>{formatRupiah(changeAmount)}</span>
               </div>
             )}
           </div>

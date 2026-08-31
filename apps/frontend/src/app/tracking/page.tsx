@@ -28,7 +28,6 @@ export default function JobTrackingPage() {
 
   // Modals
   const [settleModal, setSettleModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
-  const [payAmount, setPayAmount] = useState<number>(0);
   const [settlePaymentMethod, setSettlePaymentMethod] = useState<PaymentMethod>('CASH');
   const [submittingSettle, setSubmittingSettle] = useState(false);
   const [waModal, setWaModal] = useState<{ open: boolean; job: any | null; phone: string }>({ open: false, job: null, phone: '' });
@@ -87,8 +86,6 @@ export default function JobTrackingPage() {
   };
 
   const handleOpenSettle = (job: any) => {
-    const remaining = Number(job.total_amount) - Number(job.paid_amount ?? job.pay_amount);
-    setPayAmount(remaining > 0 ? remaining : 0);
     setSettlePaymentMethod('CASH');
     setSettleModal({ open: true, job });
   };
@@ -99,7 +96,7 @@ export default function JobTrackingPage() {
 
     setSubmittingSettle(true);
     try {
-      await transactionService.settle(settleModal.job.id, payAmount, settlePaymentMethod);
+      await transactionService.settle(settleModal.job.id, settlePaymentMethod);
       setSettleModal({ open: false, job: null });
       showToast('Pelunasan berhasil dan barang diserahkan!', 'success');
       fetchJobs();
@@ -171,7 +168,13 @@ export default function JobTrackingPage() {
     setSubmittingCancel(true);
     try {
       await transactionService.cancelTransaction(cancelTarget.id, reason);
-      showToast('Pesanan dibatalkan; reservasi bahan dilepas', 'success');
+      const paid = Number(cancelTarget.pay_amount ?? cancelTarget.paid_amount) || 0;
+      showToast(
+        paid > 0
+          ? 'Pesanan dibatalkan; uang pelanggan menunggu refund via Riwayat Transaksi'
+          : 'Pesanan dibatalkan; reservasi bahan dilepas',
+        'success'
+      );
       setCancelTarget(null);
       fetchJobs();
     } catch (err: any) {
@@ -283,8 +286,6 @@ export default function JobTrackingPage() {
       <TrackingSettleModal
         isOpen={settleModal.open}
         job={settleModal.job}
-        payAmount={payAmount}
-        onPayAmountChange={setPayAmount}
         paymentMethod={settlePaymentMethod}
         onPaymentMethodChange={setSettlePaymentMethod}
         submitting={submittingSettle}

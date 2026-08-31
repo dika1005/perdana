@@ -110,6 +110,7 @@ export const TransactionFilterBar: React.FC<TransactionFilterBarProps> = ({
             <option value="PROSES">Sedang Diproses</option>
             <option value="SELESAI">Selesai</option>
             <option value="DIAMBIL">Sudah Diambil</option>
+            <option value="BATAL">Dibatalkan</option>
           </select>
         </div>
 

@@ -6,8 +6,6 @@ import { formatRupiah } from '../../utils/format';
 interface TrackingSettleModalProps {
   isOpen: boolean;
   job: any | null;
-  payAmount: number;
-  onPayAmountChange: (val: number) => void;
   paymentMethod: PaymentMethod;
   onPaymentMethodChange: (pm: PaymentMethod) => void;
   submitting: boolean;
@@ -18,8 +16,6 @@ interface TrackingSettleModalProps {
 export const TrackingSettleModal: React.FC<TrackingSettleModalProps> = ({
   isOpen,
   job,
-  payAmount,
-  onPayAmountChange,
   paymentMethod,
   onPaymentMethodChange,
   submitting,
@@ -76,73 +72,38 @@ export const TrackingSettleModal: React.FC<TrackingSettleModalProps> = ({
             <span className="font-bold">{formatRupiah(currentPaid)} <span className="text-[10px] font-mono opacity-80">({job.payment_method || 'CASH'})</span></span>
           </div>
           <div className="flex justify-between text-amber-600 dark:text-amber-400 font-bold text-sm pt-2 border-t border-slate-200 dark:border-slate-800">
-            <span>Sisa Tagihan:</span>
+            <span>Sisa Tagihan (dilunasi):</span>
             <span className="font-mono">{formatRupiah(remaining)}</span>
           </div>
         </div>
 
-        <div className="space-y-4">
-          {/* Pilih Metode Bayar Pelunasan */}
-          <div>
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">
-              Metode Pembayaran Pelunasan:
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {paymentMethods.map(pm => {
-                const isActive = paymentMethod === pm.id;
-                return (
-                  <button
-                    key={pm.id}
-                    type="button"
-                    onClick={() => onPaymentMethodChange(pm.id)}
-                    className={`py-2.5 px-2 text-center rounded-xl transition-all border-2 ${
-                      isActive 
-                        ? `${pm.activeColor} font-bold shadow-xs` 
-                        : 'border-slate-200 dark:border-slate-800 skeuo-button text-slate-600 dark:text-slate-400 hover:text-text-main'
-                    }`}
-                  >
-                    <span className="text-base block mb-0.5">{pm.emoji}</span>
-                    <p className="text-xs font-bold">{pm.label}</p>
-                  </button>
-                );
-              })}
-            </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">
+            Metode Pembayaran Pelunasan:
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {paymentMethods.map(pm => {
+              const isActive = paymentMethod === pm.id;
+              return (
+                <button
+                  key={pm.id}
+                  type="button"
+                  onClick={() => onPaymentMethodChange(pm.id)}
+                  className={`py-2.5 px-2 text-center rounded-xl transition-all border-2 ${
+                    isActive
+                      ? `${pm.activeColor} font-bold shadow-xs`
+                      : 'border-slate-200 dark:border-slate-800 skeuo-button text-slate-600 dark:text-slate-400 hover:text-text-main'
+                  }`}
+                >
+                  <span className="text-base block mb-0.5">{pm.emoji}</span>
+                  <p className="text-xs font-bold">{pm.label}</p>
+                </button>
+              );
+            })}
           </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nominal Pelunasan Diterima (Rp) *</label>
-            <div className="px-4 py-2.5 skeuo-inset rounded-xl bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 focus-within:border-emerald-500 flex items-center gap-2">
-              <span className="font-bold text-slate-400 text-sm">Rp</span>
-              <input
-                type="text"
-                required
-                value={payAmount > 0 ? payAmount.toLocaleString('id-ID') : ''}
-                onChange={e => {
-                  const clean = e.target.value.replace(/\D/g, '');
-                  onPayAmountChange(clean ? parseInt(clean, 10) : 0);
-                }}
-                placeholder="0"
-                className="w-full bg-transparent border-none outline-none text-slate-900 dark:text-slate-100 font-bold text-base font-mono"
-              />
-            </div>
-            {payAmount > 0 && payAmount >= remaining && (
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                Terbilang: {formatRupiah(payAmount)}
-              </p>
-            )}
-            {payAmount > remaining && (
-              <div className="mt-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs flex justify-between items-center">
-                <span>💵 Kembalian:</span>
-                <span className="font-mono text-sm font-black">{formatRupiah(payAmount - remaining)}</span>
-              </div>
-            )}
-            {payAmount > 0 && payAmount < remaining && (
-              <div className="mt-2 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold text-xs flex justify-between items-center">
-                <span>⚠️ Kurang:</span>
-                <span className="font-mono text-sm font-black">{formatRupiah(remaining - payAmount)}</span>
-              </div>
-            )}
-          </div>
+          <p className="text-[10px] text-slate-400 mt-2">
+            Sistem mencatat pelunasan tepat sebesar sisa tagihan; uang tunai & kembalian dihitung manual di luar sistem.
+          </p>
         </div>
 
         <div className="flex gap-2.5 mt-5">
@@ -155,8 +116,8 @@ export const TrackingSettleModal: React.FC<TrackingSettleModalProps> = ({
           </button>
           <button
             type="submit"
-            disabled={submitting || payAmount < remaining}
-            className="flex-1 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs flex items-center justify-center gap-1.5 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={submitting}
+            className="flex-1 py-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs flex items-center justify-center gap-1.5 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
           >
             <Check className="w-4 h-4" />
             {submitting ? 'Menyimpan...' : 'Lunasi & Serahkan'}

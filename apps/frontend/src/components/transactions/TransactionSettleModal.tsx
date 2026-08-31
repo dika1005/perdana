@@ -6,8 +6,6 @@ import { formatRupiah } from '../../utils/format';
 interface TransactionSettleModalProps {
   isOpen: boolean;
   item: any | null;
-  payAmount: number;
-  onPayAmountChange: (val: number) => void;
   paymentMethod: PaymentMethod;
   onPaymentMethodChange: (pm: PaymentMethod) => void;
   submitting: boolean;
@@ -18,8 +16,6 @@ interface TransactionSettleModalProps {
 export const TransactionSettleModal: React.FC<TransactionSettleModalProps> = ({
   isOpen,
   item,
-  payAmount,
-  onPayAmountChange,
   paymentMethod,
   onPaymentMethodChange,
   submitting,
@@ -109,26 +105,9 @@ export const TransactionSettleModal: React.FC<TransactionSettleModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">
-              Nominal Bayar Pelunasan (Rp) *
-            </label>
-            <input
-              type="number"
-              required
-              min="0"
-              value={payAmount || ''}
-              onChange={e => onPayAmountChange(Number(e.target.value))}
-              className="w-full px-4 py-2.5 skeuo-inset outline-none text-text-main rounded-xl font-bold text-base bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800"
-            />
-          </div>
-
-          {payAmount > remaining && (
-            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex justify-between border border-emerald-200 dark:border-emerald-800">
-              <span>Kembalian:</span>
-              <span className="font-mono">{formatRupiah(payAmount - remaining)}</span>
-            </div>
-          )}
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Sistem mencatat pelunasan tepat sebesar sisa tagihan. Uang tunai yang diterima dan kembalian dihitung manual di luar sistem.
+          </p>
         </div>
 
         <div className="flex gap-2.5 mt-5">
