@@ -132,6 +132,7 @@ async fn test_reports_and_analytics() {
             raw_material_id: mat.id,
             mutation_type: MutationType::In,
             qty: Decimal::from(50),
+            unit: None,
             notes: Some("Restock report test".to_string()),
         },
     )

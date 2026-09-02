@@ -14,7 +14,7 @@ use crate::dto::{
     PaginationMeta, RawMaterialQuery, RawMaterialResponse, UpdateRawMaterialRequest,
 };
 use crate::error::AppError;
-use crate::services::{audit, inventory};
+use crate::services::{audit, inventory, conversion};
 
 pub fn map_raw_material(m: &raw_materials::Model) -> RawMaterialResponse {
     let available_stock = m.stock - m.reserved_stock;
@@ -349,11 +349,17 @@ pub async fn create_mutation_as(
     payload.validate()?;
     let txn = db.begin().await?;
     let notes = payload.notes.map(|value| value.trim().to_string());
-    let (_material, mutation) = inventory::adjust_physical(
+    let actual_qty = if let Some(unit) = payload.unit.clone() {
+            // Convert to base unit using conversion service
+            conversion::to_base_unit(&db, payload.raw_material_id, unit.trim(), payload.qty).await?
+        } else {
+            payload.qty
+        };
+        let (_material, mutation) = inventory::adjust_physical(
         &txn,
         payload.raw_material_id,
         payload.mutation_type,
-        payload.qty,
+        actual_qty,
         inventory::LedgerContext {
             actor_id,
             notes: notes.clone(),

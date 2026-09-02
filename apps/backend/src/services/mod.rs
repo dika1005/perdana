@@ -14,6 +14,7 @@ pub mod inventory;
 pub mod material_lots;
 pub mod reports;
 pub mod transactions;
+pub mod conversion;
 pub mod users;
 
 

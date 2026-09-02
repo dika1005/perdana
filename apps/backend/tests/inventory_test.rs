@@ -74,6 +74,7 @@ async fn test_raw_materials_and_mutations_lifecycle() {
             raw_material_id: mat.id,
             mutation_type: MutationType::In,
             qty: Decimal::from(30),
+            unit: None,
             notes: Some("Restock supplier".to_string()),
         },
     )
@@ -93,6 +94,7 @@ async fn test_raw_materials_and_mutations_lifecycle() {
             raw_material_id: mat.id,
             mutation_type: MutationType::Out,
             qty: Decimal::from(65),
+            unit: None,
             notes: Some("Produksi cetak undangan".to_string()),
         },
     )
@@ -113,6 +115,7 @@ async fn test_raw_materials_and_mutations_lifecycle() {
             raw_material_id: mat.id,
             mutation_type: MutationType::Out,
             qty: Decimal::from(100), // Stock is only 15
+            unit: None,
             notes: Some("Over requested".to_string()),
         },
     )

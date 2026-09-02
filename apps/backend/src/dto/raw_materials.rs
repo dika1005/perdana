@@ -102,6 +102,8 @@ pub struct RawMaterialResponse {
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct CreateMutationRequest {
+    #[schema(example = "lembar")] // optional satuan input, jika berbeda dari unit dasar maka akan dikonversi
+    pub unit: Option<String>,
     #[schema(example = 1)]
     pub raw_material_id: i32,
     #[serde(rename = "type", alias = "mutation_type")]

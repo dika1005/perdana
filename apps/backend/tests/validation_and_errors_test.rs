@@ -284,6 +284,7 @@ async fn test_inventory_and_customer_errors() {
             raw_material_id: 9999999,
             mutation_type: MutationType::In,
             qty: Decimal::from(10),
+            unit: None,
             notes: None,
         },
     )
@@ -297,6 +298,7 @@ async fn test_inventory_and_customer_errors() {
             raw_material_id: 1,
             mutation_type: MutationType::In,
             qty: Decimal::from(0),
+            unit: None,
             notes: None,
         },
     )
