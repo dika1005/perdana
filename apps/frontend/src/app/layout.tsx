@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AlertProvider } from "../context/AlertContext";
+import { Providers } from "./providers";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -23,9 +24,11 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans transition-colors duration-300">
-        <AlertProvider>
-          {children}
-        </AlertProvider>
+        <Providers>
+          <AlertProvider>
+            {children}
+          </AlertProvider>
+        </Providers>
       </body>
     </html>
   );

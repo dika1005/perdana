@@ -16,6 +16,20 @@
         }
     }
 
+    # Aset statis Next.js: konten immutable (hash di filename) -> cache agresif.
+    @immutable path /_next/static/*
+    handle @immutable {
+        header Cache-Control "public, max-age=31536000, immutable"
+        reverse_proxy frontend:3000
+    }
+
+    # Gambar & ikon publik: cache 1 hari, revalidasi lembut.
+    @static_assets path /file.svg /globe.svg /next.svg /vercel.svg /window.svg /favicon.ico
+    handle @static_assets {
+        header Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
+        reverse_proxy frontend:3000
+    }
+
     # Route request Swagger UI ke Backend Rust
     handle /swagger-ui/* {
         reverse_proxy backend:8800

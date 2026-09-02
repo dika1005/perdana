@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Product, ProductAddon } from '../types/product';
 import { Category } from '../types/category';
 import { Customer } from '../types/customer';
@@ -77,51 +77,59 @@ export function usePOSState() {
   const [showCalcModal, setShowCalcModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
 
-  const fetchCatalog = async () => {
-    setLoading(true);
+  /**
+   * Data referensi (kategori, pelanggan, add-on, bahan) di-load SEKALI saat
+   * halaman POS dibuka — tidak ikut refetch setiap kali user mengetik search.
+   */
+  const fetchReferences = useCallback(async () => {
     try {
-      const [prodRes, catRes, custRes, addonRes, matRes] = await Promise.all([
-        productService.getProducts({ 
-          search: searchTerm || undefined, 
-          category_id: activeCategoryId 
-        }),
+      const [catRes, custRes, addonRes, matRes] = await Promise.all([
         productService.getCategories(),
         customerService.getCustomers(),
         productService.getAddons(),
         rawMaterialService.getRawMaterials(),
       ]);
-      setProducts(prodRes.data);
       setCategories(catRes);
       setCustomers(custRes.data);
       setAvailableAddons(addonRes);
       setRawMaterials(matRes.data);
     } catch (err: any) {
-      console.error('Failed to load POS catalog:', err);
+      console.error('Failed to load POS reference data:', err);
+    }
+  }, []);
+
+  /** Hanya produk yang ikut refetch saat search/filter kategori berubah. */
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const prodRes = await productService.getProducts({
+        search: searchTerm || undefined,
+        category_id: activeCategoryId,
+      });
+      setProducts(prodRes.data);
+    } catch (err: any) {
+      console.error('Failed to load POS products:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  }, [searchTerm, activeCategoryId]);
 
   useEffect(() => {
-    fetchCatalog();
-  }, [activeCategoryId]);
+    fetchReferences();
+  }, [fetchReferences]);
 
-  // Debounced search: fetch setelah user berhenti mengetik 300ms
+  // Debounced search: fetch setelah user berhenti mengetik 300ms.
+  // Di mount (searchTerm kosong) langsung fetch tanpa menunggu.
   useEffect(() => {
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(() => {
-      fetchCatalog();
-    }, 300);
-    return () => {
-      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    };
-  }, [searchTerm]);
+    const timer = setTimeout(() => {
+      fetchProducts();
+    }, searchTerm ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [fetchProducts, searchTerm]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCatalog();
+    fetchProducts();
   };
 
   const addToCart = (product: Product, override?: { price?: number; qty?: number; length?: number; width?: number }) => {

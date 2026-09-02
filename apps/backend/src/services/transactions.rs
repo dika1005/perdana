@@ -8,6 +8,8 @@
 //! - PROSES: active reservation becomes physical consumption.
 //! - Cancellation only releases reservations; consumed stock is never put back.
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use entity::enums::{OrderStatus, PaymentMethod, PaymentStatus, PriceType, RangePriceType};
 use entity::prelude::*;
@@ -306,6 +308,84 @@ async fn response_for(
     ))
 }
 
+/// Batch mapper: membangun response untuk banyak transaksi hanya dengan
+/// 4 query total (items, addons, materials, users) tanpa N+1 per baris.
+/// Dipakai oleh endpoint list; riwayat payment/event sengaja tidak disertakan
+/// (sama seperti `response_for(.., include_history=false)`).
+async fn responses_for_rows(
+    db: &DatabaseConnection,
+    rows: Vec<transactions::Model>,
+) -> Result<Vec<TransactionResponse>, AppError> {
+    if rows.is_empty() {
+        return Ok(vec![]);
+    }
+    let txn_ids: Vec<i32> = rows.iter().map(|row| row.id).collect();
+    let user_ids: Vec<i32> = rows.iter().filter_map(|row| row.created_by).collect();
+
+    let items = TransactionItem::find()
+        .filter(transaction_items::Column::TransactionId.is_in(txn_ids))
+        .order_by_asc(transaction_items::Column::Id)
+        .all(db)
+        .await?;
+    let item_ids: Vec<i32> = items.iter().map(|item| item.id).collect();
+    let addons = if item_ids.is_empty() {
+        vec![]
+    } else {
+        TransactionItemAddon::find()
+            .filter(transaction_item_addons::Column::TransactionItemId.is_in(item_ids.clone()))
+            .all(db)
+            .await?
+    };
+    let materials = if item_ids.is_empty() {
+        vec![]
+    } else {
+        TransactionItemMaterial::find()
+            .filter(transaction_item_materials::Column::TransactionItemId.is_in(item_ids))
+            .order_by_asc(transaction_item_materials::Column::Id)
+            .all(db)
+            .await?
+    };
+    let cashier_map: HashMap<i32, String> = if user_ids.is_empty() {
+        HashMap::new()
+    } else {
+        User::find()
+            .filter(entity::users::Column::Id.is_in(user_ids))
+            .all(db)
+            .await?
+            .into_iter()
+            .map(|user| (user.id, user.name))
+            .collect()
+    };
+
+    Ok(rows
+        .into_iter()
+        .map(|row| {
+            let cashier_name = row
+                .created_by
+                .as_ref()
+                .and_then(|uid| cashier_map.get(uid).cloned());
+            let mapped_items = items
+                .iter()
+                .filter(|item| item.transaction_id == row.id)
+                .map(|item| {
+                    let item_addons = addons
+                        .iter()
+                        .filter(|addon| addon.transaction_item_id == item.id)
+                        .map(map_item_addon)
+                        .collect();
+                    let item_materials = materials
+                        .iter()
+                        .filter(|material| material.transaction_item_id == item.id)
+                        .map(map_item_material)
+                        .collect();
+                    map_item(item, item_addons, item_materials)
+                })
+                .collect();
+            map_transaction(&row, cashier_name, Some(mapped_items), None, None)
+        })
+        .collect())
+}
+
 // ==========================================
 // READS
 // ==========================================
@@ -351,12 +431,10 @@ pub async fn list(
         select = select.filter(transactions::Column::OrderStatus.ne(OrderStatus::Batal));
     }
     let (rows, meta) = pagination.fetch(select, db).await?;
-    let mut output = Vec::with_capacity(rows.len());
-    for row in rows {
-        // List deliberately excludes payment/event history, but returns full
-        // item/material snapshots so tracking badges are always truthful.
-        output.push(response_for(db, row, false).await?);
-    }
+    // List deliberately excludes payment/event history, but returns full
+    // item/material snapshots so tracking badges are always truthful.
+    // Batched di sini untuk menghindari N+1 query per baris halaman.
+    let output = responses_for_rows(db, rows).await?;
     Ok((output, meta))
 }
 

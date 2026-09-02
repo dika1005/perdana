@@ -180,6 +180,13 @@ CREATE INDEX IF NOT EXISTS idx_expenses_date_cat ON expenses(expense_date, categ
 CREATE INDEX IF NOT EXISTS idx_products_cat ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_raw_materials_low_stock ON raw_materials(stock, min_stock_warning);
 
+-- Performance Indexes (tambahan): mempercepat laporan rentang tanggal,
+-- filter status pembayaran, rekap mutasi bahan, dan pencarian pelanggan.
+CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at);
+CREATE INDEX IF NOT EXISTS idx_transactions_payment_created ON transactions(payment_status, created_at);
+CREATE INDEX IF NOT EXISTS idx_mutations_material_created ON raw_material_mutations(raw_material_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name);
+
 -- Per-tanggal counter yang konsisten dengan backend `invoice_counter.rs`.
 CREATE TABLE IF NOT EXISTS invoice_counter (
     date_key VARCHAR(12) PRIMARY KEY,
