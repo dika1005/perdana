@@ -2,8 +2,8 @@ use actix_web::{HttpResponse, web};
 
 use crate::dto::{
     ApiResponse, DailySalesReportItem, DashboardSummaryResponse, InventoryMutationReportItem,
-    LowStockItem, MonthlyReportQuery, MonthlySalesReportItem, ReceivableItem, ReportDateQuery,
-    TopProductReportItem,
+    LedgerReconciliationReport, LowStockItem, MonthlyReportQuery, MonthlySalesReportItem,
+    ReceivableItem, ReportDateQuery, TopProductReportItem,
 };
 use crate::error::AppError;
 use crate::extractors::AuthUser;
@@ -184,4 +184,28 @@ pub async fn low_stock(
 ) -> Result<HttpResponse, AppError> {
     let data = report_service::get_low_stock(&state.db).await?;
     Ok(HttpResponse::Ok().json(ApiResponse::ok("Daftar bahan baku stok rendah", data)))
+}
+
+/// Rekonsiliasi saldo inventori terhadap ledger immutable.
+/// Khusus Super Admin: hasil dipakai untuk memverifikasi integritas data.
+#[utoipa::path(
+    get,
+    path = "/api/v1/reports/ledger-reconciliation",
+    responses(
+        (status = 200, description = "Laporan rekonsiliasi stok vs ledger (mismatched berisi bahan yang tidak konsisten)", body = ApiResponse<LedgerReconciliationReport>),
+        (status = 401, description = "Unauthorized")
+    ),
+    security(
+        ("bearer_auth" = []),
+        ("cookie_auth" = [])
+    ),
+    tag = "Reports & Analytics"
+)]
+pub async fn ledger_reconciliation(
+    state: web::Data<AppState>,
+    user: crate::extractors::SuperAdmin,
+) -> Result<HttpResponse, AppError> {
+    let _ = user;
+    let data = report_service::get_ledger_reconciliation(&state.db).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::ok("Rekonsiliasi ledger inventori", data)))
 }

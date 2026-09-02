@@ -18,9 +18,9 @@ use sea_orm::{
 };
 
 use crate::dto::{
-    DailySalesReportItem, DashboardSummaryResponse, InventoryMutationReportItem, LowStockItem,
-    MonthlyReportQuery, MonthlySalesReportItem, ReceivableItem, ReportDateQuery,
-    TopProductReportItem,
+    DailySalesReportItem, DashboardSummaryResponse, InventoryMutationReportItem,
+    LedgerReconciliationItem, LedgerReconciliationReport, LowStockItem, MonthlyReportQuery,
+    MonthlySalesReportItem, ReceivableItem, ReportDateQuery, TopProductReportItem,
 };
 use crate::error::AppError;
 
@@ -117,6 +117,13 @@ struct MutationAggRow {
     raw_material_id: i32,
     in_qty: Decimal,
     out_qty: Decimal,
+}
+
+#[derive(FromQueryResult)]
+struct LedgerAggregateRow {
+    raw_material_id: i32,
+    physical_total: Decimal,
+    reserved_total: Decimal,
 }
 
 /// `pay_amount` is cumulative tender and can include cash returned to the
@@ -657,4 +664,67 @@ pub async fn get_low_stock(
         .collect();
 
     Ok(result)
+}
+
+/// Rekonsiliasi saldo agregat (`raw_materials.stock` / `reserved_stock`)
+/// terhadap rekap ledger immutable (`inventory_ledger.physical_delta` /
+/// `reserved_delta`). Mismatch berarti ada jalur yang mengubah saldo di
+/// luar `inventory.rs` — harusnya tidak pernah terjadi.
+pub async fn get_ledger_reconciliation(
+    db: &DatabaseConnection,
+) -> Result<LedgerReconciliationReport, AppError> {
+    use entity::inventory_ledger;
+
+    let materials = RawMaterial::find().all(db).await?;
+
+    let ledger_rows = InventoryLedger::find()
+        .select_only()
+        .column(inventory_ledger::Column::RawMaterialId)
+        .column_as(
+            Expr::cust("COALESCE(SUM(inventory_ledger.physical_delta), 0)"),
+            "physical_total",
+        )
+        .column_as(
+            Expr::cust("COALESCE(SUM(inventory_ledger.reserved_delta), 0)"),
+            "reserved_total",
+        )
+        .group_by(inventory_ledger::Column::RawMaterialId)
+        .into_model::<LedgerAggregateRow>()
+        .all(db)
+        .await?;
+
+    let ledger_map: HashMap<i32, LedgerAggregateRow> = ledger_rows
+        .into_iter()
+        .map(|row| (row.raw_material_id, row))
+        .collect();
+
+    let mut mismatched = Vec::new();
+    for m in &materials {
+        let (ledger_stock, ledger_reserved) = match ledger_map.get(&m.id) {
+            Some(row) => (row.physical_total, row.reserved_total),
+            None => (Decimal::ZERO, Decimal::ZERO),
+        };
+        let stock_ok = m.stock == ledger_stock;
+        let reserved_ok = m.reserved_stock == ledger_reserved;
+        if !stock_ok || !reserved_ok {
+            mismatched.push(LedgerReconciliationItem {
+                raw_material_id: m.id,
+                name: m.name.clone(),
+                unit: m.unit.clone(),
+                recorded_stock: m.stock,
+                ledger_stock,
+                recorded_reserved: m.reserved_stock,
+                ledger_reserved,
+                stock_ok,
+                reserved_ok,
+            });
+        }
+    }
+
+    let checked = materials.len() as i64;
+    Ok(LedgerReconciliationReport {
+        checked_materials: checked,
+        all_consistent: mismatched.is_empty(),
+        mismatched,
+    })
 }

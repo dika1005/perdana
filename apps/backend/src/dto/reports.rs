@@ -139,3 +139,31 @@ pub struct LowStockItem {
     pub min_stock_warning: Decimal,
     pub category_name: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct LedgerReconciliationItem {
+    pub raw_material_id: i32,
+    pub name: String,
+    pub unit: String,
+    /// Saldo fisik menurut kolom agregat `raw_materials.stock`.
+    #[schema(value_type = f64)]
+    pub recorded_stock: Decimal,
+    /// Saldo fisik menurut rekap ledger immutable.
+    #[schema(value_type = f64)]
+    pub ledger_stock: Decimal,
+    /// Saldo terpesan menurut kolom agregat `raw_materials.reserved_stock`.
+    #[schema(value_type = f64)]
+    pub recorded_reserved: Decimal,
+    /// Saldo terpesan menurut rekap ledger.
+    #[schema(value_type = f64)]
+    pub ledger_reserved: Decimal,
+    pub stock_ok: bool,
+    pub reserved_ok: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct LedgerReconciliationReport {
+    pub checked_materials: i64,
+    pub mismatched: Vec<LedgerReconciliationItem>,
+    pub all_consistent: bool,
+}

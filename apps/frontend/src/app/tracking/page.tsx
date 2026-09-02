@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Clock, AlertCircle, CheckCircle2, PackageCheck, RefreshCw } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
@@ -22,10 +23,6 @@ import { ReceiptModal } from '../../components/pos/ReceiptModal';
 
 export default function JobTrackingPage() {
   const { showAlert, showToast } = useAlert();
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Modals
   const [settleModal, setSettleModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
@@ -38,27 +35,47 @@ export default function JobTrackingPage() {
   const [cancelTarget, setCancelTarget] = useState<any | null>(null);
   const [submittingCancel, setSubmittingCancel] = useState(false);
 
-  const fetchJobs = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [res, custRes] = await Promise.all([
-        transactionService.getTransactions({ per_page: 100 }),
-        customerService.getCustomers(),
-      ]);
-      setTransactions(res.data);
-      setCustomers(custRes.data);
-    } catch (err: any) {
-      console.error('Failed to load tracking data:', err);
-      setError(err?.response?.data?.message || 'Gagal memuat data antrian produksi');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  /**
+   * Antrian produksi hanya butuh pesanan yang sedang berjalan (ANTRIAN,
+   * PROSES, SELESAI) dan yang baru selesai diambil (untuk arsip visual).
+   * Di-fetch via React Query dengan polling 30 detik agar pesanan baru
+   * dari kasir muncul tanpa reload manual. Filter per-status mencegah
+   * halaman kehabisan data saat total riwayat melewati 100 baris.
+   */
+  // Catatan: hooks dipanggil berurutan tanpa kondisi (aturan React hooks).
+  const jobsQueries = [
+    { status: 'ANTRIAN' as OrderStatus, interval: 30_000 },
+    { status: 'PROSES' as OrderStatus, interval: 30_000 },
+    { status: 'SELESAI' as OrderStatus, interval: 30_000 },
+    { status: 'DIAMBIL' as OrderStatus, interval: 60_000 },
+  ].map(({ status, interval }) =>
+    useQuery({
+      queryKey: ['tracking', status],
+      queryFn: () => transactionService.getTransactions({ per_page: 100, order_status: status }),
+      refetchInterval: interval,
+    })
+  );
 
-  useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+  const customersQuery = useQuery({
+    queryKey: ['customers'],
+    queryFn: () => customerService.getCustomers(),
+    staleTime: 5 * 60_000,
+  });
+
+  const transactions: any[] = jobsQueries.flatMap(q => q.data?.data || []);
+  const customers = customersQuery.data?.data || [];
+  const loading = jobsQueries.some(q => q.isPending) || customersQuery.isPending;
+  const jobError = jobsQueries.find(q => q.error);
+  const error = jobError
+    ? ((jobError.error as any)?.response?.data?.message || 'Gagal memuat data antrian produksi')
+    : null;
+
+  const refetchAll = useCallback(() => {
+    jobsQueries.forEach(q => q.refetch());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobsQueries.length]);
+
+  const fetchJobs = refetchAll;
 
   const handleAdvanceStatus = async (id: number, currentStatus: OrderStatus) => {
     const statusFlow: Record<OrderStatus, OrderStatus | null> = {
@@ -196,7 +213,7 @@ export default function JobTrackingPage() {
         title="Antrian & Pelacakan Produksi"
         subtitle="Pantau status pengerjaan pesanan cetak dan cetak SPK untuk operator produksi."
         actions={
-          <Button variant="secondary" onClick={fetchJobs} disabled={loading}>
+          <Button variant="secondary" onClick={refetchAll} disabled={loading}>
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Segarkan Antrian
           </Button>

@@ -207,6 +207,9 @@ pub async fn tracking(
 
     let trans_model = Transaction::find()
         .filter(condition)
+        // Pesanan batal tidak perlu ditampilkan ke pelanggan: mereka hanya
+        // melihat pesanan aktif/riwayat pengambilan yang valid.
+        .filter(transactions::Column::OrderStatus.ne(OrderStatus::Batal))
         .order_by_desc(transactions::Column::Id)
         .one(&state.db)
         .await?

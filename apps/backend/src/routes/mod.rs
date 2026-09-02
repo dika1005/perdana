@@ -155,7 +155,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     web::get().to(reports::inventory_mutations),
                 )
                 .route("/receivables", web::get().to(reports::receivables))
-                .route("/low-stock", web::get().to(reports::low_stock)),
+                .route("/low-stock", web::get().to(reports::low_stock))
+                .route(
+                    "/ledger-reconciliation",
+                    web::get().to(reports::ledger_reconciliation),
+                ),
         )
         .service(
             web::scope("/ai")

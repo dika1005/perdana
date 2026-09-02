@@ -44,8 +44,23 @@ export function cartItemMinOrderIssue(item: CartItem): string | null {
   return null;
 }
 
+const CART_STORAGE_KEY = 'perdana-pos-cart-v1';
+
+/** Ambil cart tersimpan dari localStorage (draft tahan refresh/tutup tab). */
+function loadSavedCart(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export function usePOSState() {
-  const { showAlert, showToast } = useAlert();
+  const { showAlert, showConfirm, showToast } = useAlert();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -54,8 +69,9 @@ export function usePOSState() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Cart State
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Cart State — draft cart dipulihkan dari localStorage agar keranjang
+  // kasir tidak hilang saat halaman ter-refresh atau browser ditutup.
+  const [cart, setCart] = useState<CartItem[]>(() => loadSavedCart());
   const [availableAddons, setAvailableAddons] = useState<ProductAddon[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customCustomerName, setCustomCustomerName] = useState('');
@@ -76,6 +92,20 @@ export function usePOSState() {
   // Tools Modal State
   const [showCalcModal, setShowCalcModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
+
+  // Persist draft cart setiap perubahan (termasuk penghapusan saat checkout sukses).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (cart.length === 0) {
+        window.localStorage.removeItem(CART_STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      }
+    } catch {
+      // Kuota penuh / private mode: cart tetap berfungsi tanpa persistensi.
+    }
+  }, [cart]);
 
   /**
    * Data referensi (kategori, pelanggan, add-on, bahan) di-load SEKALI saat
@@ -361,6 +391,31 @@ export function usePOSState() {
         type: 'warning',
       });
       return;
+    }
+
+    // Peringatan eksplisit bila ada bahan yang akan berada di bawah ambang
+    // minimum setelah kebutuhan pesanan ini. Kasir bisa memilih lanjut atau
+    // membatalkan — mencegah reservasi "mengambil" stok order lain diam-diam.
+    const lowStockWarnings = [...requiredByMaterial.entries()]
+      .map(([materialId, totalQty]) => {
+        const mat = rawMaterials.find(r => r.id === materialId);
+        if (!mat) return null;
+        const available = Number(mat.available_stock) || 0;
+        const min = Number(mat.min_stock_warning) || 0;
+        const after = available - totalQty;
+        return after <= min && min > 0
+          ? `"${mat.name}": sisa akan ${after} ${mat.unit} (minimum ${min} ${mat.unit}).`
+          : null;
+      })
+      .filter((msg): msg is string => msg !== null);
+    if (lowStockWarnings.length > 0) {
+      const proceed = await showConfirm({
+        title: 'Stok Akan Di Bawah Minimum',
+        message: `Pesanan ini membuat stok berikut turun ke ambang minimum:\n• ${lowStockWarnings.join('\n• ')}\n\nLanjutkan checkout?`,
+        type: 'warning',
+        confirmText: 'Ya, Lanjutkan',
+      });
+      if (!proceed) return;
     }
 
     setPayAmount(total);
