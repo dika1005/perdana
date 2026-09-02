@@ -330,6 +330,39 @@ export function usePOSState() {
       }
     }
 
+    // Validasi awal total kebutuhan bahan lintas item terhadap stok tersedia.
+    // Server tetap sumber kebenaran (reservasi atomik), ini hanya agar kasir
+    // mendapat umpan balik cepat sebelum request dikirim.
+    const requiredByMaterial = new Map<number, number>();
+    for (const item of cart) {
+      for (const m of item.materials || []) {
+        if (m.raw_material_id > 0 && m.material_qty > 0) {
+          requiredByMaterial.set(
+            m.raw_material_id,
+            (requiredByMaterial.get(m.raw_material_id) || 0) + m.material_qty
+          );
+        }
+      }
+    }
+    const shortages = [...requiredByMaterial.entries()]
+      .map(([materialId, totalQty]) => {
+        const mat = rawMaterials.find(r => r.id === materialId);
+        if (!mat) return null;
+        const available = Number(mat.available_stock) || 0;
+        return totalQty > available
+          ? `"${mat.name}": butuh ${totalQty} ${mat.unit}, tersedia ${available} ${mat.unit}.`
+          : null;
+      })
+      .filter((msg): msg is string => msg !== null);
+    if (shortages.length > 0) {
+      await showAlert({
+        title: 'Stok Bahan Tidak Cukup',
+        message: `Kebutuhan bahan melebihi stok tersedia:\n• ${shortages.join('\n• ')}`,
+        type: 'warning',
+      });
+      return;
+    }
+
     setPayAmount(total);
     checkoutKeyRef.current = crypto.randomUUID();
     setShowCheckoutModal(true);
@@ -393,6 +426,11 @@ export function usePOSState() {
       setPaymentMethod('CASH');
       setEstimatedDoneAt('');
       checkoutKeyRef.current = null;
+
+      // Segarkan daftar produk & saldo stok bahan agar tampilan "sisa stok"
+      // mencerminkan reservasi/konsumsi yang baru saja terjadi.
+      fetchProducts();
+      fetchReferences();
     } catch (err: any) {
       console.error('Transaction creation error:', err);
       const errData = err?.response?.data;
