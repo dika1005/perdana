@@ -17,10 +17,26 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
   storeName = 'Perdana Printing',
   storePhone
 }) => {
-  const isCustom = product.price_type === 'CUSTOM' || product.unit_name?.toLowerCase().includes('meter');
+  // Label harga mengikuti cara produk dijual agar tidak menyesatkan:
+  //  - AREA (m²)   -> "Harga per m²", badge "Ukuran Bebas (P×L)"
+  //  - METER       -> "Harga per meter", badge "Ukuran Bebas (P×L)"
+  //  - CUSTOM      -> "Hubungi Kami" (harga nego, jangan tampilkan angka placeholder)
+  //  - RANGE       -> "Rentang Harga: min - max"
+  //  - selain itu  -> "Harga:" normal
+  const unit = (product.unit_name || 'pcs').trim().toLowerCase();
+  const isAreaUnit = ['m2', 'm²', 'sqm', 'meter_persegi', 'meter persegi'].includes(unit);
+  const isMeter = unit === 'meter' || unit === 'm';
+  const isCustomSize = isAreaUnit || isMeter;
+  const isCustomPrice = product.price_type === 'CUSTOM';
 
   const waMessage = `Halo ${storeName},\n\nSaya ingin pesan / konsultasi produk:\n• *${product.name}*\n\nMohon info harga dan cara kirim file desain. Terima kasih!`;
   const orderUrl = createWaLink(storePhone, waMessage);
+
+  const priceLabel = product.price_type === 'RANGE'
+    ? 'Rentang Harga:'
+    : isAreaUnit ? 'Harga per m²:'
+    : isMeter ? 'Harga per meter:'
+    : 'Harga:';
 
   return (
     <div className="glass-card glass-card-hover p-5 sm:p-6 rounded-2xl flex flex-col justify-between group">
@@ -32,9 +48,9 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
               {categoryName}
             </span>
           )}
-          {isCustom && (
+          {(isCustomSize || isCustomPrice) && (
             <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/40">
-              Ukuran Bebas (P×L)
+              {isCustomSize ? 'Ukuran Bebas (P×L)' : 'Harga Nego'}
             </span>
           )}
           {product.has_variants && (
@@ -59,10 +75,17 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
               {formatRupiah(product.min_price)} <span className="text-slate-400 font-normal text-xs">-</span> {formatRupiah(product.max_price)}
             </div>
           </div>
+        ) : isCustomPrice ? (
+          <div className="mb-2.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Harga:</span>
+            <div className="text-amber-600 dark:text-amber-400 font-extrabold text-base">
+              Hubungi Kami
+            </div>
+          </div>
         ) : (
           <div className="mb-2.5">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-              {isCustom ? 'Harga per m²:' : 'Harga:'}
+              {priceLabel}
             </span>
             <div className="text-blue-600 dark:text-blue-400 font-extrabold text-lg">
               {formatRupiah(product.default_price)}

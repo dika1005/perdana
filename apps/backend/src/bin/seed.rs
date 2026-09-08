@@ -37,7 +37,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db: DatabaseConnection = Database::connect(&database_url).await?;
 
     println!("\n🧹 Membersihkan data lama di database...");
-    db.execute(Statement::from_string(DbBackend::MySql, "SET FOREIGN_KEY_CHECKS = 0;")).await?;
+    // PENTING: seluruh cleanup berjalan dalam SATU transaksi agar dijamin
+    // memakai koneksi yang sama. `SET FOREIGN_KEY_CHECKS` hanya berlaku
+    // per-koneksi; kalau statement dilepas ke pool, DELETE bisa gagal karena
+    // FK dan (dulu) errornya ditelan `let _ =` sehingga data lama menumpuk.
+    let txn = db.begin().await?;
+    txn.execute(Statement::from_string(DbBackend::MySql, "SET FOREIGN_KEY_CHECKS = 0;")).await?;
     // Production-domain tables (order matters for FK)
     for table in [
         "audit_logs", "production_events", "payments", "inventory_ledger",
@@ -49,9 +54,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "raw_material_categories", "product_addons", "product_variants",
         "products", "product_categories", "customers", "users",
     ] {
-        let _ = db.execute(Statement::from_string(DbBackend::MySql, format!("DELETE FROM {};", table))).await;
+        txn.execute(Statement::from_string(DbBackend::MySql, format!("DELETE FROM {};", table))).await?;
     }
-    db.execute(Statement::from_string(DbBackend::MySql, "SET FOREIGN_KEY_CHECKS = 1;")).await?;
+    txn.execute(Statement::from_string(DbBackend::MySql, "SET FOREIGN_KEY_CHECKS = 1;")).await?;
+    txn.commit().await?;
 
     // Migrasi Skema Tabel jika kolom category_id belum ada pada product_addons
     let _ = db.execute(Statement::from_string(DbBackend::MySql, "ALTER TABLE product_addons ADD COLUMN category_id INT NULL DEFAULT NULL;")).await;

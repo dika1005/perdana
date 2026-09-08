@@ -81,18 +81,32 @@ export function useCatalogFilter(catalog: PublicCatalog | null) {
     }
 
     // Sort
+    // Harga CUSTOM (nego) tidak punya angka pembanding yang jujur —
+    // selalu diletakkan paling akhir pada pengurutan berbasis harga.
+    const priceOf = (p: PublicProduct, edge: 'min' | 'max'): number | null =>
+      p.price_type === 'CUSTOM'
+        ? null
+        : p.price_type === 'RANGE'
+          ? (edge === 'min' ? p.min_price : p.max_price)
+          : p.default_price;
     switch (sortBy) {
       case 'price_asc':
         list.sort((a, b) => {
-          const priceA = a.price_type === 'RANGE' ? a.min_price : a.default_price;
-          const priceB = b.price_type === 'RANGE' ? b.min_price : b.default_price;
+          const priceA = priceOf(a, 'min');
+          const priceB = priceOf(b, 'min');
+          if (priceA === null && priceB === null) return 0;
+          if (priceA === null) return 1;
+          if (priceB === null) return -1;
           return priceA - priceB;
         });
         break;
       case 'price_desc':
         list.sort((a, b) => {
-          const priceA = a.price_type === 'RANGE' ? a.max_price : a.default_price;
-          const priceB = b.price_type === 'RANGE' ? b.max_price : b.default_price;
+          const priceA = priceOf(a, 'max');
+          const priceB = priceOf(b, 'max');
+          if (priceA === null && priceB === null) return 0;
+          if (priceA === null) return 1;
+          if (priceB === null) return -1;
           return priceB - priceA;
         });
         break;
@@ -104,9 +118,10 @@ export function useCatalogFilter(catalog: PublicCatalog | null) {
         break;
       case 'custom_size':
         list.sort((a, b) => {
-          const aIsCustom = a.price_type === 'CUSTOM' || a.unit_name?.toLowerCase().includes('meter') ? 1 : 0;
-          const bIsCustom = b.price_type === 'CUSTOM' || b.unit_name?.toLowerCase().includes('meter') ? 1 : 0;
-          return bIsCustom - aIsCustom;
+          const unitOf = (p: PublicProduct) => (p.unit_name || '').trim().toLowerCase();
+          const aIsCustomSize = ['m2', 'm²', 'sqm', 'meter_persegi', 'meter persegi'].includes(unitOf(a)) || unitOf(a) === 'meter' || unitOf(a) === 'm' || a.price_type === 'CUSTOM' ? 1 : 0;
+          const bIsCustomSize = ['m2', 'm²', 'sqm', 'meter_persegi', 'meter persegi'].includes(unitOf(b)) || unitOf(b) === 'meter' || unitOf(b) === 'm' || b.price_type === 'CUSTOM' ? 1 : 0;
+          return bIsCustomSize - aIsCustomSize;
         });
         break;
       default:
