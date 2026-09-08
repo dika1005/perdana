@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CreditCard, MessageSquare, ArrowRight, Printer, FileText, X } from 'lucide-react';
+import { CreditCard, MessageSquare, ArrowRight, FileText, X } from 'lucide-react';
 import { OrderStatus } from '../../types/transaction';
 import { Customer } from '../../types/customer';
 import { formatRupiah } from '../../utils/format';
@@ -14,7 +14,6 @@ interface TrackingCardProps {
   onOpenSettle: (job: any) => void;
   onSendWhatsApp: (job: any) => void;
   onAdvanceStatus: (id: number, currentStatus: OrderStatus) => void;
-  onPrintSpk: (job: any) => void;
   onOpenDetail: (job: any) => void;
   onCancel?: (job: any) => void;
 }
@@ -34,7 +33,6 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
   onOpenSettle,
   onSendWhatsApp,
   onAdvanceStatus,
-  onPrintSpk,
   onOpenDetail,
   onCancel,
 }) => {
@@ -116,18 +114,6 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
       
       {/* Action Bar */}
       <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 dark:border-slate-800/80 pt-2">
-        {/* Tombol Cetak SPK (Hanya ada di ANTRIAN dan PROSES) */}
-        {(status === 'ANTRIAN' || status === 'PROSES') && (
-          <button
-            type="button"
-            onClick={() => onPrintSpk(job)}
-            className="p-1.5 rounded-lg skeuo-button text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors"
-            title="Cetak SPK / Tiket Kerja Operator"
-          >
-            <Printer className="w-3.5 h-3.5" />
-          </button>
-        )}
-
         {/* Tombol Batalkan Pesanan (khusus ANTRIAN) */}
         {status === 'ANTRIAN' && onCancel && (
           <button

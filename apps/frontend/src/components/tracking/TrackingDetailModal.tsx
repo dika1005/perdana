@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import {
   FileText,
-  Printer,
   CreditCard,
   Layers,
   DollarSign,
@@ -21,7 +20,6 @@ interface TrackingDetailModalProps {
   job: TransactionDetail | any | null;
   customers: Customer[];
   onClose: () => void;
-  onPrintSpk: (job: any) => void;
   onPrintReceipt: (invoiceData: any) => void;
   onOpenSettle?: (job: any) => void;
 }
@@ -31,7 +29,6 @@ export const TrackingDetailModal: React.FC<TrackingDetailModalProps> = ({
   job,
   customers,
   onClose,
-  onPrintSpk,
   onPrintReceipt,
   onOpenSettle,
 }) => {
@@ -96,21 +93,6 @@ export const TrackingDetailModal: React.FC<TrackingDetailModalProps> = ({
           </Button>
 
           <div className="ml-auto flex flex-wrap gap-2">
-            {/* Tombol Cetak SPK (Hanya jika belum selesai diambil) */}
-            {job.order_status !== 'DIAMBIL' && (
-              <Button
-                variant="secondary"
-                className="text-blue-600 dark:text-blue-400"
-                onClick={() => {
-                  onClose();
-                  onPrintSpk(job);
-                }}
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Cetak SPK Kerja</span>
-              </Button>
-            )}
-
             {/* Tombol Cetak Struk Nota Kasir */}
             <Button
               variant="secondary"

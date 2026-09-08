@@ -16,7 +16,6 @@ interface TrackingColumnProps {
   onOpenSettle: (job: any) => void;
   onSendWhatsApp: (job: any) => void;
   onAdvanceStatus: (id: number, currentStatus: OrderStatus) => void;
-  onPrintSpk: (job: any) => void;
   onOpenDetail: (job: any) => void;
   onCancel?: (job: any) => void;
 }
@@ -32,7 +31,6 @@ export const TrackingColumn: React.FC<TrackingColumnProps> = ({
   onOpenSettle,
   onSendWhatsApp,
   onAdvanceStatus,
-  onPrintSpk,
   onOpenDetail,
   onCancel,
 }) => {
@@ -66,7 +64,6 @@ export const TrackingColumn: React.FC<TrackingColumnProps> = ({
               onOpenSettle={onOpenSettle}
               onSendWhatsApp={onSendWhatsApp}
               onAdvanceStatus={onAdvanceStatus}
-              onPrintSpk={onPrintSpk}
               onOpenDetail={onOpenDetail}
               onCancel={onCancel}
             />

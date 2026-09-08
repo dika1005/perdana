@@ -17,7 +17,6 @@ import { TrackingColumn } from '../../components/tracking/TrackingColumn';
 import { TrackingSettleModal } from '../../components/tracking/TrackingSettleModal';
 import { TrackingWhatsAppModal, generateWhatsAppMessage } from '../../components/tracking/TrackingWhatsAppModal';
 import { TrackingDetailModal } from '../../components/tracking/TrackingDetailModal';
-import { JobTicketModal } from '../../components/tracking/JobTicketModal';
 import { CancelTransactionModal } from '../../components/transactions/CancelTransactionModal';
 import { ReceiptModal } from '../../components/pos/ReceiptModal';
 
@@ -29,7 +28,6 @@ export default function JobTrackingPage() {
   const [settlePaymentMethod, setSettlePaymentMethod] = useState<PaymentMethod>('CASH');
   const [submittingSettle, setSubmittingSettle] = useState(false);
   const [waModal, setWaModal] = useState<{ open: boolean; job: any | null; phone: string }>({ open: false, job: null, phone: '' });
-  const [spkModal, setSpkModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
   const [detailModal, setDetailModal] = useState<{ open: boolean; job: any | null }>({ open: false, job: null });
   const [receiptModal, setReceiptModal] = useState<{ open: boolean; invoiceData: any | null }>({ open: false, invoiceData: null });
   const [cancelTarget, setCancelTarget] = useState<any | null>(null);
@@ -154,15 +152,6 @@ export default function JobTrackingPage() {
     setWaModal({ open: false, job: null, phone: '' });
   };
 
-  const handlePrintSpk = async (job: any) => {
-    try {
-      const fullJob = await transactionService.getTransactionById(job.id);
-      setSpkModal({ open: true, job: fullJob || job });
-    } catch {
-      setSpkModal({ open: true, job });
-    }
-  };
-
   const handleOpenDetail = async (job: any) => {
     try {
       const fullJob = await transactionService.getTransactionById(job.id);
@@ -211,7 +200,7 @@ export default function JobTrackingPage() {
     <DashboardLayout>
       <PageHeader
         title="Antrian & Pelacakan Produksi"
-        subtitle="Pantau status pengerjaan pesanan cetak dan cetak SPK untuk operator produksi."
+        subtitle="Pantau status pengerjaan pesanan cetak di kolom antrian produksi."
         actions={
           <Button variant="secondary" onClick={refetchAll} disabled={loading}>
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -235,7 +224,6 @@ export default function JobTrackingPage() {
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
-          onPrintSpk={handlePrintSpk}
           onOpenDetail={handleOpenDetail}
           onCancel={setCancelTarget}
         />
@@ -251,7 +239,6 @@ export default function JobTrackingPage() {
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
-          onPrintSpk={handlePrintSpk}
           onOpenDetail={handleOpenDetail}
         />
 
@@ -266,7 +253,6 @@ export default function JobTrackingPage() {
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
-          onPrintSpk={handlePrintSpk}
           onOpenDetail={handleOpenDetail}
         />
 
@@ -281,7 +267,6 @@ export default function JobTrackingPage() {
           onOpenSettle={handleOpenSettle}
           onSendWhatsApp={handleSendWhatsApp}
           onAdvanceStatus={handleAdvanceStatus}
-          onPrintSpk={handlePrintSpk}
           onOpenDetail={handleOpenDetail}
         />
       </div>
@@ -307,21 +292,12 @@ export default function JobTrackingPage() {
         onSubmit={handleSendWhatsAppSubmit}
       />
 
-      {/* SPK / Tiket Kerja Operator Modal */}
-      <JobTicketModal
-        isOpen={spkModal.open}
-        job={spkModal.job}
-        customers={customers}
-        onClose={() => setSpkModal({ open: false, job: null })}
-      />
-
       {/* Detail Pesanan & Cek Nota Modal */}
       <TrackingDetailModal
         isOpen={detailModal.open}
         job={detailModal.job}
         customers={customers}
         onClose={() => setDetailModal({ open: false, job: null })}
-        onPrintSpk={handlePrintSpk}
         onPrintReceipt={handlePrintReceipt}
         onOpenSettle={handleOpenSettle}
       />
