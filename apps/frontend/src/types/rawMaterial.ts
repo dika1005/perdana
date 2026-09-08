@@ -37,7 +37,19 @@ export interface CreateMutationPayload {
   raw_material_id: number;
   type: MutationType;
   qty: number;
+  /** Satuan input; bila berbeda dari satuan dasar, server mengonversi via master konversi/kemasan. */
+  unit?: string;
   notes?: string;
+}
+
+export interface UomConversion {
+  id: number;
+  raw_material_id: number;
+  from_unit: string;
+  to_unit: string;
+  factor: number;
+  notes?: string | null;
+  created_at: string;
 }
 
 export interface MutationItem {

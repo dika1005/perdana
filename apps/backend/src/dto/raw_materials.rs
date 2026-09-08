@@ -135,3 +135,15 @@ pub struct MutationResponse {
     pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct UomConversionResponse {
+    pub id: i32,
+    pub raw_material_id: i32,
+    pub from_unit: String,
+    pub to_unit: String,
+    #[schema(value_type = f64)]
+    pub factor: Decimal,
+    pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
+}

@@ -93,7 +93,10 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
               </tr>
             ) : (
               materials.map(item => {
-                const isRollOrArea = (item.unit || '').toLowerCase().includes('meter') || (item.unit || '').toLowerCase().includes('m2') || (item.unit || '').toLowerCase().includes('sqm') || Number(item.roll_width || 0) > 0;
+                // Tombol "Roll" hanya untuk bahan berbasis luas (m²) — lot roll
+                // memang hanya berlaku di sana (guard backend receive_lot).
+                const normalizedUnit = (item.unit || '').trim().toLowerCase();
+                const isRollOrArea = ['m2', 'm²', 'sqm', 'meter_persegi', 'meter persegi'].includes(normalizedUnit) || Number(item.roll_width || 0) > 0;
                 const stockQty = Number(item.stock) || 0;
                 const pkgSize = Number(item.package_size || 0);
                 const packageNote = item.package_unit && pkgSize > 0

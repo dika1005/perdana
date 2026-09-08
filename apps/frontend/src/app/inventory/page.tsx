@@ -29,7 +29,10 @@ export default function InventoryPage() {
   // Modal Restock (Mutasi IN)
   const [showRestock, setShowRestock] = useState(false);
   const [selectedItem, setSelectedItem] = useState<RawMaterial | null>(null);
-  const [mutationQty, setMutationQty] = useState<number>(10);
+  const [mutationQty, setMutationQty] = useState<number>(1);
+  // Satuan input restock (satuan dasar atau kemasan). Penggalian dilakukan
+  // di server (to_base_unit) dari master konversi — bukan di klien.
+  const [mutationUnit, setMutationUnit] = useState<string>('');
   const [mutationNotes, setMutationNotes] = useState('');
   const [submittingMutation, setSubmittingMutation] = useState(false);
 
@@ -87,7 +90,8 @@ export default function InventoryPage() {
 
   const handleOpenRestock = (item: RawMaterial) => {
     setSelectedItem(item);
-    setMutationQty(10);
+    setMutationQty(1);
+    setMutationUnit(item.unit);
     setMutationNotes('');
     setShowRestock(true);
   };
@@ -106,14 +110,24 @@ export default function InventoryPage() {
     if (!selectedItem || mutationQty <= 0) return;
     setSubmittingMutation(true);
     try {
-      await rawMaterialService.createMutation({
+      const created = await rawMaterialService.createMutation({
         raw_material_id: selectedItem.id,
         type: 'IN',
         qty: mutationQty,
+        // Satuan dikirim ke server; konversi ke satuan dasar dihitung di
+        // backend dari master kemasan/konversi (satu sumber kebenaran).
+        unit: mutationUnit || selectedItem.unit,
         notes: mutationNotes || undefined,
       });
       setShowRestock(false);
-      showToast(`Stok "${selectedItem.name}" berhasil ditambahkan (+${mutationQty} ${selectedItem.unit})!`, 'success');
+      const baseQty = Number(created?.qty ?? mutationQty);
+      const converted = baseQty !== Number(mutationQty);
+      showToast(
+        converted
+          ? `Stok "${selectedItem.name}" berhasil ditambahkan (${mutationQty} ${mutationUnit} = +${baseQty.toLocaleString('id-ID')} ${selectedItem.unit})!`
+          : `Stok "${selectedItem.name}" berhasil ditambahkan (+${baseQty.toLocaleString('id-ID')} ${selectedItem.unit})!`,
+        'success',
+      );
       await fetchInventory();
     } catch (err: any) {
       await showAlert({
@@ -207,6 +221,8 @@ export default function InventoryPage() {
         selectedItem={selectedItem}
         mutationQty={mutationQty}
         onChangeQty={setMutationQty}
+        mutationUnit={mutationUnit}
+        onChangeUnit={setMutationUnit}
         mutationNotes={mutationNotes}
         onChangeNotes={setMutationNotes}
         submitting={submittingMutation}

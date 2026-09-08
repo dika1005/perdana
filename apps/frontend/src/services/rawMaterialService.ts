@@ -7,6 +7,7 @@ import {
   MaterialLot, 
   MutationItem, 
   RawMaterial, 
+  UomConversion,
   UpsertUomConversionPayload 
 } from '../types/rawMaterial';
 
@@ -48,6 +49,11 @@ export const rawMaterialService = {
 
   getLots: async (rawMaterialId: number) => {
     const res = await apiClient.get<ApiResponse<MaterialLot[]>>(`/raw-materials/${rawMaterialId}/lots`);
+    return res.data.data;
+  },
+
+  getUomConversions: async (rawMaterialId: number) => {
+    const res = await apiClient.get<ApiResponse<UomConversion[]>>(`/raw-materials/${rawMaterialId}/uom-conversions`);
     return res.data.data;
   },
 

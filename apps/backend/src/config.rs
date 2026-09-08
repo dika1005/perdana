@@ -194,6 +194,18 @@ pub async fn connect_db(database_url: &str) -> Result<DatabaseConnection, DbErr>
     let _ = db.execute_unprepared("ALTER TABLE raw_materials ADD COLUMN package_size DECIMAL(12,4) NULL DEFAULT NULL AFTER package_unit;").await;
     let _ = db.execute_unprepared("ALTER TABLE products ADD COLUMN uses_material TINYINT(1) NOT NULL DEFAULT 0 AFTER has_variants;").await;
 
+    // Koreksi data idempoten (lihat requirements/migrations/0006_fix_amplop_package_size.sql).
+    // Seed lama menyalin pola kertas (rim = 500) ke baris Amplop sehingga faktor
+    // kemasan box & konversi box->pcs terekam 500, padahal label varian master
+    // "Isi 100 / Box". Perbaikan hanya meluruskan faktor konversi ke depan;
+    // baris yang sudah dikoreksi owner (faktor bukan 500) tidak tersentuh.
+    let _ = db.execute_unprepared(
+        "UPDATE raw_materials SET package_size = 100 WHERE unit = 'pcs' AND package_unit = 'box' AND package_size = 500 AND name LIKE 'Amplop%';",
+    ).await;
+    let _ = db.execute_unprepared(
+        "UPDATE material_uom_conversions c JOIN raw_materials m ON m.id = c.raw_material_id SET c.factor = 100, c.notes = '1 box = 100 pcs amplop' WHERE c.from_unit = 'box' AND c.to_unit = 'pcs' AND c.factor = 500 AND m.name LIKE 'Amplop%';",
+    ).await;
+
     // Fondasi inventori produksi (reservation, ledger, payments, audit, dan
     // lot/offcut) dibuat secara additive agar data lama tidak dihapus saat
     // aplikasi diperbarui.

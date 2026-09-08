@@ -10,6 +10,8 @@ interface InventoryRestockModalProps {
   selectedItem: RawMaterial | null;
   mutationQty: number;
   onChangeQty: (val: number) => void;
+  mutationUnit: string;
+  onChangeUnit: (val: string) => void;
   mutationNotes: string;
   onChangeNotes: (val: string) => void;
   submitting: boolean;
@@ -17,68 +19,81 @@ interface InventoryRestockModalProps {
   onSubmit: () => void;
 }
 
+const fmt = (v: number) => Number(v).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+
 export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
   isOpen,
   selectedItem,
   mutationQty,
   onChangeQty,
+  mutationUnit,
+  onChangeUnit,
   mutationNotes,
   onChangeNotes,
   submitting,
   onClose,
   onSubmit,
 }) => {
-  const unit = selectedItem?.unit?.toLowerCase() || '';
-  const variant = (selectedItem?.variant || '').toLowerCase();
+  // Master kemasan (package_unit/package_size) adalah SATU-SATUNYA sumber
+  // konversi. Penggandaian dilakukan di SERVER (to_base_unit) saat submit —
+  // klien hanya mengirim jumlah kemasan + nama satuannya. Ini mencegah
+  // konversi ganda dan faktor heuristik yang meleset (bug box 500 vs 100).
+  const packageUnit = (selectedItem?.package_unit || '').trim();
+  const packageSize = Number(selectedItem?.package_size || 0);
+  const hasMasterPackage = !!packageUnit && packageSize > 0;
 
-  // Tentukan apakah bahan ini lazimnya dibeli per Rim / per Roll / per Box
-  const isPaper = unit === 'lembar' || variant.includes('rim');
-  const isBanner = unit === 'meter' || variant.includes('roll');
-  const isBoxed = unit === 'pcs' && (variant.includes('box') || variant.includes('pack') || variant.includes('isi 100'));
+  const [inputMode, setInputMode] = useState<'BULK' | 'BASE'>('BASE');
+  const [bulkCount, setBulkCount] = useState<number>(1);
 
-  // Konversi kemasan: utamakan master data (package_unit/package_size),
-  // fallback heuristik untuk bahan yang belum dikonfigurasi.
-  const hasMasterPackage = !!selectedItem?.package_unit && Number(selectedItem?.package_size || 0) > 0;
-  const multiplier = hasMasterPackage
-    ? Number(selectedItem!.package_size)
-    : isPaper && variant.includes('rim') ? 500 : isBanner ? 50 : isBoxed ? 100 : 1;
-  const bulkUnitLabel = hasMasterPackage
-    ? selectedItem!.package_unit!
-    : isPaper && variant.includes('rim') ? 'Rim' : isBanner ? 'Roll' : isBoxed ? 'Box' : (selectedItem?.unit || 'pcs');
-
-  // Input Mode: 'BULK' (Rim/Roll/Box) atau 'BASE' (Lembar/Meter/Pcs)
-  const defaultMode = multiplier > 1 ? 'BULK' : 'BASE';
-  const [inputMode, setInputMode] = useState<'BULK' | 'BASE'>(defaultMode);
-  const [bulkCount, setBulkCount] = useState<number>(10);
-
-  // Sinkronisasi bulk count ke mutationQty
+  // Reset pilihan setiap kali modal dibuka (bahan bisa berbeda dari
+  // pembukaan sebelumnya) agar tidak ada state lama yang bocor.
   useEffect(() => {
-    if (isOpen && selectedItem && inputMode === 'BULK') {
-      onChangeQty(Math.max(1, bulkCount * multiplier));
+    if (isOpen && selectedItem) {
+      const nextMode: 'BULK' | 'BASE' = hasMasterPackage ? 'BULK' : 'BASE';
+      setInputMode(nextMode);
+      setBulkCount(1);
+      onChangeQty(1);
+      onChangeUnit(nextMode === 'BULK' ? packageUnit.toLowerCase() : selectedItem.unit);
     }
-  }, [isOpen, selectedItem, bulkCount, inputMode, multiplier, onChangeQty]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, selectedItem]);
 
   if (!selectedItem) return null;
+
+  const isBulk = inputMode === 'BULK' && hasMasterPackage;
+  // Estimasi total satuan dasar hanya untuk pratinjau; angka final dihitung
+  // ulang di server dari konversi tersimpan.
+  const baseTotal = isBulk ? mutationQty * packageSize : mutationQty;
+  const currentStock = Number(selectedItem.stock) || 0;
+  const newStock = currentStock + baseTotal;
 
   const handleBulkChange = (val: number) => {
     const safeVal = Math.max(1, val);
     setBulkCount(safeVal);
-    onChangeQty(safeVal * multiplier);
+    onChangeQty(safeVal);
+    onChangeUnit(packageUnit.toLowerCase());
   };
 
   const handleBaseChange = (val: number) => {
     const safeVal = Math.max(1, val);
     onChangeQty(safeVal);
+    onChangeUnit(selectedItem.unit);
   };
 
   const setPresetBulk = (count: number) => {
     setInputMode('BULK');
     setBulkCount(count);
-    onChangeQty(count * multiplier);
+    onChangeQty(count);
+    onChangeUnit(packageUnit.toLowerCase());
   };
 
-  const currentStock = Number(selectedItem.stock) || 0;
-  const newStock = currentStock + (mutationQty || 0);
+  const switchMode = (mode: 'BULK' | 'BASE') => {
+    if (mode === 'BULK' && !hasMasterPackage) return;
+    setInputMode(mode);
+    setBulkCount(1);
+    onChangeQty(1);
+    onChangeUnit(mode === 'BULK' ? packageUnit.toLowerCase() : selectedItem.unit);
+  };
 
   return (
     <Modal
@@ -99,7 +114,9 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
             onClick={onSubmit}
             disabled={submitting || mutationQty <= 0}
           >
-            {submitting ? 'Menyimpan...' : `Tambah +${mutationQty.toLocaleString()} ${selectedItem.unit}`}
+            {submitting ? 'Menyimpan...' : isBulk
+              ? `Tambah +${mutationQty.toLocaleString()} ${packageUnit}`
+              : `Tambah +${mutationQty.toLocaleString()} ${selectedItem.unit}`}
           </Button>
         </>
       }
@@ -115,14 +132,15 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
         <div className="text-right">
           <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium block">Estimasi Setelah Restock:</span>
           <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
-            +{mutationQty.toLocaleString()} {selectedItem.unit} → {newStock.toLocaleString()} {selectedItem.unit}
+            +{fmt(baseTotal)} {selectedItem.unit} → {fmt(newStock)} {selectedItem.unit}
           </span>
         </div>
       </div>
 
       <div className="space-y-4">
-        {/* Mode Selector (Jika bahan bisa dihitung per Rim/Roll/Box) */}
-        {multiplier > 1 && (
+        {/* Mode Selector: hanya saat kemasan kulakan terdaftar di master data.
+            Konversi dihitung server; klien tidak mengalikan apa pun. */}
+        {hasMasterPackage ? (
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               Satuan Pembelian / Kulakan Masuk:
@@ -130,25 +148,22 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
             <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
               <button
                 type="button"
-                onClick={() => {
-                  setInputMode('BULK');
-                  onChangeQty(bulkCount * multiplier);
-                }}
+                onClick={() => switchMode('BULK')}
                 className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  inputMode === 'BULK'
+                  isBulk
                     ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200 dark:border-slate-700'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>Per {bulkUnitLabel} (x{multiplier} {selectedItem.unit})</span>
+                <span>Per {packageUnit} (1 = {fmt(packageSize)} {selectedItem.unit})</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setInputMode('BASE')}
+                onClick={() => switchMode('BASE')}
                 className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  inputMode === 'BASE'
+                  !isBulk
                     ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200 dark:border-slate-700'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                 }`}
@@ -157,12 +172,18 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
               </button>
             </div>
           </div>
+        ) : (
+          <div className="p-3 rounded-lg bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-300">
+            Kemasan kulakan belum diatur untuk bahan ini (mis. 1 box = 100 pcs).
+            Atur lewat tombol <strong>UOM</strong> di tabel agar bisa restock per kemasan;
+            untuk saat ini input dalam satuan dasar ({selectedItem.unit}).
+          </div>
         )}
 
         {/* Input Qty */}
         <div>
           <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-            {inputMode === 'BULK' ? `Jumlah Masuk (dalam Satuan ${bulkUnitLabel}):` : `Jumlah Lembar / Meter Masuk (${selectedItem.unit}):`}
+            {isBulk ? `Jumlah Masuk (per ${packageUnit}):` : `Jumlah Lembar / Meter Masuk (${selectedItem.unit}):`}
           </label>
 
           {inputMode === 'BULK' ? (
@@ -174,11 +195,11 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
                   min="1"
                   value={bulkCount}
                   onChange={e => handleBulkChange(Number(e.target.value))}
-                  placeholder={`Contoh: 10 ${bulkUnitLabel}`}
+                  placeholder={`Contoh: 10 ${packageUnit}`}
                   className="bg-transparent border-none outline-none w-full text-slate-900 dark:text-slate-100 font-extrabold text-base font-mono"
                 />
                 <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2.5 py-1 rounded-md shrink-0">
-                  {bulkUnitLabel}
+                  {packageUnit}
                 </span>
               </div>
 
@@ -196,10 +217,15 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
                         : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-brand-400'
                     }`}
                   >
-                    +{cnt} {bulkUnitLabel}
+                    +{cnt} {packageUnit}
                   </button>
                 ))}
               </div>
+
+              {/* Pratinjau konversi (final dihitung server dari master konversi) */}
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                = {fmt(baseTotal)} {selectedItem.unit} — dikalikan di server dari konversi tersimpan.
+              </p>
             </div>
           ) : (
             <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl">

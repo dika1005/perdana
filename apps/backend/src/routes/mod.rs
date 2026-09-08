@@ -100,6 +100,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .route("/{id}/lots", web::post().to(raw_materials::receive_lot))
                 .route(
                     "/{id}/uom-conversions",
+                    web::get().to(raw_materials::get_uom_conversions),
+                )
+                .route(
+                    "/{id}/uom-conversions",
                     web::put().to(raw_materials::upsert_uom_conversion),
                 )
                 .route("/{id}/mutations", web::get().to(raw_materials::list_mutations))

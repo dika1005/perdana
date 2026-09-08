@@ -7,7 +7,7 @@
 use chrono::Utc;
 use entity::enums::MutationType;
 use entity::prelude::*;
-use entity::{material_lots, material_uom_conversions};
+use entity::{material_lots, material_uom_conversions, raw_materials};
 use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
@@ -17,6 +17,7 @@ use validator::Validate;
 
 use crate::dto::{
     CreateMaterialLotRequest, MaterialLotResponse, UpsertUomConversionRequest,
+    UomConversionResponse,
 };
 use crate::error::AppError;
 use crate::services::{audit, inventory};
@@ -168,7 +169,7 @@ pub async fn upsert_uom_conversion_as(
         ));
     }
     let txn = db.begin().await?;
-    RawMaterial::find_by_id(raw_material_id)
+    let material = RawMaterial::find_by_id(raw_material_id)
         .lock_exclusive()
         .one(&txn)
         .await?
@@ -180,6 +181,32 @@ pub async fn upsert_uom_conversion_as(
         .lock_exclusive()
         .one(&txn)
         .await?;
+
+    // Satu sumber kebenaran: bila konversi yang disimpan merujuk pasangan
+    // kemasan beli (package_unit -> unit dasar), sinkronkan juga master
+    // `package_size` dalam transaksi yang sama. Tanpa ini, modal UOM dan
+    // logika kulakan/display bisa menyimpan dua faktor berbeda untuk
+    // "satuan kemasan" yang sama (bug restock box amplop 500 vs 100).
+    let base_unit = material.unit.trim().to_ascii_lowercase();
+    let defines_package = to_unit == base_unit
+        && material
+            .package_unit
+            .as_ref()
+            .map(|p| p.trim().to_ascii_lowercase())
+            .map(|p| p == from_unit)
+            .unwrap_or(false);
+    let mut sync_note = String::new();
+    if defines_package && material.package_size != Some(payload.factor) {
+        let mut active_material: raw_materials::ActiveModel = material.clone().into();
+        active_material.package_size = Set(Some(payload.factor));
+        active_material.updated_at = Set(Utc::now());
+        active_material.update(&txn).await?;
+        sync_note = format!(
+            " Isi kemasan {} disinkronkan menjadi {} {}.",
+            from_unit, payload.factor, to_unit
+        );
+    }
+
     let (before, after_id) = if let Some(existing) = existing {
         let before = audit::snapshot(&existing);
         let mut active: material_uom_conversions::ActiveModel = existing.into();
@@ -208,9 +235,41 @@ pub async fn upsert_uom_conversion_as(
         after_id.to_string(),
         before,
         None,
-        Some("Konversi satuan material diperbarui; saldo stok tidak diubah".to_string()),
+        Some(format!(
+            "Konversi satuan material diperbarui; saldo stok tidak diubah.{}",
+            sync_note
+        )),
     )
     .await?;
     txn.commit().await?;
     Ok(())
+}
+
+/// Daftar konversi satuan milik satu bahan. Dipakai modal UOM agar faktor
+/// yang sudah tersimpan selalu tampil, bukan nilai default heuristik.
+pub async fn list_uom_conversions(
+    db: &DatabaseConnection,
+    raw_material_id: i32,
+) -> Result<Vec<UomConversionResponse>, AppError> {
+    RawMaterial::find_by_id(raw_material_id)
+        .one(db)
+        .await?
+        .ok_or_else(|| AppError::not_found("Bahan baku tidak ditemukan"))?;
+    let conversions = MaterialUomConversion::find()
+        .filter(material_uom_conversions::Column::RawMaterialId.eq(raw_material_id))
+        .order_by_asc(material_uom_conversions::Column::FromUnit)
+        .all(db)
+        .await?;
+    Ok(conversions
+        .iter()
+        .map(|c| UomConversionResponse {
+            id: c.id,
+            raw_material_id: c.raw_material_id,
+            from_unit: c.from_unit.clone(),
+            to_unit: c.to_unit.clone(),
+            factor: c.factor,
+            notes: c.notes.clone(),
+            created_at: c.created_at,
+        })
+        .collect())
 }

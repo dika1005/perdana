@@ -1,7 +1,8 @@
 use std::env;
+use backend::services::inventory;
 use bcrypt::{DEFAULT_COST, hash};
 use dotenvy::dotenv;
-use entity::enums::{PriceType, RangePriceType, UserRole};
+use entity::enums::{MutationType, PriceType, RangePriceType, UserRole};
 use entity::{
     customers, product_addons, product_categories, product_variants, products,
     raw_material_categories, raw_materials, users,
@@ -9,7 +10,7 @@ use entity::{
 use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, DbBackend,
-    Set, Statement,
+    Set, Statement, TransactionTrait,
 };
 
 #[tokio::main]
@@ -124,9 +125,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("NCR Biru", Some("Middle/Bottom / 50 Rim"), "lembar", Some("rim"), Some(500), 25000, 1500, rcat_kertas.id),
         ("NCR Hijau", Some("Middle/Bottom / 50 Rim"), "lembar", Some("rim"), Some(500), 25000, 1500, rcat_kertas.id),
 
-        // II. Amplop & Plastik Undangan (Satuan Dasar: Pcs, Kemasan: Box / 500 & Dus / 100)
-        ("Amplop Sedang", Some("Isi 100 / Box"), "pcs", Some("box"), Some(500), 6000, 500, rcat_amplop.id),
-        ("Amplop Panjang", Some("Isi 100 / Box"), "pcs", Some("box"), Some(500), 6000, 500, rcat_amplop.id),
+        // II. Amplop & Plastik Undangan (Satuan Dasar: Pcs, Kemasan: Box / 100 & Dus / 100)
+        // CATATAN: 1 box amplop = 100 pcs sesuai label "Isi 100 / Box".
+        // JANGAN memakai 500 (itu isi rim kertas); faktor salah membuat
+        // restock per box menggandakan stok 5x (lihat 0006_fix_amplop_package_size.sql).
+        ("Amplop Sedang", Some("Isi 100 / Box"), "pcs", Some("box"), Some(100), 6000, 500, rcat_amplop.id),
+        ("Amplop Panjang", Some("Isi 100 / Box"), "pcs", Some("box"), Some(100), 6000, 500, rcat_amplop.id),
         ("Plastik Und. Ukuran 8", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
         ("Plastik Und. Ukuran 8.5", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
         ("Plastik Und. Ukuran 9", Some("Pack Isi 100"), "pcs", Some("dus"), Some(100), 5000, 500, rcat_amplop.id),
@@ -167,6 +171,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut map_mat_id = std::collections::HashMap::new();
     for (name, variant, unit, pkg_unit, pkg_size, stock, min_w, c_id) in raw_mats {
+        // Saldo awal selalu dicatat lewat jalur kanonik (adjust_physical) agar
+        // inventory_ledger ikut terisi dan laporan rekonsiliasi ledger tetap
+        // konsisten sejak data pertama kali ditanam.
+        let txn = db.begin().await?;
         let inserted = raw_materials::ActiveModel {
             category_id: Set(Some(c_id)),
             name: Set(name.to_string()),
@@ -174,10 +182,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             unit: Set(unit.to_string()),
             package_unit: Set(pkg_unit.map(|s| s.to_string())),
             package_size: Set(pkg_size.map(Decimal::from)),
-            stock: Set(Decimal::from(stock)),
+            stock: Set(Decimal::ZERO),
             min_stock_warning: Set(Decimal::from(min_w)),
             ..Default::default()
-        }.insert(&db).await?;
+        }.insert(&txn).await?;
+        if stock > 0 {
+            inventory::adjust_physical(
+                &txn,
+                inserted.id,
+                MutationType::In,
+                Decimal::from(stock),
+                inventory::LedgerContext {
+                    notes: Some("Saldo awal bahan baku (seed)".to_string()),
+                    ..Default::default()
+                },
+            ).await?;
+        }
+        txn.commit().await?;
         map_mat_id.insert(name.to_string(), inserted.id);
     }
     println!("  -> {} Bahan Baku Asli berhasil ditanam.", map_mat_id.len());
@@ -1196,10 +1217,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if let Some(amp_id) = map_mat_id.get("Amplop Sedang").copied() {
         let _ = db.execute(Statement::from_string(DbBackend::MySql, format!(
-            "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'box', 'pcs', 500.000000, '1 box = 500 pcs amplop')",
+            "INSERT IGNORE INTO material_uom_conversions (raw_material_id, from_unit, to_unit, factor, notes) VALUES ({}, 'box', 'pcs', 100.000000, '1 box = 100 pcs amplop')",
             amp_id
         ))).await;
-        println!("  -> Amplop Sedang: 1 box = 500 pcs");
+        println!("  -> Amplop Sedang: 1 box = 100 pcs");
     }
 
     println!("\n==================================================");

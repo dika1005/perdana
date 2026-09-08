@@ -241,11 +241,6 @@ pub async fn update_as(
         .one(&txn)
         .await?
         .ok_or_else(|| AppError::not_found("Bahan baku tidak ditemukan"))?;
-    if let Some(cat_id) = payload.category_id {
-        if RawMaterialCategory::find_by_id(cat_id).one(&txn).await?.is_none() {
-            return Err(AppError::field("category_id", "Kategori bahan baku tidak ditemukan"));
-        }
-    }
     if let Some(unit) = &payload.unit {
         let new_unit = unit.trim();
         if new_unit != item.unit && item.reserved_stock > Decimal::ZERO {
@@ -254,11 +249,23 @@ pub async fn update_as(
             ));
         }
     }
+    // Field opsional hanya ditimpa bila memang dikirim. Tanpa guard ini,
+    // update parsial (mis. ubah kemasan dari modal UOM) akan menghapus
+    // kategori/varian bahan secara diam-diam.
+    if let Some(cat_id) = payload.category_id {
+        if RawMaterialCategory::find_by_id(cat_id).one(&txn).await?.is_none() {
+            return Err(AppError::field("category_id", "Kategori bahan baku tidak ditemukan"));
+        }
+    }
     let before = audit::snapshot(&item);
     let mut active: raw_materials::ActiveModel = item.into();
-    active.category_id = Set(payload.category_id);
+    if let Some(cat_id) = payload.category_id {
+        active.category_id = Set(Some(cat_id));
+    }
     active.name = Set(name);
-    active.variant = Set(payload.variant.map(|v| v.trim().to_string()));
+    if let Some(variant) = payload.variant {
+        active.variant = Set(Some(variant.trim().to_string()));
+    }
     if let Some(unit) = payload.unit {
         active.unit = Set(unit.trim().to_string());
     }

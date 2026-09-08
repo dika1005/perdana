@@ -4,6 +4,7 @@ use crate::dto::{
     ApiResponse, CreateMaterialLotRequest, CreateMutationRequest, CreateRawMaterialRequest,
     ListResponse, MaterialLotResponse, MessageData, MutationResponse, Pagination, RawMaterialQuery,
     RawMaterialResponse, UpdateRawMaterialRequest, UpsertUomConversionRequest,
+    UomConversionResponse,
 };
 use crate::error::AppError;
 use crate::extractors::{AuthUser, SuperAdmin};
@@ -210,6 +211,20 @@ pub async fn list_lots(
     let data = material_lot_service::list_lots(&state.db, path.into_inner()).await?;
     Ok(HttpResponse::Ok().json(ApiResponse::<Vec<MaterialLotResponse>>::ok(
         "Daftar lot dan offcut bahan",
+        data,
+    )))
+}
+
+/// Konversi satuan tersimpan untuk satu bahan. Dipakai modal UOM agar faktor
+/// yang sudah ada selalu ditampilkan (tidak lagi menebak dari heuristik).
+pub async fn get_uom_conversions(
+    state: web::Data<AppState>,
+    _user: AuthUser,
+    path: web::Path<i32>,
+) -> Result<HttpResponse, AppError> {
+    let data = material_lot_service::list_uom_conversions(&state.db, path.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(ApiResponse::<Vec<UomConversionResponse>>::ok(
+        "Daftar konversi satuan bahan",
         data,
     )))
 }

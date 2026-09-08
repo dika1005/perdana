@@ -56,9 +56,21 @@ pub async fn to_base_unit(
         }
     }
 
-    // No conversion rule is applicable.
+    // No conversion rule is applicable. Explain which units the material
+    // understands so the operator can correct the payload immediately.
+    let mut available_units = vec![base_unit.clone()];
+    if let Some(pkg_unit) = material.package_unit.as_ref() {
+        let pkg = pkg_unit.trim().to_ascii_lowercase();
+        if !pkg.is_empty() && !available_units.contains(&pkg) {
+            available_units.push(pkg);
+        }
+    }
     Err(AppError::field(
         "unit",
-        "Tidak ada konversi yang tersedia untuk satuan yang diberikan",
+        format!(
+            "Tidak ada konversi yang tersedia dari satuan \"{}\" untuk bahan ini. Satuan yang dikenal: {}.",
+            from_unit.trim(),
+            available_units.join(", ")
+        ),
     ))
 }
