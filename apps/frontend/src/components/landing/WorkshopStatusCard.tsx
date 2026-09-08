@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, MapPin, Phone, CheckCircle2, MessageSquare, Star } from 'lucide-react';
+import { Printer, MapPin, Phone, CheckCircle2, MessageSquare } from 'lucide-react';
 import { PublicStoreInfo } from '../../services/publicService';
 import { createWaLink } from '../../utils/whatsapp';
 
@@ -10,17 +10,6 @@ interface WorkshopStatusCardProps {
 export const WorkshopStatusCard: React.FC<WorkshopStatusCardProps> = React.memo(({ store }) => {
   return (
     <div className="relative">
-      {/* Floating rating badge */}
-      <div className="absolute -top-4 -left-4 z-20 glass-card px-3.5 py-2 rounded-2xl shadow-xl flex items-center gap-2.5 border border-amber-300/40 dark:border-amber-500/30 animate-float-slow">
-        <div className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center">
-          <Star className="w-3.5 h-3.5 fill-amber-500" />
-        </div>
-        <div>
-          <p className="text-xs font-black text-slate-900 dark:text-white leading-none">4.9 / 5.0</p>
-          <p className="text-[10px] text-slate-500 font-medium">Kepuasan Pelanggan</p>
-        </div>
-      </div>
-
       <div className="glass-card p-6 sm:p-8 rounded-3xl space-y-5 relative overflow-hidden shadow-xl">
         
         {/* Card Header */}

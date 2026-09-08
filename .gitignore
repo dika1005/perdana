@@ -7,6 +7,11 @@
 credentials.json
 secrets.json
 
+# Database files lokal (backend memakai MySQL/MariaDB, bukan SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
 # Rust (workspace root target/)
 /target/
 **/*.rs.bk
