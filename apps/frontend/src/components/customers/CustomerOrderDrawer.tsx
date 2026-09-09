@@ -22,7 +22,7 @@ export const CustomerOrderDrawer: React.FC<CustomerOrderDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-end z-50">
-      <div className="w-full max-w-md bg-bg-skeuo h-full p-6 shadow-2xl flex flex-col overflow-y-auto animate-in slide-in-from-right duration-200">
+      <div className="w-full max-w-md bg-bg-skeuo h-full p-6 shadow-2xl flex flex-col overflow-y-auto anim-slide-right">
         <div className="flex justify-between items-start mb-6 pb-4 border-b border-black/10">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2 py-0.5 rounded">

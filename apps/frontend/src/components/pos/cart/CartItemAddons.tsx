@@ -37,7 +37,7 @@ export const CartItemAddons: React.FC<CartItemAddonsProps> = ({
           return (
             <div
               key={addon.id}
-              className={`flex items-center rounded-lg border transition-all ${
+              className={`flex items-center rounded-lg border transition-[background-color,color,transform,box-shadow,border-color] ${
                 isSelected
                   ? 'bg-brand-50 dark:bg-brand-950/60 border-brand-400 dark:border-brand-700 text-brand-900 dark:text-brand-200 shadow-2xs'
                   : 'skeuo-button text-slate-600 dark:text-slate-400'

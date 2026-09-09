@@ -32,7 +32,7 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = React.memo(({
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         
         {/* Search Input */}
-        <div className="md:col-span-6 flex items-center gap-3 px-4 py-3 glass-card rounded-2xl focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+        <div className="md:col-span-6 flex items-center gap-3 px-4 py-3 glass-card rounded-2xl focus-within:ring-2 focus-within:ring-blue-500 transition-[background-color,color,transform,box-shadow,border-color]">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input 
             type="text" 
@@ -102,7 +102,7 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = React.memo(({
               onCategoryChange(undefined);
               onClearServiceFilter();
             }}
-            className={`px-4 py-2 whitespace-nowrap text-xs font-bold rounded-xl transition-all shrink-0 cursor-pointer ${
+            className={`px-4 py-2 whitespace-nowrap text-xs font-bold rounded-xl transition-[background-color,color,transform,box-shadow,border-color] shrink-0 cursor-pointer ${
               activeCategoryId === undefined && !selectedServiceId
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
                 : 'glass-card text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -119,7 +119,7 @@ export const CatalogFilters: React.FC<CatalogFiltersProps> = React.memo(({
                   onCategoryChange(cat.id);
                   onClearServiceFilter();
                 }}
-                className={`px-4 py-2 whitespace-nowrap text-xs font-bold rounded-xl transition-all shrink-0 cursor-pointer ${
+                className={`px-4 py-2 whitespace-nowrap text-xs font-bold rounded-xl transition-[background-color,color,transform,box-shadow,border-color] shrink-0 cursor-pointer ${
                   isCatActive 
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
                     : 'glass-card text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'

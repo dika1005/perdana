@@ -37,7 +37,7 @@ export const VariantListTab: React.FC<VariantListTabProps> = ({
             <button
               key={p.id}
               onClick={() => onSelectProduct(p.id)}
-              className={`w-full text-left px-3 py-2 rounded-xl transition-all text-xs ${
+              className={`w-full text-left px-3 py-2 rounded-xl transition-[background-color,color,transform,box-shadow,border-color] text-xs ${
                 selectedProductId === p.id 
                   ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/60 shadow-sm' 
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-100 font-medium'

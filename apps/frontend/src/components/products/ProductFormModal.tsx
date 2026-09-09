@@ -101,7 +101,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <button
               type="button"
               onClick={() => onChange('price_type', 'FIXED')}
-              className={`py-2 px-2 text-center rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+              className={`py-2 px-2 text-center rounded-lg border text-xs font-bold transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer ${
                 formData.price_type === 'FIXED'
                   ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border-blue-500'
                   : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
@@ -112,7 +112,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <button
               type="button"
               onClick={() => onChange('price_type', 'RANGE')}
-              className={`py-2 px-2 text-center rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+              className={`py-2 px-2 text-center rounded-lg border text-xs font-bold transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer ${
                 formData.price_type === 'RANGE'
                   ? 'bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 border-amber-500'
                   : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
@@ -123,7 +123,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <button
               type="button"
               onClick={() => onChange('price_type', 'CUSTOM')}
-              className={`py-2 px-2 text-center rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+              className={`py-2 px-2 text-center rounded-lg border text-xs font-bold transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer ${
                 formData.price_type === 'CUSTOM'
                   ? 'bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 border-teal-500'
                   : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'

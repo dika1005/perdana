@@ -40,14 +40,14 @@ export const HeroSection: React.FC<HeroSectionProps> = React.memo(({
 
           {/* Subtitle */}
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed max-w-xl">
-            Solusi percetakan modern untuk bisnis, promosi, dan acara Anda. Dari spanduk flexi, stiker die-cut, kartu nama PVC, brosur promosi, hingga undangan & merchandise dengan harga jujur dan transparan.
+            Dari spanduk flexi, stiker die-cut, kartu nama PVC, brosur promosi, hingga undangan & merchandise — harga jujur dan transparan.
           </p>
 
           {/* CTAs */}
           <div className="flex flex-wrap items-center gap-3.5 pt-1">
             <button 
               onClick={onScrollToCatalog}
-              className="shimmer-btn flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-xs sm:text-sm shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+              className="shimmer-btn flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-xs sm:text-sm shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-[transform,box-shadow] duration-150 cursor-pointer"
             >
               <span>Lihat Katalog & Harga</span>
               <ArrowRight className="w-4 h-4" />
@@ -58,7 +58,7 @@ export const HeroSection: React.FC<HeroSectionProps> = React.memo(({
                 href={createWaLink(store.phone, 'Halo, saya ingin order cetak di Perdana Printing.')} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/25 hover:scale-[1.02] active:scale-95 transition-all"
+                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/25 hover:scale-[1.02] active:scale-95 transition-[transform,box-shadow,background-color] duration-150"
               >
                 <Phone className="w-4 h-4" />
                 <span>Order via WhatsApp</span>
@@ -67,7 +67,7 @@ export const HeroSection: React.FC<HeroSectionProps> = React.memo(({
 
             <Link
               href="/cek-pesanan"
-              className="flex items-center gap-2 px-5 py-3.5 rounded-2xl glass-card text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs sm:text-sm shadow-sm hover:scale-[1.02] active:scale-95 transition-all"
+              className="flex items-center gap-2 px-5 py-3.5 rounded-2xl glass-card text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs sm:text-sm shadow-sm hover:scale-[1.02] active:scale-95 transition-transform duration-150"
             >
               <Package className="w-4 h-4 text-blue-500" />
               <span>Lacak Pesanan</span>

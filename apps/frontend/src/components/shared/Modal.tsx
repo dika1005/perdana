@@ -81,7 +81,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 anim-fade-in"
       style={{ zIndex }}
       onMouseDown={e => {
         if (closeOnOutsideClick && e.target === e.currentTarget) onClose();
@@ -90,12 +90,12 @@ export const Modal: React.FC<ModalProps> = ({
       {onSubmit ? (
         <form
           onSubmit={onSubmit}
-          className={`skeuo bg-bg-skeuo w-full ${MAX_WIDTH_CLASS[maxWidth]} p-6 sm:p-7`}
+          className={`skeuo bg-bg-skeuo w-full anim-pop ${MAX_WIDTH_CLASS[maxWidth]} p-6 sm:p-7`}
         >
           {panel}
         </form>
       ) : (
-        <div className={`skeuo bg-bg-skeuo w-full ${MAX_WIDTH_CLASS[maxWidth]} p-6 sm:p-7`}>
+        <div className={`skeuo bg-bg-skeuo w-full anim-pop ${MAX_WIDTH_CLASS[maxWidth]} p-6 sm:p-7`}>
           {panel}
         </div>
       )}

@@ -72,7 +72,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = React.memo(({
           {isFilteringActive && (
             <button 
               onClick={resetAllFilters}
-              className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 flex items-center gap-1.5 transition-all cursor-pointer"
+              className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 flex items-center gap-1.5 transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               <span>Reset Filter</span>

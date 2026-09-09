@@ -67,7 +67,7 @@ export default function LoginPage() {
       <header className="w-full px-6 sm:px-10 py-5 flex items-center justify-between relative z-10">
         <Link 
           href="/" 
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl skeuo-button text-xs font-bold text-text-muted hover:text-blue-600 dark:hover:text-blue-400 transition-all active:scale-95"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl skeuo-button text-xs font-bold text-text-muted hover:text-blue-600 dark:hover:text-blue-400 transition-[background-color,color,transform,box-shadow,border-color] active:scale-95"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Kembali ke Beranda</span>

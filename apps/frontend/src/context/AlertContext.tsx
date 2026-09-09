@@ -172,7 +172,7 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       {/* Modern Skeuomorphic Alert / Confirm Modal Dialog */}
       {modalState.isOpen && (
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md anim-fade-in"
           role="dialog"
           aria-modal="true"
           onClick={(e) => {
@@ -182,7 +182,7 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           }}
         >
           <div 
-            className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-7 relative skeuo overflow-hidden animate-in zoom-in-95 duration-150"
+            className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-7 relative skeuo overflow-hidden anim-pop"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top decorative gradient bar */}
@@ -223,7 +223,7 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 <button
                   type="button"
                   onClick={() => handleCloseModal(false)}
-                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold skeuo-button text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-center"
+                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold skeuo-button text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-[background-color,color,transform,box-shadow,border-color] text-center"
                 >
                   {modalState.cancelText || 'Batal'}
                 </button>
@@ -232,7 +232,7 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 type="button"
                 onClick={() => handleCloseModal(true)}
                 autoFocus
-                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-md active:scale-[0.98] text-center ${currentConfig.btnColor}`}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-[background-color,color,transform,box-shadow,border-color] shadow-md active:scale-[0.98] text-center ${currentConfig.btnColor}`}
               >
                 {modalState.confirmText}
               </button>
@@ -249,7 +249,7 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           return (
             <div
               key={toast.id}
-              className="pointer-events-auto p-3.5 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 shadow-xl flex items-center gap-3 skeuo animate-in slide-in-from-bottom-3 duration-200"
+              className="pointer-events-auto p-3.5 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 shadow-xl flex items-center gap-3 skeuo anim-toast"
             >
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shrink-0 ${cfg.badgeBg}`}>
                 <ToastIcon className={`w-4 h-4 ${cfg.iconColor}`} />

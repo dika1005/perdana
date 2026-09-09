@@ -82,7 +82,7 @@ export default function ProductsPage() {
       <div className="flex gap-2 p-1.5 rounded-2xl skeuo-inset bg-slate-100/80 dark:bg-slate-900/60 mb-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab('products')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-[background-color,color,transform,box-shadow,border-color] whitespace-nowrap cursor-pointer ${
             activeTab === 'products'
               ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
@@ -94,7 +94,7 @@ export default function ProductsPage() {
 
         <button
           onClick={() => setActiveTab('variants')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-[background-color,color,transform,box-shadow,border-color] whitespace-nowrap cursor-pointer ${
             activeTab === 'variants'
               ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
@@ -106,7 +106,7 @@ export default function ProductsPage() {
 
         <button
           onClick={() => setActiveTab('addons')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-[background-color,color,transform,box-shadow,border-color] whitespace-nowrap cursor-pointer ${
             activeTab === 'addons'
               ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
@@ -118,7 +118,7 @@ export default function ProductsPage() {
 
         <button
           onClick={() => setActiveTab('categories')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-[background-color,color,transform,box-shadow,border-color] whitespace-nowrap cursor-pointer ${
             activeTab === 'categories'
               ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-xs border border-slate-200 dark:border-slate-700'
               : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'

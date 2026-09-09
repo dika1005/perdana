@@ -206,7 +206,7 @@ export default function ReportsPage() {
       <div className="flex gap-3 mb-6 border-b border-black/5 dark:border-white/10 pb-4 overflow-x-auto">
         <button
           onClick={() => setActiveTab('summary')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-[background-color,color,transform,box-shadow,border-color] ${
             activeTab === 'summary' ? 'skeuo-inset text-brand-600' : 'skeuo-button text-text-muted hover:text-text-main'
           }`}
         >
@@ -215,7 +215,7 @@ export default function ReportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('receivables')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-[background-color,color,transform,box-shadow,border-color] ${
             activeTab === 'receivables' ? 'skeuo-inset text-amber-500' : 'skeuo-button text-text-muted hover:text-text-main'
           }`}
         >
@@ -224,7 +224,7 @@ export default function ReportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('low_stock')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-[background-color,color,transform,box-shadow,border-color] ${
             activeTab === 'low_stock' ? 'skeuo-inset text-red-500' : 'skeuo-button text-text-muted hover:text-text-main'
           }`}
         >
@@ -233,7 +233,7 @@ export default function ReportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('mutations')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-[background-color,color,transform,box-shadow,border-color] ${
             activeTab === 'mutations' ? 'skeuo-inset text-brand-600' : 'skeuo-button text-text-muted hover:text-text-main'
           }`}
         >

@@ -2,7 +2,7 @@
 
 Aplikasi kasir (POS) dan pengelolaan operasional harian yang dirancang khusus untuk **Usaha Percetakan Digital, Sablon, Offset, dan Konveksi**. 
 
-Sistem ini dibuat sangat mudah dipahami oleh kasir maupun pemilik toko, mulai dari perhitungan harga spanduk meteran otomatis, pembacaan pesanan langsung dari WhatsApp, pencatatan uang muka (DP), pelacakan antrian produksi, hingga laporan laba bersih dan kas keluar.
+Sistem ini dibuat mudah dipahami oleh kasir maupun pemilik toko, mulai dari perhitungan harga spanduk meteran otomatis, pembacaan pesanan langsung dari WhatsApp, pencatatan uang muka (DP), pelacakan antrian produksi, hingga laporan laba bersih dan kas keluar.
 
 ---
 
@@ -116,8 +116,8 @@ Aplikasi dibangun dengan 3 bagian utama yang bekerja bersamaan secara aman dan c
                                                                 [ Database Toko (MySQL) ]
 ```
 
-1. **Frontend (Layar Kasir)**: Dibuat menggunakan *Next.js (React)* dengan tampilan ramah pengguna, tombol besar, dan desain modern anti-pusing.
-2. **Backend (Mesin Utama)**: Dibuat menggunakan bahasa *Rust (Actix-Web)* yang terkenal sangat cepat, hemat memori, dan bebas dari error crash.
+1. **Frontend (Layar Kasir)**: Dibuat menggunakan *Next.js (React)* dengan tampilan sederhana, tombol besar, dan ikon yang jelas.
+2. **Backend (Mesin Utama)**: Dibuat menggunakan bahasa *Rust (Actix-Web)* yang cepat, hemat memori, dan stabil saat dijalankan terus-menerus.
 3. **Database (Penyimpanan Data)**: Menggunakan *MySQL / MariaDB* untuk menyimpan data produk, stok bahan, nota transaksi, dan pelanggan dengan aman.
 
 ---

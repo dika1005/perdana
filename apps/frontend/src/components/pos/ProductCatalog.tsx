@@ -41,7 +41,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
     <div className="flex-1 flex flex-col h-full min-w-0">
       {/* Top Search & Actions */}
       <div className="flex flex-col sm:flex-row gap-2.5 mb-3">
-        <div className="flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl skeuo-sm focus-within:border-brand-500 transition-all">
+        <div className="flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl skeuo-sm focus-within:border-brand-500 transition-[background-color,color,transform,box-shadow,border-color]">
           <Search className="w-4 h-4 text-text-muted shrink-0" />
           <input
             type="text"
@@ -91,7 +91,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
       <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1.5 custom-scrollbar shrink-0">
         <button
           onClick={() => onSelectCategory(undefined)}
-          className={`px-3.5 py-1.5 whitespace-nowrap text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+          className={`px-3.5 py-1.5 whitespace-nowrap text-xs font-semibold rounded-xl transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer ${
             activeCategoryId === undefined
               ? 'bg-brand-600 text-white shadow-xs'
               : 'skeuo-button text-slate-600 dark:text-slate-400'
@@ -103,7 +103,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
           <button
             key={cat.id}
             onClick={() => onSelectCategory(cat.id)}
-            className={`px-3.5 py-1.5 whitespace-nowrap text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 whitespace-nowrap text-xs font-semibold rounded-xl transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer ${
               activeCategoryId === cat.id
                 ? 'bg-brand-600 text-white shadow-xs'
                 : 'skeuo-button text-slate-600 dark:text-slate-400'
@@ -145,7 +145,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                 <div
                   key={product.id}
                   onClick={() => onAddToCart(product)}
-                  className={`p-3 rounded-xl skeuo-sm transition-all relative cursor-pointer flex flex-col justify-between hover:border-brand-400 dark:hover:border-brand-600 select-none ${
+                  className={`p-3 rounded-xl skeuo-sm transition-[background-color,color,transform,box-shadow,border-color] relative cursor-pointer flex flex-col justify-between hover:border-brand-400 dark:hover:border-brand-600 select-none ${
                     inCartItem
                       ? 'border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/20 dark:bg-brand-950/20'
                       : ''

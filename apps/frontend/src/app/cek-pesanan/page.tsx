@@ -174,7 +174,7 @@ export default function CekPesananPage() {
             <button
               type="submit"
               disabled={loading}
-              className="py-3 px-7 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[0.98] text-white font-bold text-xs tracking-wide shadow-md shadow-brand-500/25 transition-all flex items-center justify-center gap-2"
+              className="py-3 px-7 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[0.98] text-white font-bold text-xs tracking-wide shadow-md shadow-brand-500/25 transition-[background-color,color,transform,box-shadow,border-color] flex items-center justify-center gap-2"
             >
               {loading ? (
                 <span>Mencari...</span>
@@ -190,7 +190,7 @@ export default function CekPesananPage() {
 
         {/* Error Alert Box */}
         {error && (
-          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-medium flex items-start gap-3 mb-6 animate-in fade-in">
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-medium flex items-start gap-3 mb-6 anim-fade-in">
             <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold text-sm">Pesanan Tidak Ditemukan</p>
@@ -201,7 +201,7 @@ export default function CekPesananPage() {
 
         {/* Result Card & Progress Stepper */}
         {trackingData && (
-          <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="space-y-6 anim-pop">
             {/* Top Order Card Summary */}
             <div className="p-6 rounded-2xl skeuo bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl relative overflow-hidden">
               <div className={`absolute top-0 left-0 right-0 h-1.5 ${
@@ -244,7 +244,7 @@ export default function CekPesananPage() {
                     const StepIcon = step.icon;
 
                     return (
-                      <div key={idx} className={`p-4 rounded-xl border transition-all ${
+                      <div key={idx} className={`p-4 rounded-xl border transition-[background-color,color,transform,box-shadow,border-color] ${
                         isCurrent 
                           ? 'bg-brand-50/80 dark:bg-brand-950/40 border-brand-400 dark:border-brand-600 shadow-md ring-2 ring-brand-500/20' 
                           : isDone 
@@ -321,7 +321,7 @@ export default function CekPesananPage() {
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+                  className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-[background-color,color,transform,box-shadow,border-color]"
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>Hubungi CS WhatsApp</span>

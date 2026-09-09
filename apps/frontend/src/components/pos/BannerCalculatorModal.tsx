@@ -130,7 +130,7 @@ export const BannerCalculatorModal: React.FC<BannerCalculatorModalProps> = ({
                   key={v}
                   type="button"
                   onClick={() => setCalcLength(v)}
-                  className={`px-2 py-0.5 text-[10px] rounded font-semibold transition-all cursor-pointer ${
+                  className={`px-2 py-0.5 text-[10px] rounded font-semibold transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer ${
                     calcLength === v ? 'skeuo-inset text-brand-600 font-bold' : 'skeuo-button text-text-muted'
                   }`}
                 >
@@ -154,7 +154,7 @@ export const BannerCalculatorModal: React.FC<BannerCalculatorModalProps> = ({
                   key={v}
                   type="button"
                   onClick={() => setCalcWidth(v)}
-                  className={`px-2 py-0.5 text-[10px] rounded font-semibold transition-all cursor-pointer ${
+                  className={`px-2 py-0.5 text-[10px] rounded font-semibold transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer ${
                     calcWidth === v ? 'skeuo-inset text-brand-600 font-bold' : 'skeuo-button text-text-muted'
                   }`}
                 >

@@ -73,7 +73,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
 
 
   return (
-    <div className="w-full lg:w-[480px] xl:w-[520px] 2xl:w-[560px] flex flex-col skeuo p-4 lg:p-5 shrink-0 h-[calc(100vh-130px)] transition-all">
+    <div className="w-full lg:w-[480px] xl:w-[520px] 2xl:w-[560px] flex flex-col skeuo p-4 lg:p-5 shrink-0 h-[calc(100vh-130px)] transition-[background-color,color,transform,box-shadow,border-color]">
       {/* 1. Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0">
         <div className="flex items-center gap-2.5">
@@ -91,7 +91,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
           <button 
             type="button"
             onClick={onClearCart} 
-            className="text-xs text-rose-500 hover:text-rose-700 dark:text-rose-400 font-semibold px-2.5 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200/80 dark:hover:border-rose-900/60 transition-all flex items-center gap-1 cursor-pointer"
+            className="text-xs text-rose-500 hover:text-rose-700 dark:text-rose-400 font-semibold px-2.5 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200/80 dark:hover:border-rose-900/60 transition-[background-color,color,transform,box-shadow,border-color] flex items-center gap-1 cursor-pointer"
             title="Kosongkan seluruh isi keranjang"
           >
             <Trash2 className="w-3.5 h-3.5" />

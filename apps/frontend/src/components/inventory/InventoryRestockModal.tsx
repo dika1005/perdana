@@ -149,7 +149,7 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
               <button
                 type="button"
                 onClick={() => switchMode('BULK')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-[background-color,color,transform,box-shadow,border-color] flex items-center justify-center gap-1.5 cursor-pointer ${
                   isBulk
                     ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200 dark:border-slate-700'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
@@ -162,7 +162,7 @@ export const InventoryRestockModal: React.FC<InventoryRestockModalProps> = ({
               <button
                 type="button"
                 onClick={() => switchMode('BASE')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-[background-color,color,transform,box-shadow,border-color] flex items-center justify-center gap-1.5 cursor-pointer ${
                   !isBulk
                     ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200 dark:border-slate-700'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'

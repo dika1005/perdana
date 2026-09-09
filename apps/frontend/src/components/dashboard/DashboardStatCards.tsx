@@ -15,7 +15,7 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, colorClass, subtitle }) => (
-  <div className="skeuo p-5 flex flex-col justify-between hover:border-slate-400 dark:hover:border-slate-600 transition-all">
+  <div className="skeuo p-5 flex flex-col justify-between hover:border-slate-400 dark:hover:border-slate-600 transition-[background-color,color,transform,box-shadow,border-color]">
     <div className="flex items-center justify-between">
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs ${colorClass}`}>
         <Icon className="w-5 h-5" />

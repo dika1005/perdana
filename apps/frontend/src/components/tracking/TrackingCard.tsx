@@ -41,7 +41,7 @@ export const TrackingCard: React.FC<TrackingCardProps> = ({
   const cust = customers.find(c => c.id === job.customer_id);
 
   return (
-    <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm">
+    <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-[background-color,color,transform,box-shadow,border-color] shadow-sm">
       {/* Header: Invoice & Total */}
       <div className="flex justify-between items-start mb-1.5">
         <button

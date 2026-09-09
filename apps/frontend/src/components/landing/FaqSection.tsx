@@ -33,7 +33,7 @@ export const FaqSection: React.FC<FaqSectionProps> = React.memo(({ faqs = FAQS }
           return (
             <div 
               key={idx} 
-              className={`glass-card rounded-2xl overflow-hidden transition-all duration-300 ${
+              className={`glass-card rounded-2xl overflow-hidden transition-[box-shadow,border-color,background-color] duration-200 ${
                 isOpen 
                   ? 'ring-2 ring-blue-500/50 dark:ring-blue-400/50 shadow-lg bg-blue-50/20 dark:bg-blue-950/20 border-blue-200/80 dark:border-blue-800/80' 
                   : 'hover:border-slate-300 dark:hover:border-slate-700'
@@ -47,14 +47,14 @@ export const FaqSection: React.FC<FaqSectionProps> = React.memo(({ faqs = FAQS }
                   <HelpCircle className={`w-4 h-4 shrink-0 transition-colors duration-200 ${isOpen ? 'text-blue-600 dark:text-blue-400' : 'text-blue-500'}`} />
                   <span>{faq.q}</span>
                 </span>
-                <div className={`p-1 rounded-full transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-180 bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>
+                <div className={`p-1 rounded-full transition-transform duration-200 ease-out ${isOpen ? 'rotate-180 bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>
                   <ChevronDown className="w-4 h-4" />
                 </div>
               </button>
               
               {/* Smooth Animated Accordion Body using CSS Grid */}
               <div 
-                className={`grid transition-all duration-300 ease-in-out ${
+                className={`grid transition-[grid-template-rows,opacity] duration-250 ease-out ${
                   isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                 }`}
               >

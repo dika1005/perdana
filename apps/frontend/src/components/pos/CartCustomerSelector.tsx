@@ -32,7 +32,7 @@ export const CartCustomerSelector: React.FC<CartCustomerSelectorProps> = ({
           const found = customers.find(c => c.id === id);
           onSelectCustomer(found || null);
         }}
-        className="w-full px-3 py-2 text-xs font-medium text-text-main outline-none skeuo-inset cursor-pointer focus:border-brand-500 transition-all [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
+        className="w-full px-3 py-2 text-xs font-medium text-text-main outline-none skeuo-inset cursor-pointer focus:border-brand-500 transition-[background-color,color,transform,box-shadow,border-color] [&>option]:bg-white [&>option]:text-slate-900 dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
       >
         <option value="">Pelanggan Umum (Walk-in)</option>
         {customers.map(c => (
@@ -45,7 +45,7 @@ export const CartCustomerSelector: React.FC<CartCustomerSelectorProps> = ({
           placeholder="Ketik nama pelanggan / instansi..." 
           value={customCustomerName}
           onChange={e => onCustomCustomerNameChange(e.target.value)}
-          className="w-full mt-2 px-3 py-2 text-xs text-text-main outline-none skeuo-inset focus:border-brand-500 transition-all"
+          className="w-full mt-2 px-3 py-2 text-xs text-text-main outline-none skeuo-inset focus:border-brand-500 transition-[background-color,color,transform,box-shadow,border-color]"
         />
       )}
     </div>

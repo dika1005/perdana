@@ -50,7 +50,7 @@ export const CtaBanner: React.FC<CtaBannerProps> = React.memo(({
                 href={createWaLink(store.phone, 'Halo, saya ingin konsultasi order cetak partai besar / penawaran harga khusus.')}
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="shimmer-btn px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-center text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-95 transition-all"
+                className="shimmer-btn px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-center text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-95 transition-[background-color,color,transform,box-shadow,border-color]"
               >
                 <Phone className="w-4 h-4" />
                 <span>Konsultasi WhatsApp</span>
@@ -58,7 +58,7 @@ export const CtaBanner: React.FC<CtaBannerProps> = React.memo(({
             )}
             <button 
               onClick={onScrollToCatalog}
-              className="px-6 py-3.5 rounded-2xl glass-card text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-center text-xs sm:text-sm transition-all cursor-pointer"
+              className="px-6 py-3.5 rounded-2xl glass-card text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-center text-xs sm:text-sm transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer"
             >
               Lihat Katalog Produk
             </button>

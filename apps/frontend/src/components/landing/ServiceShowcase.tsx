@@ -43,7 +43,7 @@ export const ServiceShowcase: React.FC<ServiceShowcaseProps> = React.memo(({
         {selectedServiceId && (
           <button 
             onClick={() => onSelectService(null)}
-            className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 transition-all cursor-pointer"
+            className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             <span>Tampilkan Semua Layanan</span>
@@ -59,7 +59,7 @@ export const ServiceShowcase: React.FC<ServiceShowcaseProps> = React.memo(({
             <div 
               key={service.id}
               onClick={() => handleServiceClick(service.id)}
-              className={`glass-card glass-card-hover p-6 rounded-2xl flex flex-col justify-between cursor-pointer transition-all ${
+              className={`glass-card glass-card-hover p-6 rounded-2xl flex flex-col justify-between cursor-pointer transition-[background-color,color,transform,box-shadow,border-color] ${
                 isSelected 
                   ? 'ring-2 ring-blue-600 dark:ring-blue-400 bg-blue-50/70 dark:bg-blue-950/40 shadow-lg' 
                   : ''

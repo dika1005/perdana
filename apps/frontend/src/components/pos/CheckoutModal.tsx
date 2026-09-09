@@ -103,7 +103,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     if (st.id === 'PAID') onPayAmountChange(total);
                     if (st.id === 'UNPAID') onPayAmountChange(0);
                   }}
-                  className={`py-2 px-2 text-center rounded-xl transition-all border cursor-pointer ${
+                  className={`py-2 px-2 text-center rounded-xl transition-[background-color,color,transform,box-shadow,border-color] border cursor-pointer ${
                     isActive
                       ? `${st.activeColor} font-bold shadow-xs`
                       : 'border-slate-200 dark:border-slate-800 skeuo-button text-slate-600 dark:text-slate-400 hover:text-text-main'

@@ -18,7 +18,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = React.memo(({
       href={createWaLink(phone, message)}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xl shadow-emerald-600/40 hover:scale-105 active:scale-95 transition-all group"
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xl shadow-emerald-600/40 hover:scale-105 active:scale-95 transition-[transform,background-color] duration-200 group"
       title="Chat WhatsApp Langsung"
     >
       <span className="relative flex h-3 w-3">

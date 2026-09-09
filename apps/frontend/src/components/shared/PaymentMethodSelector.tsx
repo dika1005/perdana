@@ -24,7 +24,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
           key={pm.id}
           type="button"
           onClick={() => onChange(pm.id)}
-          className={`py-2.5 px-2 text-center rounded-xl transition-all border-2 cursor-pointer ${
+          className={`py-2.5 px-2 text-center rounded-xl transition-[background-color,color,transform,box-shadow,border-color] border-2 cursor-pointer ${
             isActive
               ? `${pm.activeClass} font-bold shadow-xs`
               : 'border-slate-200 dark:border-slate-800 skeuo-button text-slate-600 dark:text-slate-400 hover:text-text-main'

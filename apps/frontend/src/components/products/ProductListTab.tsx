@@ -31,7 +31,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   return (
     <div className="skeuo p-6">
       <div className="flex justify-between items-center mb-6 gap-4">
-        <div className="flex-1 max-w-md flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-950 transition-all">
+        <div className="flex-1 max-w-md flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-950 transition-[background-color,color,transform,box-shadow,border-color]">
           <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
           <input
             type="text"

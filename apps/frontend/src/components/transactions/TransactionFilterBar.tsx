@@ -38,7 +38,7 @@ export const TransactionFilterBar: React.FC<TransactionFilterBarProps> = ({
   return (
     <div className="skeuo p-4 mb-6 flex flex-wrap gap-3 items-center justify-between">
       <form onSubmit={onSearchSubmit} className="flex-1 min-w-[240px] flex gap-2">
-        <div className="flex-1 flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-950 transition-all">
+        <div className="flex-1 flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-950 transition-[background-color,color,transform,box-shadow,border-color]">
           <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
           <input
             type="text"

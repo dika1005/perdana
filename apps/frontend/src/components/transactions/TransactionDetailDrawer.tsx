@@ -64,7 +64,7 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-end z-50">
-      <div className="w-full max-w-lg bg-bg-skeuo h-full p-6 skeuo overflow-y-auto custom-scrollbar flex flex-col justify-between">
+      <div className="w-full max-w-lg bg-bg-skeuo h-full p-6 skeuo overflow-y-auto custom-scrollbar flex flex-col justify-between anim-slide-right">
         <div>
           {/* Header */}
           <div className="flex justify-between items-start pb-4 border-b border-black/10 dark:border-white/10">
@@ -406,7 +406,7 @@ export const TransactionDetailDrawer: React.FC<TransactionDetailDrawerProps> = (
           {transaction.order_status === 'BATAL' && netPaid > 0 && onRefund && (
             <button
               onClick={() => onRefund(transaction)}
-              className="w-full py-2.5 font-bold bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs flex items-center justify-center gap-1.5 rounded-xl shadow-md transition-all cursor-pointer"
+              className="w-full py-2.5 font-bold bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs flex items-center justify-center gap-1.5 rounded-xl shadow-md transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer"
             >
               <DollarSign className="w-4 h-4" />
               Proses Refund ({formatRupiah(netPaid)})

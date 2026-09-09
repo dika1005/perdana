@@ -13,7 +13,7 @@ export const ExpenseSummaryCards: React.FC<ExpenseSummaryCardsProps> = ({ summar
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {/* Hari Ini */}
-      <div className="skeuo p-5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+      <div className="skeuo p-5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-[background-color,color,transform,box-shadow,border-color]">
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Pengeluaran Hari Ini</p>
           <h3 className="text-xl font-bold text-text-main mt-1 font-mono tracking-tight">
@@ -26,7 +26,7 @@ export const ExpenseSummaryCards: React.FC<ExpenseSummaryCardsProps> = ({ summar
       </div>
 
       {/* Bulan Ini */}
-      <div className="skeuo p-5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+      <div className="skeuo p-5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-[background-color,color,transform,box-shadow,border-color]">
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Pengeluaran Bulan Ini</p>
           <h3 className="text-xl font-bold text-text-main mt-1 font-mono tracking-tight">
@@ -39,7 +39,7 @@ export const ExpenseSummaryCards: React.FC<ExpenseSummaryCardsProps> = ({ summar
       </div>
 
       {/* Total Tercatat */}
-      <div className="skeuo p-5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+      <div className="skeuo p-5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-[background-color,color,transform,box-shadow,border-color]">
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Pengeluaran</p>
           <h3 className="text-xl font-bold text-text-main mt-1 font-mono tracking-tight">
@@ -52,7 +52,7 @@ export const ExpenseSummaryCards: React.FC<ExpenseSummaryCardsProps> = ({ summar
       </div>
 
       {/* Jumlah Transaksi */}
-      <div className="skeuo p-5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+      <div className="skeuo p-5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-[background-color,color,transform,box-shadow,border-color]">
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Jumlah Catatan</p>
           <h3 className="text-xl font-bold text-text-main mt-1">

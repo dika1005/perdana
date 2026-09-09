@@ -104,7 +104,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = React.memo(({
               <li className="pt-2">
                 <Link 
                   href="/login" 
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all font-bold"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-[background-color,color,transform,box-shadow,border-color] font-bold"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Portal Kasir POS</span>

@@ -66,7 +66,7 @@ export const WorkshopStatusCard: React.FC<WorkshopStatusCardProps> = React.memo(
             href={createWaLink(store.phone, 'Halo, saya mau konsultasi dan kirim file desain.')}
             target="_blank"
             rel="noopener noreferrer"
-            className="shimmer-btn w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-center text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 active:scale-95 transition-all"
+            className="shimmer-btn w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-center text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 active:scale-95 transition-[transform,background-color] duration-150"
           >
             <MessageSquare className="w-4 h-4" />
             <span>Kirim File via WhatsApp</span>

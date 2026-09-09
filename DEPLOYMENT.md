@@ -27,7 +27,7 @@ Dokumen ini menjelaskan alur **Continuous Integration & Continuous Deployment (C
 ## ⚡ 1. Optimasi yang Telah Diterapkan di Aplikasi
 
 1. **Rust Binary Compilation (`Cargo.toml`)**:
-   * Menggunakan `opt-level = 3`, `lto = true`, `codegen-units = 1`, `panic = "abort"`, dan `strip = true` untuk menghasilkan executable berukuran ramping (~12 MB) dan eksekusi instruksi CPU tercepat.
+   * Menggunakan `opt-level = 3`, `lto = true`, `codegen-units = 1`, `panic = "abort"`, dan `strip = true` untuk menghasilkan executable berukuran ramping (~12 MB) dengan instruksi CPU yang dioptimalkan.
 2. **Database Performance Indexing (`init.sql` & auto-migration)**:
    * Indeks komposit pada `transactions(order_status, payment_status, created_at)` dan `(customer_id)`.
    * Indeks pada `expenses(expense_date, category)` dan `raw_materials(stock, min_stock_warning)`.

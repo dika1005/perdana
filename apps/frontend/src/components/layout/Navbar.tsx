@@ -66,7 +66,7 @@ export const Navbar = () => {
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-blue-400 dark:hover:border-blue-500 transition-all cursor-pointer"
+            className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-blue-400 dark:hover:border-blue-500 transition-[background-color,color,transform,box-shadow,border-color] cursor-pointer"
             title="Pusat Notifikasi & Peringatan"
           >
             <Bell className="w-4 h-4" />

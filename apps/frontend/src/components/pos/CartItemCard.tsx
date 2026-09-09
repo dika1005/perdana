@@ -69,7 +69,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
   const itemGrandTotal = itemBaseTotal + itemAddonsTotal;
 
   return (
-    <div className="rounded-xl skeuo-sm hover:border-brand-300 dark:hover:border-brand-800 transition-all overflow-hidden p-3.5 space-y-2.5">
+    <div className="rounded-xl skeuo-sm hover:border-brand-300 dark:hover:border-brand-800 transition-[background-color,color,transform,box-shadow,border-color] overflow-hidden p-3.5 space-y-2.5">
       <CartItemHeader
         item={item}
         isPriceEdited={isPriceEdited}
