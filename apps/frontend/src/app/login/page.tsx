@@ -1,19 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Lock, User, RefreshCw, Eye, EyeOff, ArrowLeft, Sun, Moon, ShieldCheck } from 'lucide-react';
-import { authService } from '../../services/authService';
-import { Button, ErrorBanner } from '../../components/shared';
+import React, { useEffect, useState } from 'react';
+import { AmbientGlow, BackLink, ThemeToggleButton } from '../../components/shared';
+import { LoginForm } from '../../components/auth/LoginForm';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [username, setUsername] = useState('superadmin');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -37,123 +28,27 @@ export default function LoginPage() {
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      await authService.login(username.trim(), password);
-      router.push('/dashboard');
-    } catch (err: any) {
-      console.error('Login error:', err);
-      setError(
-        err?.response?.data?.message || 
-        'Login gagal. Periksa koneksi backend dan kecocokan username/password.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen relative flex flex-col justify-between bg-bg-skeuo text-text-main font-sans overflow-hidden">
-      
-      {/* Background Decorative Gradient Orbs */}
-      <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-500/10 dark:bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-500/10 dark:bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-500/[0.04] dark:bg-purple-500/[0.06] rounded-full blur-3xl pointer-events-none" />
+      <AmbientGlow variant="auth" />
 
       {/* Top Bar: Back to Home + Theme Switcher */}
       <header className="w-full px-6 sm:px-10 py-5 flex items-center justify-between relative z-10">
-        <Link 
-          href="/" 
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl skeuo-button text-xs font-bold text-text-muted hover:text-blue-600 dark:hover:text-blue-400 transition-[background-color,color,transform,box-shadow,border-color] active:scale-95"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Beranda</span>
-        </Link>
-
-        <button
-          onClick={toggleTheme}
-          className="w-9 h-9 rounded-xl skeuo-button flex items-center justify-center text-text-muted hover:text-text-main transition-colors"
-          title="Ganti Tema (Dark / Light)"
-        >
-          {isDarkMode ? <Moon className="w-4 h-4 text-amber-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
-        </button>
+        <BackLink
+          href="/"
+          className="px-3.5 py-2 rounded-xl skeuo-button text-xs font-bold text-text-muted hover:text-blue-600 dark:hover:text-blue-400 active:scale-95"
+        />
+        <ThemeToggleButton
+          isDark={isDarkMode}
+          onToggle={toggleTheme}
+          className="w-9 h-9 rounded-xl skeuo-button text-text-muted hover:text-text-main transition-colors"
+        />
       </header>
 
       {/* Main Login Card Center */}
       <main className="w-full flex-1 flex items-center justify-center px-4 py-8 relative z-10">
         <div className="w-full max-w-md p-8 sm:p-10 skeuo rounded-3xl relative shadow-2xl border border-black/[0.06] dark:border-white/[0.08]">
-          
-          {/* Brand & Title */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 mx-auto flex items-center justify-center text-white font-black text-2xl mb-4 shadow-lg shadow-blue-500/25">
-              P
-            </div>
-            <h1 className="text-2xl font-black text-text-main tracking-tight">Perdana POS & Percetakan</h1>
-            <p className="text-xs text-text-muted mt-1 font-medium">Portal Masuk Khusus Kasir & Owner</p>
-          </div>
-
-          {/* Error Message */}
-          {error && <ErrorBanner message={error} />}
-
-          {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Username</label>
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl skeuo-inset">
-                <User className="w-4 h-4 text-text-muted shrink-0" />
-                <input 
-                  type="text" 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Masukkan username" 
-                  className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-medium text-text-main placeholder:text-text-muted/50"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Password</label>
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl skeuo-inset">
-                <Lock className="w-4 h-4 text-text-muted shrink-0" />
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan password" 
-                  className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-medium text-text-main placeholder:text-text-muted/50"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-text-muted hover:text-text-main transition-colors p-1"
-                  title={showPassword ? "Sembunyikan password" : "Lihat password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <Button variant="primary" type="submit" disabled={loading} className="w-full mt-3">
-              {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
-              {loading ? 'Memverifikasi...' : 'Masuk ke Dashboard'}
-            </Button>
-          </form>
-
-          {/* Security Notice */}
-          <div className="mt-6 pt-5 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center gap-1.5 text-[11px] text-text-muted">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Sistem Kasir Terenkripsi & Aman</span>
-          </div>
-
+          <LoginForm />
         </div>
       </main>
 
@@ -161,7 +56,6 @@ export default function LoginPage() {
       <footer className="w-full py-4 text-center text-[10px] text-text-muted relative z-10">
         © {new Date().getFullYear()} Perdana Printing & POS. Semua hak cipta dilindungi.
       </footer>
-
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FolderTree, X, ChevronDown } from 'lucide-react';
 import { PRESET_SERVICES, PresetService } from '../../data/landingData';
+import { SectionHeading } from '../shared';
 
 interface ServiceShowcaseProps {
   services?: PresetService[];
@@ -27,18 +28,12 @@ export const ServiceShowcase: React.FC<ServiceShowcaseProps> = React.memo(({
   return (
     <section className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16 py-14 sm:py-18">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/50 mb-2">
-            <FolderTree className="w-3.5 h-3.5" />
-            <span>Layanan Percetakan</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Pilihan Layanan Percetakan
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl font-medium">
-            Klik salah satu kategori di bawah untuk menyaring produk di katalog kami secara instan.
-          </p>
-        </div>
+        <SectionHeading
+          eyebrow="Layanan Percetakan"
+          eyebrowIcon={<FolderTree className="w-3.5 h-3.5" />}
+          title="Pilihan Layanan Percetakan"
+          description="Klik salah satu kategori di bawah untuk menyaring produk di katalog kami secara instan."
+        />
 
         {selectedServiceId && (
           <button 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HelpCircle, ChevronDown } from 'lucide-react';
 import { FAQS, FaqItem } from '../../data/landingData';
+import { SectionHeading } from '../shared';
 
 interface FaqSectionProps {
   faqs?: FaqItem[];
@@ -15,17 +16,13 @@ export const FaqSection: React.FC<FaqSectionProps> = React.memo(({ faqs = FAQS }
 
   return (
     <section id="faq" className="relative z-10 max-w-4xl mx-auto px-6 sm:px-10 lg:px-16 py-14 sm:py-18">
-      <div className="text-center mb-8">
-        <span className="text-xs font-extrabold uppercase tracking-widest text-blue-600 dark:text-blue-400">
-          Bantuan & FAQ
-        </span>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1 tracking-tight">
-          Pertanyaan yang Sering Diajukan
-        </h2>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
-          Info seputar format file desain, waktu pengerjaan, dan pengiriman
-        </p>
-      </div>
+      <SectionHeading
+        align="center"
+        eyebrow="Bantuan & FAQ"
+        title="Pertanyaan yang Sering Diajukan"
+        description="Info seputar format file desain, waktu pengerjaan, dan pengiriman"
+        className="mb-8"
+      />
 
       <div className="space-y-3.5">
         {faqs.map((faq, idx) => {

@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, MapPin, Phone } from 'lucide-react';
 import { PublicStoreInfo } from '../../services/publicService';
 import { createWaLink } from '../../utils/whatsapp';
+import { WaLinkButton } from '../shared';
 
 interface CtaBannerProps {
   store?: PublicStoreInfo | null;
@@ -46,15 +47,12 @@ export const CtaBanner: React.FC<CtaBannerProps> = React.memo(({
 
           <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3.5 justify-center">
             {store?.phone && (
-              <a 
+              <WaLinkButton
                 href={createWaLink(store.phone, 'Halo, saya ingin konsultasi order cetak partai besar / penawaran harga khusus.')}
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="shimmer-btn px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-center text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-95 transition-[background-color,color,transform,box-shadow,border-color]"
+                className="px-6 py-3.5 rounded-2xl text-xs sm:text-sm"
               >
-                <Phone className="w-4 h-4" />
-                <span>Konsultasi WhatsApp</span>
-              </a>
+                Konsultasi WhatsApp
+              </WaLinkButton>
             )}
             <button 
               onClick={onScrollToCatalog}

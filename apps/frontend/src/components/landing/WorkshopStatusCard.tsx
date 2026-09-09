@@ -1,7 +1,8 @@
 import React from 'react';
-import { Printer, MapPin, Phone, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Printer, MapPin, Phone, CheckCircle2 } from 'lucide-react';
 import { PublicStoreInfo } from '../../services/publicService';
 import { createWaLink } from '../../utils/whatsapp';
+import { WaLinkButton } from '../shared';
 
 interface WorkshopStatusCardProps {
   store?: PublicStoreInfo | null;
@@ -23,8 +24,7 @@ export const WorkshopStatusCard: React.FC<WorkshopStatusCardProps> = React.memo(
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Siap melayani pesanan Anda</p>
             </div>
           </div>
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
             Buka Setiap Hari
           </span>
         </div>
@@ -62,15 +62,13 @@ export const WorkshopStatusCard: React.FC<WorkshopStatusCardProps> = React.memo(
         </div>
 
         {store?.phone && (
-          <a 
+          <WaLinkButton
             href={createWaLink(store.phone, 'Halo, saya mau konsultasi dan kirim file desain.')}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shimmer-btn w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-center text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 active:scale-95 transition-[transform,background-color] duration-150"
+            variant="brand"
+            className="w-full py-3.5 rounded-2xl text-xs"
           >
-            <MessageSquare className="w-4 h-4" />
-            <span>Kirim File via WhatsApp</span>
-          </a>
+            Kirim File via WhatsApp
+          </WaLinkButton>
         )}
 
       </div>

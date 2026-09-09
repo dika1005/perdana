@@ -1,9 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, Phone, Package } from 'lucide-react';
+import { ArrowRight, Package } from 'lucide-react';
 import { PublicStoreInfo } from '../../services/publicService';
 import { createWaLink } from '../../utils/whatsapp';
 import { WorkshopStatusCard } from './WorkshopStatusCard';
+import { WaLinkButton } from '../shared';
 
 interface HeroSectionProps {
   store?: PublicStoreInfo | null;
@@ -22,12 +23,8 @@ export const HeroSection: React.FC<HeroSectionProps> = React.memo(({
         <div className="lg:col-span-7 space-y-6">
           
           {/* Live Indicator Pill */}
-          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full glass-card border border-blue-200/60 dark:border-blue-900/60 text-xs font-bold text-blue-600 dark:text-blue-400 shadow-sm animate-float-slow">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>Workshop Aktif · Siap Cetak Kilat Hari Ini</span>
+          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full glass-card border border-blue-200/60 dark:border-blue-900/60 text-xs font-bold text-blue-600 dark:text-blue-400 shadow-sm">
+            <span>Siap Cetak Kilat Hari Ini</span>
           </div>
 
           {/* Main Title */}
@@ -47,22 +44,19 @@ export const HeroSection: React.FC<HeroSectionProps> = React.memo(({
           <div className="flex flex-wrap items-center gap-3.5 pt-1">
             <button 
               onClick={onScrollToCatalog}
-              className="shimmer-btn flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-xs sm:text-sm shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-[transform,box-shadow] duration-150 cursor-pointer"
+              className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-xs sm:text-sm shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-[transform,box-shadow] duration-150 cursor-pointer"
             >
               <span>Lihat Katalog & Harga</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
             {store?.phone && (
-              <a 
-                href={createWaLink(store.phone, 'Halo, saya ingin order cetak di Perdana Printing.')} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/25 hover:scale-[1.02] active:scale-95 transition-[transform,box-shadow,background-color] duration-150"
+              <WaLinkButton
+                href={createWaLink(store.phone, 'Halo, saya ingin order cetak di Perdana Printing.')}
+                className="px-6 py-3.5 rounded-2xl text-xs sm:text-sm hover:scale-[1.02]"
               >
-                <Phone className="w-4 h-4" />
-                <span>Order via WhatsApp</span>
-              </a>
+                Order via WhatsApp
+              </WaLinkButton>
             )}
 
             <Link

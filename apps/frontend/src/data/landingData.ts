@@ -124,13 +124,13 @@ export const PRESET_SERVICES: PresetService[] = [
 ];
 
 export const MARQUEE_ITEMS: string[] = [
-  '⚡ Cetak Spanduk & Banner Kilat',
-  '⭐ Stiker Vinyl & Chromo Die-Cut',
-  '🔥 Kartu Nama & ID Card PVC',
-  '💎 Undangan & Souvenir Premium',
-  '🚀 Brosur & Flyer Warna Tajam',
-  '📦 Nota NCR & Buku Jilid Spiral',
-  '🎯 Cetak Meteran Bebas Ukuran'
+  'Cetak Spanduk & Banner Kilat',
+  'Stiker Vinyl & Chromo Die-Cut',
+  'Kartu Nama & ID Card PVC',
+  'Undangan & Souvenir Premium',
+  'Brosur & Flyer Warna Tajam',
+  'Nota NCR & Buku Jilid Spiral',
+  'Cetak Meteran Bebas Ukuran'
 ];
 
 export const FEATURE_HIGHLIGHTS: FeatureHighlight[] = [

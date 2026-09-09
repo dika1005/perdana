@@ -3,6 +3,7 @@ import { Phone } from 'lucide-react';
 import { PublicProduct } from '../../services/publicService';
 import { formatRupiah } from '../../utils/format';
 import { createWaLink } from '../../utils/whatsapp';
+import { WaLinkButton } from '../shared';
 
 interface ProductCardProps {
   product: PublicProduct;
@@ -97,15 +98,13 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
             /{product.unit_name || 'pcs'}{product.min_order > 1 ? ` · Min ${product.min_order}` : ''}
           </span>
-          <a
+          <WaLinkButton
             href={orderUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 active:scale-95 transition-[background-color,color,transform,box-shadow,border-color]"
+            icon={<Phone className="w-3.5 h-3.5" />}
+            className="px-3.5 py-1.5 rounded-xl text-xs shadow-md shadow-emerald-600/20"
           >
-            <Phone className="w-3.5 h-3.5" />
-            <span>Order WA</span>
-          </a>
+            Order WA
+          </WaLinkButton>
         </div>
 
         {/* Variants list preview */}
