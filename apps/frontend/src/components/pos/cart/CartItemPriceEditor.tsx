@@ -66,9 +66,11 @@ export const CartItemPriceEditor: React.FC<CartItemPriceEditorProps> = ({
             type="number"
             min="0"
             step="500"
+            inputMode="numeric"
+            aria-label="Harga satuan kustom"
             value={item.price || ''}
             onChange={e => onUpdatePrice(Number(e.target.value))}
-            className={`w-full text-xs font-mono font-bold bg-transparent outline-none ${isOutOfRange ? 'text-rose-600 dark:text-rose-400' : 'text-text-main'}`}
+            className={`w-full text-xs font-mono font-bold bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 rounded-md tabular-nums ${isOutOfRange ? 'text-rose-600 dark:text-rose-400' : 'text-text-main'}`}
             placeholder="Masukkan nominal harga..."
           />
         </div>
@@ -76,7 +78,7 @@ export const CartItemPriceEditor: React.FC<CartItemPriceEditorProps> = ({
           <button
             type="button"
             onClick={() => onUpdatePrice(refPrice)}
-            className="px-2 py-1.5 skeuo-button text-[10px] font-semibold text-text-muted shrink-0 flex items-center gap-1"
+            className="px-2 py-1.5 skeuo-button text-[10px] font-semibold text-text-muted shrink-0 flex items-center gap-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
             title="Reset harga ke hitungan ukuran"
           >
             <RefreshCw className="w-3 h-3" />

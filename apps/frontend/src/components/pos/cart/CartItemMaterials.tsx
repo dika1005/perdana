@@ -47,8 +47,9 @@ export const CartItemMaterials: React.FC<CartItemMaterialsProps> = ({
         <div key={index} className="flex items-center gap-1.5">
           <select
             value={material.raw_material_id || ''}
+            aria-label="Pilih bahan dipakai"
             onChange={e => onUpdateMaterial(index, { raw_material_id: Number(e.target.value) })}
-            className="flex-1 min-w-0 px-2 py-1 text-[11px] font-semibold skeuo-inset outline-none focus:border-indigo-400 text-text-main cursor-pointer"
+            className="flex-1 min-w-0 px-2 py-1 text-[11px] font-semibold skeuo-inset outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 text-text-main cursor-pointer"
           >
             <option value="">Pilih bahan...</option>
             {rawMaterials.map(r => (
@@ -59,10 +60,12 @@ export const CartItemMaterials: React.FC<CartItemMaterialsProps> = ({
             type="number"
             min="0"
             step="0.5"
+            inputMode="decimal"
+            aria-label="Qty bahan dipakai"
             value={material.material_qty || ''}
             onChange={e => onUpdateMaterial(index, { material_qty: Number(e.target.value) })}
             placeholder="0"
-            className="w-16 px-1.5 py-1 text-center text-[11px] font-mono font-bold skeuo-inset outline-none focus:border-indigo-400 text-text-main"
+            className="w-16 px-1.5 py-1 text-center text-[11px] font-mono font-bold skeuo-inset outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 text-text-main tabular-nums"
           />
           <span className="text-[10px] text-slate-500 dark:text-slate-400 w-10 shrink-0">
             {selected ? selected.unit : ''}
@@ -73,7 +76,8 @@ export const CartItemMaterials: React.FC<CartItemMaterialsProps> = ({
           <button
             type="button"
             onClick={() => onRemoveMaterial(index)}
-            className="text-slate-400 hover:text-rose-500 p-0.5 rounded cursor-pointer"
+            aria-label="Hapus baris bahan"
+            className="text-slate-400 hover:text-rose-500 p-0.5 rounded cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/50"
             title="Hapus baris bahan"
           >
             <X className="w-3 h-3" />

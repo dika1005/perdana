@@ -71,7 +71,11 @@ export function usePOSState() {
 
   // Cart State — draft cart dipulihkan dari localStorage agar keranjang
   // kasir tidak hilang saat halaman ter-refresh atau browser ditutup.
-  const [cart, setCart] = useState<CartItem[]>(() => loadSavedCart());
+  // Pemulihan dilakukan di useEffect setelah mount (bukan di initializer
+  // useState) agar render pertama identik dengan HTML server — mencegah
+  // hydration mismatch saat draft cart tersimpan.
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartHydrated, setCartHydrated] = useState(false);
   const [availableAddons, setAvailableAddons] = useState<ProductAddon[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customCustomerName, setCustomCustomerName] = useState('');
@@ -93,9 +97,17 @@ export function usePOSState() {
   const [showCalcModal, setShowCalcModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
 
-  // Persist draft cart setiap perubahan (termasuk penghapusan saat checkout sukses).
+  // Pulihkan draft cart SEKALI setelah mount (hanya berjalan di klien).
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    setCart(loadSavedCart());
+    setCartHydrated(true);
+  }, []);
+
+  // Persist draft cart setiap perubahan (termasuk penghapusan saat checkout
+  // sukses). Dilewati sampai pemulihan selesai agar draft tersimpan tidak
+  // terhapus oleh render awal keranjang kosong.
+  useEffect(() => {
+    if (!cartHydrated || typeof window === 'undefined') return;
     try {
       if (cart.length === 0) {
         window.localStorage.removeItem(CART_STORAGE_KEY);
@@ -105,7 +117,7 @@ export function usePOSState() {
     } catch {
       // Kuota penuh / private mode: cart tetap berfungsi tanpa persistensi.
     }
-  }, [cart]);
+  }, [cart, cartHydrated]);
 
   /**
    * Data referensi (kategori, pelanggan, add-on, bahan) di-load SEKALI saat

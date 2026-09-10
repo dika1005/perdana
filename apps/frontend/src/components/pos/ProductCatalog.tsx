@@ -142,10 +142,12 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                 : formatRupiah(product.default_price);
 
               return (
-                <div
+                <button
                   key={product.id}
+                  type="button"
                   onClick={() => onAddToCart(product)}
-                  className={`p-3 rounded-xl skeuo-sm transition-[background-color,color,transform,box-shadow,border-color] relative cursor-pointer flex flex-col justify-between hover:border-brand-400 dark:hover:border-brand-600 select-none ${
+                  aria-label={`Tambah ${product.name} ke keranjang`}
+                  className={`p-3 rounded-xl skeuo-sm transition-[background-color,color,transform,box-shadow,border-color] relative cursor-pointer flex flex-col justify-between text-left w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 hover:border-brand-400 dark:hover:border-brand-600 select-none ${
                     inCartItem
                       ? 'border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/20 dark:bg-brand-950/20'
                       : ''
@@ -186,7 +188,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
 
                   <div className="mt-2.5 pt-2 border-t border-border-main flex items-end justify-between">
                     <div>
-                      <p className="font-extrabold text-xs sm:text-sm text-brand-600 dark:text-brand-400 font-mono">
+                      <p className="font-extrabold text-xs sm:text-sm text-brand-600 dark:text-brand-400 font-mono tabular-nums">
                         {priceDisplay}
                       </p>
                       <span className="text-[10px] text-text-muted font-medium">
@@ -197,12 +199,12 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
                       inCartItem
                         ? 'bg-brand-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-brand-600 hover:text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:bg-brand-600 group-hover:text-white'
                     }`}>
                       <Plus className="w-4 h-4" />
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

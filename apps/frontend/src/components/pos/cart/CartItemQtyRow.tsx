@@ -35,7 +35,8 @@ export const CartItemQtyRow: React.FC<CartItemQtyRowProps> = ({
           <button
             type="button"
             onClick={() => onUpdateQty(-1)}
-            className="w-7 h-7 flex items-center justify-center rounded-md skeuo-button"
+            aria-label="Kurangi jumlah"
+            className="w-7 h-7 flex items-center justify-center rounded-md skeuo-button cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
             title="Kurangi jumlah"
           >
             <Minus className="w-3.5 h-3.5" />
@@ -43,17 +44,19 @@ export const CartItemQtyRow: React.FC<CartItemQtyRowProps> = ({
           <input
             type="number"
             min="1"
+            aria-label={`Jumlah ${item.product.name}`}
             value={item.qty}
             onChange={e => {
               const val = Math.max(1, parseInt(e.target.value) || 1);
               onSetQty(val);
             }}
-            className="w-11 text-center text-xs font-black font-mono text-text-main bg-transparent outline-none"
+            className="w-11 text-center text-xs font-black font-mono text-text-main bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 rounded-md tabular-nums"
           />
           <button
             type="button"
             onClick={() => onUpdateQty(1)}
-            className="w-7 h-7 flex items-center justify-center rounded-md skeuo-button"
+            aria-label="Tambah jumlah"
+            className="w-7 h-7 flex items-center justify-center rounded-md skeuo-button cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
             title="Tambah jumlah"
           >
             <Plus className="w-3.5 h-3.5" />

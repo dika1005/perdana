@@ -63,7 +63,8 @@ export const CartItemAddons: React.FC<CartItemAddonsProps> = ({
                       e.stopPropagation();
                       onUpdateAddonQty?.(addon.id, Math.max(1, addonQty - 1));
                     }}
-                    className="w-4 h-4 flex items-center justify-center rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 text-[11px] font-black leading-none cursor-pointer"
+                    aria-label={`Kurangi jumlah ${addon.name}`}
+                    className="w-4 h-4 flex items-center justify-center rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 text-[11px] font-black leading-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
                     title="Kurangi jumlah finishing"
                   >
                     -
@@ -71,13 +72,14 @@ export const CartItemAddons: React.FC<CartItemAddonsProps> = ({
                   <input
                     type="number"
                     min="1"
+                    aria-label={`Jumlah finishing ${addon.name}`}
                     value={addonQty}
                     onChange={e => {
                       e.stopPropagation();
                       const val = Math.max(1, parseInt(e.target.value) || 1);
                       onUpdateAddonQty?.(addon.id, val);
                     }}
-                    className="w-7 text-center font-mono font-black text-xs bg-transparent outline-none text-brand-700 dark:text-brand-300"
+                    className="w-7 text-center font-mono font-black text-xs bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 rounded-md text-brand-700 dark:text-brand-300"
                   />
                   <button
                     type="button"
@@ -85,7 +87,8 @@ export const CartItemAddons: React.FC<CartItemAddonsProps> = ({
                       e.stopPropagation();
                       onUpdateAddonQty?.(addon.id, addonQty + 1);
                     }}
-                    className="w-4 h-4 flex items-center justify-center rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 text-[11px] font-black leading-none cursor-pointer"
+                    aria-label={`Tambah jumlah ${addon.name}`}
+                    className="w-4 h-4 flex items-center justify-center rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 text-[11px] font-black leading-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
                     title="Tambah jumlah finishing"
                   >
                     +

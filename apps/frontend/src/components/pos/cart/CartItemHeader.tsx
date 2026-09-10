@@ -51,7 +51,8 @@ export const CartItemHeader: React.FC<CartItemHeaderProps> = ({
       <button
         type="button"
         onClick={onRemove}
-        className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+        aria-label={`Hapus ${item.product.name} dari pesanan`}
+        className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/50"
         title="Hapus item ini dari pesanan"
       >
         <Trash2 className="w-4 h-4" />

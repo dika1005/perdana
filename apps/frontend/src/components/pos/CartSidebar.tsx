@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ShoppingCart, Trash2 } from 'lucide-react';
 import { Customer } from '../../types/customer';
 import { ProductAddon } from '../../types/product';
@@ -61,17 +61,6 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   total,
   onOpenCheckout,
 }) => {
-  const [editingPriceIds, setEditingPriceIds] = useState<Record<number, boolean>>({});
-
-  const togglePriceEdit = (productId: number) => {
-    setEditingPriceIds(prev => ({
-      ...prev,
-      [productId]: !prev[productId]
-    }));
-  };
-
-
-
   return (
     <div className="w-full lg:w-[480px] xl:w-[520px] 2xl:w-[560px] flex flex-col skeuo p-4 lg:p-5 shrink-0 h-[calc(100vh-130px)] transition-[background-color,color,transform,box-shadow,border-color]">
       {/* 1. Header */}
@@ -123,18 +112,12 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
           </div>
         ) : (
           cart.map(item => {
-            const isRange = item.product.price_type === 'RANGE';
-            const isCustom = item.product.price_type === 'CUSTOM';
-            const isEditOpen = editingPriceIds[item.product.id] || isRange || isCustom;
-
             return (
               <CartItemCard
                 key={item.product.id}
                 item={item}
                 rawMaterials={rawMaterials}
                 availableAddons={availableAddons}
-                isEditOpen={isEditOpen}
-                onTogglePriceEdit={() => togglePriceEdit(item.product.id)}
                 onUpdateQty={(delta) => onUpdateQty(item.product.id, delta)}
                 onSetQty={(qty) => onUpdateQty(item.product.id, qty - item.qty)}
                 onUpdatePrice={(price) => onUpdatePrice(item.product.id, price)}
