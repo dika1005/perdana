@@ -18,14 +18,14 @@ export const LandingFooter: React.FC<LandingFooterProps> = React.memo(({
 
   return (
     <footer className="relative z-10 border-t border-slate-200/80 dark:border-slate-800/80 pt-12 pb-8 px-6 sm:px-10 lg:px-16 bg-white/70 dark:bg-[#090D16]/80 backdrop-blur-md">
-      <div className="max-w-[1440px] mx-auto">
+      <div>
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 pb-10 border-b border-slate-200/80 dark:border-slate-800/80">
           
           {/* Column 1: Store Branding & Contact */}
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center font-black text-white text-base shadow-lg shadow-blue-500/25">
+              <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-white text-base shadow-sm">
                 P
               </div>
               <div>

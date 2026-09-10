@@ -26,7 +26,7 @@ export const ServiceShowcase: React.FC<ServiceShowcaseProps> = React.memo(({
   };
 
   return (
-    <section className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16 py-14 sm:py-18">
+    <section className="relative z-10 px-6 sm:px-10 lg:px-16 py-14 sm:py-18">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <SectionHeading
           eyebrow="Layanan Percetakan"
@@ -62,7 +62,7 @@ export const ServiceShowcase: React.FC<ServiceShowcaseProps> = React.memo(({
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${service.gradient} text-white flex items-center justify-center shadow-md shadow-blue-500/20`}>
+                  <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
                     <service.icon className="w-5 h-5" />
                   </div>
                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${service.bgLight} ${service.textColor} border ${service.borderLight}`}>

@@ -16,21 +16,22 @@ export const HeroSection: React.FC<HeroSectionProps> = React.memo(({
   onScrollToCatalog
 }) => {
   return (
-    <section className="relative z-10 pt-10 sm:pt-14 lg:pt-16 pb-12 sm:pb-16 px-6 sm:px-10 lg:px-16 max-w-[1440px] mx-auto">
+    <section className="relative z-10 pt-10 sm:pt-14 lg:pt-16 pb-12 sm:pb-16 px-6 sm:px-10 lg:px-16">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 xl:gap-20 items-center">
         
         {/* Left Column: Modern Headline & CTAs */}
         <div className="lg:col-span-7 space-y-6">
           
-          {/* Live Indicator Pill */}
-          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full glass-card border border-blue-200/60 dark:border-blue-900/60 text-xs font-bold text-blue-600 dark:text-blue-400 shadow-sm">
-            <span>Siap Cetak Kilat Hari Ini</span>
+          {/* Status Pill */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Buka hari ini · respon cepat jam kerja</span>
           </div>
 
           {/* Main Title */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.14]">
             Layanan Cetak Cepat,{' '}
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">
+            <span className="text-blue-600 dark:text-blue-400">
               Hasil Tajam & Presisi
             </span>
           </h1>
@@ -44,7 +45,7 @@ export const HeroSection: React.FC<HeroSectionProps> = React.memo(({
           <div className="flex flex-wrap items-center gap-3.5 pt-1">
             <button 
               onClick={onScrollToCatalog}
-              className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-xs sm:text-sm shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-[transform,box-shadow] duration-150 cursor-pointer"
+              className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md transition-[background-color,transform,box-shadow] duration-150 hover:scale-[1.02] active:scale-95 cursor-pointer"
             >
               <span>Lihat Katalog & Harga</span>
               <ArrowRight className="w-4 h-4" />

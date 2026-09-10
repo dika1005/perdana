@@ -16,9 +16,9 @@ const BASE_CLASS =
 
 const VARIANT_CLASS: Record<WaLinkVariant, string> = {
   emerald:
-    'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/25',
+    'bg-emerald-600 hover:bg-emerald-700 shadow-md',
   brand:
-    'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-600/25',
+    'bg-blue-600 hover:bg-blue-700 shadow-md',
 };
 
 /** Tombol / tautan CTA ke WhatsApp dengan varian warna konsisten. */

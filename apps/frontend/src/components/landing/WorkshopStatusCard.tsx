@@ -16,7 +16,7 @@ export const WorkshopStatusCard: React.FC<WorkshopStatusCardProps> = React.memo(
         {/* Card Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-200/80 dark:border-slate-800/80">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+            <div className="w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
               <Printer className="w-5 h-5" />
             </div>
             <div>
@@ -51,7 +51,7 @@ export const WorkshopStatusCard: React.FC<WorkshopStatusCardProps> = React.memo(
         )}
 
         {/* Design File Check Offer */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-cyan-500/10 border border-blue-200 dark:border-blue-800/50 space-y-1.5">
+        <div className="p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 space-y-1.5">
           <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-bold text-xs">
             <CheckCircle2 className="w-4 h-4" />
             <span>Cek Kelayakan File Desain Gratis</span>

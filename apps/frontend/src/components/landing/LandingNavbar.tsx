@@ -20,11 +20,11 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = React.memo(({
 }) => {
   return (
     <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-[#090D16]/80 border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
-      <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16 py-3.5 sm:py-4 flex items-center justify-between">
+      <div className="px-6 sm:px-10 lg:px-16 py-3.5 sm:py-4 flex items-center justify-between">
         
         {/* Logo & Store Title */}
         <Link href="/" className="flex items-center gap-3.5 group">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform duration-200">
+          <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-extrabold text-lg shadow-sm group-hover:scale-105 transition-transform duration-200">
             <span>P</span>
           </div>
           <div>
@@ -91,7 +91,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = React.memo(({
 
           <Link 
             href="/login" 
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/25 active:scale-95 transition-[background-color,color,transform,box-shadow,border-color]"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm active:scale-95 transition-[background-color,color,transform,box-shadow,border-color]"
           >
             <LogIn className="w-3.5 h-3.5" />
             <span>Login Kasir</span>

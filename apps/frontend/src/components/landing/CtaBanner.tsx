@@ -14,8 +14,8 @@ export const CtaBanner: React.FC<CtaBannerProps> = React.memo(({
   onScrollToCatalog
 }) => {
   return (
-    <section className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
-      <div className="glass-card p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-cyan-500/10 border border-blue-200/80 dark:border-blue-800/60 shadow-xl relative overflow-hidden">
+    <section className="relative z-10 px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
+      <div className="glass-card p-8 sm:p-12 rounded-3xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/80 dark:border-blue-800/60 shadow-lg relative overflow-hidden">
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           

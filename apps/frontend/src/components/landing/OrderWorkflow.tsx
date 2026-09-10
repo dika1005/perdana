@@ -11,12 +11,11 @@ export const OrderWorkflow: React.FC<OrderWorkflowProps> = React.memo(({
 }) => {
   return (
     <section className="relative z-10 py-14 sm:py-18 px-6 sm:px-10 lg:px-16 bg-slate-100/60 dark:bg-slate-900/40 border-y border-slate-200/80 dark:border-slate-800/80">
-      <div className="max-w-[1440px] mx-auto">
+      <div>
         <SectionHeading
           align="center"
-          eyebrow="Alur Pemesanan"
-          title="4 Langkah Mudah Pesan Cetak"
-          description="Tanpa registrasi berbelit, Anda langsung terhubung dengan tim percetakan kami"
+          title="Alur Pemesanan"
+          description="Dari memilih produk di katalog sampai pesanan diambil atau dikirim"
           className="mb-10"
         />
 
@@ -24,7 +23,7 @@ export const OrderWorkflow: React.FC<OrderWorkflowProps> = React.memo(({
           {steps.map((s, idx) => (
             <div key={idx} className="glass-card glass-card-hover p-6 sm:p-7 rounded-2xl relative overflow-hidden group">
               <div className="flex items-center justify-between mb-4">
-                <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${s.gradient} text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform`}>
+                <div className={`w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform`}>
                   <s.icon className="w-5 h-5" />
                 </div>
                 <span className="font-extrabold text-2xl text-slate-300 dark:text-slate-700">

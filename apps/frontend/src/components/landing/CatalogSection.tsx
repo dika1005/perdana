@@ -51,7 +51,7 @@ export const CatalogSection: React.FC<CatalogSectionProps> = React.memo(({
   const storePhone = catalog?.store.phone;
 
   return (
-    <section ref={catalogRef} className="relative z-10 max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16 py-14 sm:py-18 scroll-mt-20">
+    <section ref={catalogRef} className="relative z-10 px-6 sm:px-10 lg:px-16 py-14 sm:py-18 scroll-mt-20">
       
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
